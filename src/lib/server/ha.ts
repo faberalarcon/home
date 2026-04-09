@@ -1,6 +1,6 @@
 import { db } from './db/index';
 import { haEventsLog } from './db/schema';
-import { getSetting } from './db/settings';
+import { getSetting, setSetting } from './db/settings';
 
 const TIMEOUT_MS = 3000;
 
@@ -12,10 +12,11 @@ export async function fireEvent(
   const token = getSetting('ha_token') ?? '';
   const payloadJson = JSON.stringify(payload);
 
-  const logAndReturn = (success: boolean, error: string) => {
-    db.insert(haEventsLog).values({ eventType, payload: payloadJson, success, error }).run();
-    console.warn(`[ha] ${eventType} skipped: ${error}`);
-    return { success, error };
+  const logAndReturn = (success: boolean, errorMsg: string) => {
+    db.insert(haEventsLog).values({ eventType, payload: payloadJson, success, error: errorMsg }).run();
+    console.warn(`[ha] ${eventType} skipped: ${errorMsg}`);
+    setSetting('ha_last_error', `${eventType}: ${errorMsg}`);
+    return { success, error: errorMsg };
   };
 
   if (!token) return logAndReturn(false, 'no token configured');
@@ -24,7 +25,7 @@ export async function fireEvent(
   const url = `${baseUrl.replace(/\/$/, '')}/api/events/${encodeURIComponent(eventType)}`;
 
   let success = false;
-  let error: string | undefined;
+  let errorMsg: string | undefined;
 
   try {
     const controller = new AbortController();
@@ -45,10 +46,10 @@ export async function fireEvent(
     if (res.ok) {
       success = true;
     } else {
-      error = `HTTP ${res.status} ${res.statusText}`;
+      errorMsg = `HTTP ${res.status} ${res.statusText}`;
     }
   } catch (err) {
-    error = err instanceof Error ? err.message : String(err);
+    errorMsg = err instanceof Error ? err.message : String(err);
   }
 
   db.insert(haEventsLog)
@@ -56,13 +57,16 @@ export async function fireEvent(
       eventType,
       payload: payloadJson,
       success,
-      error: error ?? null
+      error: errorMsg ?? null
     })
     .run();
 
-  if (!success) {
-    console.error(`[ha] event ${eventType} failed: ${error}`);
+  if (!success && errorMsg) {
+    console.error(`[ha] event ${eventType} failed: ${errorMsg}`);
+    setSetting('ha_last_error', `${eventType}: ${errorMsg}`);
+  } else if (success) {
+    setSetting('ha_last_error', '');
   }
 
-  return { success, error };
+  return { success, error: errorMsg };
 }

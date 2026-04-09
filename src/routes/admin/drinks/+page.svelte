@@ -7,7 +7,17 @@
 </script>
 
 <div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-semibold">Drinks</h1>
+  <div class="flex items-center gap-3">
+    <h1 class="text-2xl font-semibold">Drinks</h1>
+    {#if data.inactiveCount > 0}
+      <a
+        href="/admin/drinks?{data.showInactive ? '' : 'inactive=1'}"
+        class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+      >
+        {data.showInactive ? 'Hide inactive' : `+${data.inactiveCount} hidden`}
+      </a>
+    {/if}
+  </div>
   <a href="/admin/drinks" class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New drink</a>
 </div>
 
@@ -29,7 +39,7 @@
     </thead>
     <tbody>
       {#each data.drinks as d (d.id)}
-        <tr class="border-b border-slate-800/50 last:border-0 {data.editing?.id === d.id ? 'bg-slate-800/40' : 'hover:bg-slate-800/20'}">
+        <tr class="border-b border-slate-800/50 last:border-0 {data.editing?.id === d.id ? 'bg-slate-800/40' : !d.active ? 'opacity-50 hover:opacity-75' : 'hover:bg-slate-800/20'} transition">
           <td class="px-4 py-3">
             <div class="flex items-center gap-2">
               {#if d.imageUrl}
@@ -43,9 +53,15 @@
           <td class="px-4 py-3 text-slate-400 hidden sm:table-cell">{d.category}</td>
           <td class="px-4 py-3 text-slate-500 text-xs hidden sm:table-cell">{d.haTriggerEvent ?? '—'}</td>
           <td class="px-4 py-3 text-center">{d.active ? '✓' : '–'}</td>
-          <td class="px-4 py-3 text-right">
-            <a href="/admin/drinks?edit={d.id}" class="text-slate-400 hover:text-white text-xs mr-3">Edit</a>
-            <form method="POST" action="?/delete" class="inline" onsubmit={(e) => { if (!confirm(`Delete ${d.name}?`)) e.preventDefault(); }}>
+          <td class="px-4 py-3 text-right space-x-2">
+            <a href="/admin/drinks?edit={d.id}{data.showInactive ? '&inactive=1' : ''}" class="text-slate-400 hover:text-white text-xs">Edit</a>
+            <form method="POST" action="?/toggleActive" class="inline">
+              <input type="hidden" name="id" value={d.id} />
+              <button type="submit" class="text-xs {d.active ? 'text-slate-500 hover:text-amber-400' : 'text-emerald-600 hover:text-emerald-400'}">
+                {d.active ? 'Hide' : 'Show'}
+              </button>
+            </form>
+            <form method="POST" action="?/delete" class="inline" onsubmit={(e) => { if (!confirm(`Delete ${d.name}? This cannot be undone.`)) e.preventDefault(); }}>
               <input type="hidden" name="id" value={d.id} />
               <button type="submit" class="text-red-500 hover:text-red-400 text-xs">Delete</button>
             </form>
@@ -53,7 +69,9 @@
         </tr>
       {/each}
       {#if data.drinks.length === 0}
-        <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">No drinks yet.</td></tr>
+        <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">
+          {data.showInactive ? 'No drinks.' : 'No active drinks.'}
+        </td></tr>
       {/if}
     </tbody>
   </table>
@@ -128,7 +146,7 @@
 
     <div>
       <label class="block text-sm text-slate-400 mb-1" for="image">
-        Image {data.editing?.imageUrl ? '(leave blank to keep current)' : '(optional)'}
+        Image {data.editing?.imageUrl ? '(leave blank to keep current, max 10 MB)' : '(optional, max 10 MB)'}
       </label>
       {#if data.editing?.imageUrl}
         <img src={data.editing.imageUrl} alt="" class="w-16 h-16 rounded-lg object-cover mb-2" />

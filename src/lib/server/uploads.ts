@@ -5,6 +5,8 @@ import sharp from 'sharp';
 const dbPath = process.env.DATABASE_PATH ?? './data/drink-hub.db';
 const UPLOADS_DIR = join(dirname(dbPath), 'uploads');
 
+const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+
 function toSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
@@ -15,6 +17,12 @@ export async function saveImage(
   id: number,
   name: string
 ): Promise<string> {
+  if (file.size > MAX_BYTES) {
+    throw new Error(
+      `Image too large — max 10 MB, uploaded file is ${(file.size / 1024 / 1024).toFixed(1)} MB`
+    );
+  }
+
   const dir = join(UPLOADS_DIR, subdir);
   mkdirSync(dir, { recursive: true });
 

@@ -29,7 +29,11 @@ export const actions: Actions = {
 
       let avatarUrl = existing.avatarUrl;
       if (imageFile && imageFile.size > 0) {
-        avatarUrl = await saveImage(imageFile, 'profiles', id, name);
+        try {
+          avatarUrl = await saveImage(imageFile, 'profiles', id, name);
+        } catch (err) {
+          return fail(400, { error: err instanceof Error ? err.message : 'Image upload failed' });
+        }
       }
 
       db.update(profiles).set({ name, color, active, avatarUrl }).where(eq(profiles.id, id)).run();
@@ -40,8 +44,12 @@ export const actions: Actions = {
         .get();
 
       if (imageFile && imageFile.size > 0) {
-        const avatarUrl = await saveImage(imageFile, 'profiles', inserted.id, name);
-        db.update(profiles).set({ avatarUrl }).where(eq(profiles.id, inserted.id)).run();
+        try {
+          const avatarUrl = await saveImage(imageFile, 'profiles', inserted.id, name);
+          db.update(profiles).set({ avatarUrl }).where(eq(profiles.id, inserted.id)).run();
+        } catch (err) {
+          return fail(400, { error: err instanceof Error ? err.message : 'Image upload failed' });
+        }
       }
     }
 

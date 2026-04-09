@@ -1,7 +1,8 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import type { LayoutData } from './$types';
 
-  let { children } = $props();
+  let { children, data }: { children: any; data: LayoutData } = $props();
 
   const links = [
     { href: '/admin', label: 'Dashboard' },
@@ -22,6 +23,14 @@
   <div class="bg-amber-950/50 border-b border-amber-800/60 px-4 py-2 text-xs text-amber-300">
     ⚠ Admin panel — LAN only. No authentication. Do not expose this device to the public internet without adding auth first.
   </div>
+
+  {#if data.haWarning}
+    <div class="bg-red-950/50 border-b border-red-800/60 px-4 py-2 text-xs text-red-300 flex items-center gap-2">
+      <span>⚠ HA:</span>
+      <span>{data.haWarning}</span>
+      <a href="/admin/settings" class="underline ml-1 hover:text-red-200">Fix in Settings →</a>
+    </div>
+  {/if}
 
   <header class="flex items-center gap-4 px-4 py-3 border-b border-slate-800">
     <a href="/" class="text-lg font-semibold tracking-tight">🍹 drink-hub</a>

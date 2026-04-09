@@ -9,5 +9,6 @@ services:
       - ./data:/app/data
     environment:
       - DATABASE_PATH=/app/data/drink-hub.db
+      - BODY_SIZE_LIMIT=10485760
     extra_hosts:
       - "ai.local:host-gateway"

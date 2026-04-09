@@ -2,7 +2,7 @@
 
 A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi alongside Home Assistant, serves a mobile-friendly menu on the local network, tracks orders per person, and dispatches fun automations through HA — speaker announcements, milestone light flashes, whatever you can wire up.
 
-> **Status:** All 5 phases complete. See [docs/](./docs) for details.
+> **Status:** All 5 phases complete. Phase 6–8 enhancements in progress — see [docs/future-phases.md](./docs/future-phases.md).
 
 ---
 
@@ -127,3 +127,5 @@ drink-hub/
 ## Docs
 
 Each phase has a standalone doc under [`docs/`](./docs) that stays up-to-date as we implement it. Start with [Phase 1](./docs/phase-1-mvp.md) to understand the MVP.
+
+Planned enhancements are documented in [docs/future-phases.md](./docs/future-phases.md).
