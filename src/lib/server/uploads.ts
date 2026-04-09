@@ -30,11 +30,13 @@ export async function saveImage(
   const base = `${id}-${toSlug(name)}`;
 
   await sharp(buffer)
+    .rotate()                              // auto-rotate from EXIF orientation, then strip tag
     .resize(512, 512, { fit: 'cover' })
     .webp({ quality: 85 })
     .toFile(join(dir, `${base}.webp`));
 
   await sharp(buffer)
+    .rotate()
     .resize(128, 128, { fit: 'cover' })
     .webp({ quality: 80 })
     .toFile(join(dir, `${base}-thumb.webp`));
