@@ -1,9 +1,18 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
 
   const CATEGORIES = ['cocktail', 'beer', 'wine', 'spirit', 'non-alcoholic', 'other'];
+
+  // Scroll the edit form into view whenever we navigate to ?edit=<id>
+  afterNavigate(() => {
+    if (data.editing) {
+      const el = document.getElementById('edit-form');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
 </script>
 
 <div class="flex items-center justify-between mb-6">
@@ -25,61 +34,76 @@
   <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.error}</div>
 {/if}
 
-<!-- Table -->
+<!-- Drink list table -->
 <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-8">
-  <table class="w-full text-sm">
-    <thead>
-      <tr class="border-b border-slate-800 text-slate-400 text-left">
-        <th class="px-4 py-3 font-medium">Name</th>
-        <th class="px-4 py-3 font-medium hidden sm:table-cell">Category</th>
-        <th class="px-4 py-3 font-medium hidden sm:table-cell">HA event</th>
-        <th class="px-4 py-3 font-medium text-center">Active</th>
-        <th class="px-4 py-3 font-medium text-right">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each data.drinks as d (d.id)}
-        <tr class="border-b border-slate-800/50 last:border-0 {data.editing?.id === d.id ? 'bg-slate-800/40' : !d.active ? 'opacity-50 hover:opacity-75' : 'hover:bg-slate-800/20'} transition">
-          <td class="px-4 py-3">
-            <div class="flex items-center gap-2">
-              {#if d.imageUrl}
-                <img src={d.imageUrl.replace('.webp', '-thumb.webp')} alt="" class="w-8 h-8 rounded object-cover" />
-              {:else}
-                <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-base">🍸</div>
-              {/if}
-              <span class="font-medium">{d.name}</span>
-            </div>
-          </td>
-          <td class="px-4 py-3 text-slate-400 hidden sm:table-cell">{d.category}</td>
-          <td class="px-4 py-3 text-slate-500 text-xs hidden sm:table-cell">{d.haTriggerEvent ?? '—'}</td>
-          <td class="px-4 py-3 text-center">{d.active ? '✓' : '–'}</td>
-          <td class="px-4 py-3 text-right space-x-2">
-            <a href="/admin/drinks?edit={d.id}{data.showInactive ? '&inactive=1' : ''}" class="text-slate-400 hover:text-white text-xs">Edit</a>
-            <form method="POST" action="?/toggleActive" class="inline">
-              <input type="hidden" name="id" value={d.id} />
-              <button type="submit" class="text-xs {d.active ? 'text-slate-500 hover:text-amber-400' : 'text-emerald-600 hover:text-emerald-400'}">
-                {d.active ? 'Hide' : 'Show'}
-              </button>
-            </form>
-            <form method="POST" action="?/delete" class="inline" onsubmit={(e) => { if (!confirm(`Delete ${d.name}? This cannot be undone.`)) e.preventDefault(); }}>
-              <input type="hidden" name="id" value={d.id} />
-              <button type="submit" class="text-red-500 hover:text-red-400 text-xs">Delete</button>
-            </form>
-          </td>
+  <!-- overflow-x-auto lets the table scroll on narrow screens without clipping the actions column -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm min-w-[36rem]">
+      <thead>
+        <tr class="border-b border-slate-800 text-slate-400 text-left">
+          <th class="px-4 py-3 font-medium">Name</th>
+          <th class="px-4 py-3 font-medium">Category</th>
+          <th class="px-4 py-3 font-medium">HA event</th>
+          <th class="px-4 py-3 font-medium text-center w-16">Active</th>
+          <th class="px-4 py-3 font-medium text-right w-36">Actions</th>
         </tr>
-      {/each}
-      {#if data.drinks.length === 0}
-        <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">
-          {data.showInactive ? 'No drinks.' : 'No active drinks.'}
-        </td></tr>
-      {/if}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {#each data.drinks as d (d.id)}
+          <tr class="border-b border-slate-800/50 last:border-0 {data.editing?.id === d.id ? 'bg-slate-800/40' : !d.active ? 'opacity-50 hover:opacity-75' : 'hover:bg-slate-800/20'} transition">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                {#if d.imageUrl}
+                  <img src={d.imageUrl.replace('.webp', '-thumb.webp')} alt="" class="w-8 h-8 rounded object-cover shrink-0" />
+                {:else}
+                  <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-base shrink-0">🍸</div>
+                {/if}
+                <span class="font-medium">{d.name}</span>
+              </div>
+            </td>
+            <td class="px-4 py-3 text-slate-400">{d.category}</td>
+            <td class="px-4 py-3 text-slate-500 text-xs">{d.haTriggerEvent ?? '—'}</td>
+            <td class="px-4 py-3 text-center">{d.active ? '✓' : '–'}</td>
+            <td class="px-4 py-3 text-right">
+              <div class="flex items-center justify-end gap-3">
+                <a
+                  href="/admin/drinks?edit={d.id}{data.showInactive ? '&inactive=1' : ''}"
+                  class="text-slate-400 hover:text-white text-xs"
+                >Edit</a>
+                <form method="POST" action="?/toggleActive" class="contents">
+                  <input type="hidden" name="id" value={d.id} />
+                  <button type="submit" class="text-xs {d.active ? 'text-slate-500 hover:text-amber-400' : 'text-emerald-600 hover:text-emerald-400'}">
+                    {d.active ? 'Hide' : 'Show'}
+                  </button>
+                </form>
+                <form method="POST" action="?/delete" class="contents" onsubmit={(e) => { if (!confirm(`Delete ${d.name}? This cannot be undone.`)) e.preventDefault(); }}>
+                  <input type="hidden" name="id" value={d.id} />
+                  <button type="submit" class="text-red-500 hover:text-red-400 text-xs">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {/each}
+        {#if data.drinks.length === 0}
+          <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">
+            {data.showInactive ? 'No drinks.' : 'No active drinks.'}
+          </td></tr>
+        {/if}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- Create / Edit form -->
-<div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
-  <h2 class="text-lg font-semibold mb-4">{data.editing ? `Edit — ${data.editing.name}` : 'New drink'}</h2>
+<div
+  id="edit-form"
+  class="bg-slate-900 border rounded-xl p-6 scroll-mt-4 transition-colors duration-300
+    {data.editing ? 'border-orange-700/60' : 'border-slate-800'}"
+>
+  <h2 class="text-lg font-semibold mb-4">
+    {data.editing ? `Editing — ${data.editing.name}` : 'New drink'}
+  </h2>
+
   <form method="POST" action="?/save" enctype="multipart/form-data" class="space-y-4">
     {#if data.editing}
       <input type="hidden" name="id" value={data.editing.id} />
