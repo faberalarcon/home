@@ -21,12 +21,20 @@
       style="background-color: {p.color}20; border: 1px solid {p.color}60"
       onclick={() => pick(p)}
     >
-      <div
-        class="w-12 h-12 rounded-full mb-3 flex items-center justify-center text-xl font-bold"
-        style="background-color: {p.color}; color: #0f172a"
-      >
-        {p.name[0]}
-      </div>
+      {#if p.avatarUrl}
+        <img
+          src={p.avatarUrl.replace('.webp', '-thumb.webp')}
+          alt={p.name}
+          class="w-12 h-12 rounded-full mb-3 object-cover"
+        />
+      {:else}
+        <div
+          class="w-12 h-12 rounded-full mb-3 flex items-center justify-center text-xl font-bold"
+          style="background-color: {p.color}; color: #0f172a"
+        >
+          {p.name[0]}
+        </div>
+      {/if}
       <div class="text-lg font-medium">{p.name}</div>
     </button>
   {/each}
