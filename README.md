@@ -2,7 +2,7 @@
 
 A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi alongside Home Assistant, serves a mobile-friendly menu on the local network, tracks orders per person, and dispatches fun automations through HA — speaker announcements, milestone light flashes, whatever you can wire up.
 
-> **Status:** Phase 1 (MVP ordering) complete. See [docs/](./docs) for the phase plan.
+> **Status:** Phase 3 (Admin panel) complete. See [docs/](./docs) for the phase plan.
 
 ---
 
@@ -12,7 +12,7 @@ A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi 
 |---|---|---|
 | [1 — MVP ordering](./docs/phase-1-mvp.md) | ✅ Done | Profile picker, drink menu, order API, recent feed, SQLite, Docker |
 | [2 — Home Assistant integration](./docs/phase-2-home-assistant.md) | ✅ Done | Fire HA events on order, server-side HA client, reference automations |
-| [3 — Admin panel](./docs/phase-3-admin-panel.md) | ⏳ Planned | CRUD for drinks/profiles/milestones/settings, image uploads |
+| [3 — Admin panel](./docs/phase-3-admin-panel.md) | ✅ Done | CRUD for drinks/profiles/milestones/settings, image uploads |
 | [4 — Milestones & stats](./docs/phase-4-milestones-stats.md) | ⏳ Planned | Milestone evaluator, stats dashboard, live SSE updates |
 | [5 — Polish & tablet mode](./docs/phase-5-polish-tablet.md) | ⏳ Planned | Kiosk view, PWA, backups, final polish |
 
@@ -90,19 +90,31 @@ drink-hub/
 │   ├── lib/
 │   │   ├── profile.ts               # client-side selected-profile store
 │   │   └── server/
+│   │       ├── ha.ts                # HA event client
+│   │       ├── uploads.ts           # image upload + sharp resize
 │   │       └── db/
 │   │           ├── schema.ts
 │   │           ├── index.ts
 │   │           ├── migrate.ts
-│   │           └── seed.ts
+│   │           ├── seed.ts
+│   │           └── settings.ts      # key/value settings helpers
 │   └── routes/
 │       ├── +layout.svelte
 │       ├── +page.svelte             # profile picker
 │       ├── menu/
 │       ├── recent/
-│       └── api/orders/+server.ts
+│       ├── api/orders/+server.ts
+│       ├── uploads/[...path]/       # serves data/uploads/ files
+│       └── admin/                   # admin panel (no auth — LAN only)
+│           ├── +layout.svelte
+│           ├── +page.svelte         # dashboard + stats
+│           ├── drinks/              # drink CRUD + image upload
+│           ├── profiles/            # profile CRUD + avatar upload
+│           ├── milestones/          # milestone CRUD
+│           ├── settings/            # HA URL/token + connection test
+│           └── ha-log/              # HA event dispatch log
 ├── drizzle/                         # generated migrations
-├── data/                            # gitignored; SQLite + uploads + backups
+├── data/                            # gitignored; SQLite + uploads
 ├── docs/                            # phase plans
 ├── Dockerfile
 └── docker-compose.yml

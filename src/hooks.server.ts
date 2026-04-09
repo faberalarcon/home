@@ -14,7 +14,7 @@ if (!migrated) {
 }
 
 bootstrapSettings({
-  ha_base_url: 'http://homeassistant.local:8123',
+  ha_base_url: 'http://ai.local:8123',
   ha_token: '',
   site_name: 'drink-hub'
 });

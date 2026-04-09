@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
+# sharp uses prebuilt libvips binaries; ensure they're fetched for the build arch
+ENV SHARP_IGNORE_GLOBAL_LIBVIPS=1
+
 COPY package.json package-lock.json* ./
 RUN npm install
 

@@ -1,0 +1,76 @@
+import { db } from '$lib/server/db';
+import { drinks } from '$lib/server/db/schema';
+import { eq, asc, sql } from 'drizzle-orm';
+import { fail, redirect } from '@sveltejs/kit';
+import { saveImage } from '$lib/server/uploads';
+import type { PageServerLoad, Actions } from './$types';
+
+export const load: PageServerLoad = async ({ url }) => {
+  const editId = url.searchParams.get('edit') ? Number(url.searchParams.get('edit')) : null;
+  const all = db.select().from(drinks).orderBy(asc(drinks.sortOrder), asc(drinks.name)).all();
+  const editing = editId ? all.find((d) => d.id === editId) ?? null : null;
+
+  const existingEvents = [
+    ...new Set(all.map((d) => d.haTriggerEvent).filter(Boolean))
+  ] as string[];
+
+  return { drinks: all, editing, existingEvents };
+};
+
+export const actions: Actions = {
+  save: async ({ request }) => {
+    const fd = await request.formData();
+    const id = fd.get('id') ? Number(fd.get('id')) : null;
+    const name = (fd.get('name') as string | null)?.trim();
+    const description = (fd.get('description') as string | null)?.trim() || null;
+    const category = (fd.get('category') as string | null)?.trim() || 'drink';
+    const haTriggerEvent = (fd.get('haTriggerEvent') as string | null)?.trim() || null;
+    const active = fd.get('active') === 'on';
+    const sortOrder = Number(fd.get('sortOrder') ?? 0) || 0;
+    const imageFile = fd.get('image') as File | null;
+
+    if (!name) return fail(400, { error: 'Name is required', fields: { name, description, category, haTriggerEvent, active, sortOrder } });
+
+    if (id) {
+      // update
+      const existing = db.select().from(drinks).where(eq(drinks.id, id)).get();
+      if (!existing) return fail(404, { error: 'Drink not found' });
+
+      let imageUrl = existing.imageUrl;
+      if (imageFile && imageFile.size > 0) {
+        imageUrl = await saveImage(imageFile, 'drinks', id, name);
+      }
+
+      db.update(drinks)
+        .set({ name, description, category, haTriggerEvent, active, sortOrder, imageUrl })
+        .where(eq(drinks.id, id))
+        .run();
+    } else {
+      // create
+      const inserted = db.insert(drinks)
+        .values({ name, description, category, haTriggerEvent, active, sortOrder })
+        .returning({ id: drinks.id })
+        .get();
+
+      if (imageFile && imageFile.size > 0) {
+        const imageUrl = await saveImage(imageFile, 'drinks', inserted.id, name);
+        db.update(drinks).set({ imageUrl }).where(eq(drinks.id, inserted.id)).run();
+      }
+    }
+
+    redirect(303, '/admin/drinks');
+  },
+
+  delete: async ({ request }) => {
+    const fd = await request.formData();
+    const id = Number(fd.get('id'));
+    if (!id) return fail(400, { error: 'Missing id' });
+    try {
+      db.delete(drinks).where(eq(drinks.id, id)).run();
+    } catch {
+      // FK constraint — drink has orders; deactivate instead of deleting
+      db.update(drinks).set({ active: false }).where(eq(drinks.id, id)).run();
+    }
+    redirect(303, '/admin/drinks');
+  }
+};

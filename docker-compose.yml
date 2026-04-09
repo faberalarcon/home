@@ -9,3 +9,5 @@ services:
       - ./data:/app/data
     environment:
       - DATABASE_PATH=/app/data/drink-hub.db
+    extra_hosts:
+      - "ai.local:host-gateway"

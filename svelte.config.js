@@ -5,7 +5,10 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
   preprocess: vitePreprocess(),
   kit: {
-    adapter: adapter()
+    adapter: adapter(),
+    // LAN-only service with no auth — CSRF origin check causes false positives
+    // because adapter-node defaults to https:// while the LAN runs on http://.
+    csrf: { checkOrigin: false }
   }
 };
 
