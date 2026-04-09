@@ -2,7 +2,7 @@
 
 A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi alongside Home Assistant, serves a mobile-friendly menu on the local network, tracks orders per person, and dispatches fun automations through HA — speaker announcements, milestone light flashes, whatever you can wire up.
 
-> **Status:** Phase 3 (Admin panel) complete. See [docs/](./docs) for the phase plan.
+> **Status:** All 5 phases complete. See [docs/](./docs) for details.
 
 ---
 
@@ -13,8 +13,8 @@ A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi 
 | [1 — MVP ordering](./docs/phase-1-mvp.md) | ✅ Done | Profile picker, drink menu, order API, recent feed, SQLite, Docker |
 | [2 — Home Assistant integration](./docs/phase-2-home-assistant.md) | ✅ Done | Fire HA events on order, server-side HA client, reference automations |
 | [3 — Admin panel](./docs/phase-3-admin-panel.md) | ✅ Done | CRUD for drinks/profiles/milestones/settings, image uploads |
-| [4 — Milestones & stats](./docs/phase-4-milestones-stats.md) | ⏳ Planned | Milestone evaluator, stats dashboard, live SSE updates |
-| [5 — Polish & tablet mode](./docs/phase-5-polish-tablet.md) | ⏳ Planned | Kiosk view, PWA, backups, final polish |
+| [4 — Milestones & stats](./docs/phase-4-milestones-stats.md) | ✅ Done | Milestone evaluator, stats dashboard, live SSE updates |
+| [5 — Polish & tablet mode](./docs/phase-5-polish-tablet.md) | ✅ Done | Kiosk view, PWA, nightly backups, final polish |
 
 ---
 
@@ -105,6 +105,8 @@ drink-hub/
 │       ├── recent/
 │       ├── api/orders/+server.ts
 │       ├── uploads/[...path]/       # serves data/uploads/ files
+│       ├── stats/                   # live stats dashboard (SSE)
+│       ├── kiosk/                   # wall-tablet always-on display
 │       └── admin/                   # admin panel (no auth — LAN only)
 │           ├── +layout.svelte
 │           ├── +page.svelte         # dashboard + stats
