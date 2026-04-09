@@ -12,6 +12,7 @@
     <nav class="flex gap-3 text-sm text-slate-300">
       <a href="/menu" class:text-white={$page.url.pathname === '/menu'}>Menu</a>
       <a href="/recent" class:text-white={$page.url.pathname === '/recent'}>Recent</a>
+      <a href="/stats" class:text-white={$page.url.pathname === '/stats'}>Stats</a>
       <a href="/admin" class:text-white={$page.url.pathname.startsWith('/admin')} class="text-slate-500 hover:text-slate-300">Admin</a>
       {#if $selectedProfile}
         <button

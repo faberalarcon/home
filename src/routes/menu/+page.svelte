@@ -34,10 +34,14 @@
         body: JSON.stringify({ profileId: $selectedProfile.id, drinkId: pending.id })
       });
       if (!res.ok) throw new Error('order failed');
-      toast = `${pending.name} ordered!`;
+      const result = await res.json();
+      const fired = result.firedMilestones ?? [];
+      toast = fired.length
+        ? `${pending.name} ordered! 🎉 ${fired.map((m: { name: string }) => m.name).join(' · ')}`
+        : `${pending.name} ordered!`;
       pending = null;
-      if (navigator.vibrate) navigator.vibrate(30);
-      setTimeout(() => (toast = null), 2500);
+      if (navigator.vibrate) navigator.vibrate(fired.length ? [30, 50, 30] : 30);
+      setTimeout(() => (toast = null), fired.length ? 4000 : 2500);
     } catch (err) {
       toast = 'Something went wrong';
       setTimeout(() => (toast = null), 2500);

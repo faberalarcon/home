@@ -1,0 +1,131 @@
+<script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
+  import type { PageData } from './$types';
+
+  let { data }: { data: PageData } = $props();
+
+  // Live state — updated by SSE
+  let totalToday = $state(data.totalToday);
+  let totalWeek = $state(data.totalWeek);
+  let totalAllTime = $state(data.totalAllTime);
+  let leaderToday = $state(data.leaderToday);
+  let leaderAllTime = $state(data.leaderAllTime);
+  let topDrinks = $state(data.topDrinks);
+
+  let tab = $state<'today' | 'all_time'>('today');
+  let milestoneToast = $state<string | null>(null);
+  let source: EventSource | null = null;
+
+  onMount(() => {
+    source = new EventSource('/api/stream');
+    source.addEventListener('order', (e) => {
+      const ev = JSON.parse(e.data);
+      totalAllTime = ev.counts.allTime;
+      totalToday = ev.counts.today;
+
+      // Patch leaderboard today
+      const pid = ev.order.profileId ?? ev.order.profile_id;
+      const existing = leaderToday.find((p) => p.id === pid);
+      if (existing) {
+        leaderToday = leaderToday
+          .map((p) => p.id === pid ? { ...p, c: p.c + 1 } : p)
+          .sort((a, b) => b.c - a.c);
+      } else {
+        leaderToday = [
+          ...leaderToday,
+          { id: pid, name: ev.order.profileName, color: ev.order.profileColor, c: 1 }
+        ].sort((a, b) => b.c - a.c);
+      }
+
+      // Milestone toasts
+      if (ev.firedMilestones?.length) {
+        milestoneToast = ev.firedMilestones.map((m: { name: string }) => `🎉 ${m.name}`).join(' · ');
+        setTimeout(() => (milestoneToast = null), 4000);
+      }
+    });
+  });
+
+  onDestroy(() => source?.close());
+
+  const leaderboard = $derived(tab === 'today' ? leaderToday : leaderAllTime);
+  const maxDrinkCount = $derived(topDrinks[0]?.c ?? 1);
+</script>
+
+<h1 class="text-2xl font-semibold mb-6">Stats</h1>
+
+<!-- Count strip -->
+<div class="grid grid-cols-3 gap-3 mb-8">
+  {#each [
+    { label: 'Today', value: totalToday },
+    { label: 'This week', value: totalWeek },
+    { label: 'All time', value: totalAllTime }
+  ] as s}
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+      <div class="text-3xl font-bold tabular-nums">{s.value}</div>
+      <div class="text-xs text-slate-400 mt-1">{s.label}</div>
+    </div>
+  {/each}
+</div>
+
+<!-- Leaderboard -->
+<div class="mb-8">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400">Leaderboard</h2>
+    <div class="flex gap-1 text-xs">
+      <button
+        onclick={() => (tab = 'today')}
+        class="px-3 py-1 rounded-full transition {tab === 'today' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'}"
+      >Today</button>
+      <button
+        onclick={() => (tab = 'all_time')}
+        class="px-3 py-1 rounded-full transition {tab === 'all_time' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'}"
+      >All time</button>
+    </div>
+  </div>
+
+  {#if leaderboard.length === 0}
+    <p class="text-slate-500 text-sm py-4 text-center">No orders yet.</p>
+  {:else}
+    <div class="space-y-2">
+      {#each leaderboard as p, i (p.id)}
+        <div class="flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+          <div class="text-slate-500 text-sm w-5 text-center">{i + 1}</div>
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-slate-950"
+            style="background-color:{p.color}">
+            {p.name[0]}
+          </div>
+          <div class="flex-1 font-medium">{p.name}</div>
+          <div class="text-lg font-bold tabular-nums">{p.c}</div>
+        </div>
+      {/each}
+    </div>
+  {/if}
+</div>
+
+<!-- Top drinks bar chart -->
+{#if topDrinks.length > 0}
+  <div class="mb-6">
+    <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-3">Top drinks (all time)</h2>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+      {#each topDrinks as d (d.id)}
+        {@const pct = Math.round((d.c / maxDrinkCount) * 100)}
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="font-medium">{d.name}</span>
+            <span class="text-slate-400 tabular-nums">{d.c}</span>
+          </div>
+          <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div class="h-2 rounded-full bg-orange-500 transition-all duration-500" style="width:{pct}%"></div>
+          </div>
+        </div>
+      {/each}
+    </div>
+  </div>
+{/if}
+
+<!-- Milestone toast -->
+{#if milestoneToast}
+  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-orange-500 text-slate-950 font-semibold px-5 py-3 rounded-full shadow-xl text-sm z-50">
+    {milestoneToast}
+  </div>
+{/if}

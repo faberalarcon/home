@@ -9,22 +9,7 @@ drink-hub fires HA events via the REST API whenever a drink is ordered or a mile
 1. Open Home Assistant → click your **Profile** (bottom-left avatar).
 2. Scroll to **Long-Lived Access Tokens** → **Create token**.
 3. Give it a name like `drink-hub` and copy the token — you only see it once.
-4. In drink-hub, update the `ha_token` setting (Phase 3 adds an admin UI; for now use SQLite directly):
-
-```bash
-# On the Pi, with the container running:
-docker exec -it drink-hub sqlite3 /app/data/drink-hub.db \
-  "INSERT INTO settings (key, value) VALUES ('ha_token', 'YOUR_TOKEN_HERE')
-   ON CONFLICT(key) DO UPDATE SET value = excluded.value;"
-```
-
-5. Also verify (or update) the HA base URL if yours differs from the default:
-
-```bash
-docker exec -it drink-hub sqlite3 /app/data/drink-hub.db \
-  "INSERT INTO settings (key, value) VALUES ('ha_base_url', 'http://homeassistant.local:8123')
-   ON CONFLICT(key) DO UPDATE SET value = excluded.value;"
-```
+4. In drink-hub, go to **`/admin/settings`** and paste the token into the HA token field. Set the base URL to your HA address (e.g. `http://ai.local:8123`). Click **Test HA connection** to verify.
 
 ---
 
@@ -109,18 +94,22 @@ action:
 mode: single
 ```
 
-### 4. Milestone — flash lights when 10 drinks ordered today (Phase 4 stub)
+### 4. Milestone — fire a custom event when 10 drinks are ordered today
 
-*In Phase 4, drink-hub will fire a configurable milestone event automatically.
-For now you can approximate it by counting events in HA:*
+Configure in `/admin/milestones`:
+- **Name**: 10 drinks tonight
+- **Threshold**: 10
+- **Scope**: daily
+- **HA trigger event**: `ten_drinks_tonight`
+
+drink-hub fires this event automatically when the daily count hits exactly 10.
+The milestone payload includes `milestone`, `threshold`, `scope`, `profile`, and `drink`.
 
 ```yaml
-alias: drink-hub — 10 drinks today
+alias: drink-hub — 10 drinks milestone
 trigger:
   - platform: event
-    event_type: drink_ordered
-    event_data:
-      count_today: 10
+    event_type: ten_drinks_tonight
 action:
   - service: tts.speak
     target:
@@ -133,6 +122,8 @@ action:
       effect: colorloop
 mode: single
 ```
+
+The milestone re-fires the next day automatically (daily scope resets at midnight local time).
 
 ### 5. Log every order to a persistent notification (useful for debugging)
 
@@ -158,13 +149,7 @@ max: 10
 
 ## Checking the HA event log (drink-hub side)
 
-Once Phase 3 admin panel is complete, `/admin/ha-log` shows every dispatch attempt with success/error. Until then, query SQLite directly:
-
-```bash
-docker exec -it drink-hub sqlite3 /app/data/drink-hub.db \
-  "SELECT event_type, success, error, datetime(created_at, 'unixepoch', 'localtime') as at
-   FROM ha_events_log ORDER BY id DESC LIMIT 20;"
-```
+Go to **`/admin/ha-log`** to see the last 50 dispatch attempts with success/error details and timestamps. Use the filter buttons to show only failures.
 
 ---
 
