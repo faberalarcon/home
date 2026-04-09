@@ -11,7 +11,7 @@ A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi 
 | Phase | Status | What it ships |
 |---|---|---|
 | [1 — MVP ordering](./docs/phase-1-mvp.md) | ✅ Done | Profile picker, drink menu, order API, recent feed, SQLite, Docker |
-| [2 — Home Assistant integration](./docs/phase-2-home-assistant.md) | ⏳ Planned | Fire HA events on order, server-side HA client, reference automations |
+| [2 — Home Assistant integration](./docs/phase-2-home-assistant.md) | ✅ Done | Fire HA events on order, server-side HA client, reference automations |
 | [3 — Admin panel](./docs/phase-3-admin-panel.md) | ⏳ Planned | CRUD for drinks/profiles/milestones/settings, image uploads |
 | [4 — Milestones & stats](./docs/phase-4-milestones-stats.md) | ⏳ Planned | Milestone evaluator, stats dashboard, live SSE updates |
 | [5 — Polish & tablet mode](./docs/phase-5-polish-tablet.md) | ⏳ Planned | Kiosk view, PWA, backups, final polish |

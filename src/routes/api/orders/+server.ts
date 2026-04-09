@@ -2,6 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { orders, drinks, profiles } from '$lib/server/db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { fireEvent } from '$lib/server/ha';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -35,10 +36,21 @@ export const POST: RequestHandler = async ({ request }) => {
     .where(sql`${orders.createdAt} >= unixepoch('now', 'start of day')`)
     .get()?.c ?? 0;
 
-  // Phase 2 will hook HA dispatch here.
+  // Fire HA event if the drink has a trigger configured.
+  let haResult: { success: boolean; error?: string } | null = null;
+  if (drink.haTriggerEvent) {
+    haResult = await fireEvent(drink.haTriggerEvent, {
+      profile: profile.name,
+      drink: drink.name,
+      category: drink.category,
+      count_today: countToday,
+      count_all_time: countAllTime
+    });
+  }
 
   return json({
     order: inserted,
-    counts: { allTime: countAllTime, today: countToday }
+    counts: { allTime: countAllTime, today: countToday },
+    ha: haResult
   });
 };
