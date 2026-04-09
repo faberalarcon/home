@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand: oklch(0.72 0.18 45);
+}
+
+html,
+body {
+  -webkit-tap-highlight-color: transparent;
+}

@@ -1,0 +1,11 @@
+services:
+  drink-hub:
+    build: .
+    container_name: drink-hub
+    restart: unless-stopped
+    ports:
+      - "5173:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_PATH=/app/data/drink-hub.db
