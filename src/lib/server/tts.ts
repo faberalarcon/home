@@ -43,33 +43,58 @@ function milestoneKey(threshold: number, scope: string): string | null {
   return null;
 }
 
-let lastAnnouncedAt = 0;
-const COOLDOWN_MS = 60_000;
+// Per-profile rate limit: max 3 announcements per 60 seconds
+const RATE_WINDOW_MS = 60_000;
+const RATE_MAX = 3;
+const profileTimestamps = new Map<number, number[]>();
 
-export async function announceDrinkOrder(
-  profileName: string,
-  drinkName: string,
-  firedMilestones: Array<{ threshold: number; scope: string }>
-): Promise<void> {
+function isRateLimited(profileId: number): boolean {
+  const now = Date.now();
+  const times = (profileTimestamps.get(profileId) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (times.length >= RATE_MAX) {
+    profileTimestamps.set(profileId, times);
+    return true;
+  }
+  times.push(now);
+  profileTimestamps.set(profileId, times);
+  return false;
+}
+
+// Sequential queue — processes one job at a time so announcements don't overlap
+type TtsJob = {
+  profileName: string;
+  drinkName: string;
+  firedMilestones: Array<{ threshold: number; scope: string }>;
+};
+
+const queue: TtsJob[] = [];
+let processing = false;
+
+async function processQueue(): Promise<void> {
+  if (processing) return;
+  processing = true;
+  while (queue.length > 0) {
+    const job = queue.shift()!;
+    await doAnnounce(job);
+    // Brief pause between consecutive announcements
+    if (queue.length > 0) await new Promise((r) => setTimeout(r, 400));
+  }
+  processing = false;
+}
+
+async function doAnnounce(job: TtsJob): Promise<void> {
   const enabled = getSetting('tts_enabled');
   if (!enabled || enabled === 'false' || enabled === '0') return;
 
-  // tts_entity_id = the media player (e.g. media_player.living_room_speaker)
   const mediaPlayerId = (getSetting('tts_entity_id') ?? '').trim();
   if (!mediaPlayerId) return;
 
-  // tts_engine_id = the TTS engine entity (e.g. tts.google_translate_en_com)
-  // Optional — only needed for tts/speak. Falls back to media player entity for legacy services.
   const engineId = (getSetting('tts_engine_id') ?? '').trim();
 
-  const now = Date.now();
-  if (now - lastAnnouncedAt < COOLDOWN_MS) return;
-  lastAnnouncedAt = now;
-
-  const base = `${profileName} ordered a ${drinkName}.`;
+  const base = `${job.profileName} ordered a ${job.drinkName}.`;
 
   let extra: string | null = null;
-  for (const m of firedMilestones) {
+  for (const m of job.firedMilestones) {
     const key = milestoneKey(m.threshold, m.scope);
     if (key) {
       extra = nextMessage(key);
@@ -79,15 +104,12 @@ export async function announceDrinkOrder(
 
   const message = extra ? `${base} ${extra}` : base;
 
-  // Service stored as "domain/service", e.g. "tts/speak"
   const svcRaw = (getSetting('tts_service') ?? 'tts/speak').trim();
   const slash = svcRaw.indexOf('/');
   if (slash < 1) return;
   const domain = svcRaw.slice(0, slash);
   const service = svcRaw.slice(slash + 1);
 
-  // tts/speak uses entity_id for the engine and media_player_entity_id for the player.
-  // Legacy services (cloud_say, google_translate_say) use entity_id for the player.
   const serviceData: Record<string, string> =
     service === 'speak' && engineId
       ? { entity_id: engineId, media_player_entity_id: mediaPlayerId, message }
@@ -97,4 +119,18 @@ export async function announceDrinkOrder(
   if (!result.success) {
     console.error(`[tts] ${domain}/${service} failed: ${result.error}`);
   }
+}
+
+export function announceDrinkOrder(
+  profileId: number,
+  profileName: string,
+  drinkName: string,
+  firedMilestones: Array<{ threshold: number; scope: string }>
+): void {
+  if (isRateLimited(profileId)) {
+    console.log(`[tts] rate limit hit for profile ${profileId}, dropping announcement`);
+    return;
+  }
+  queue.push({ profileName, drinkName, firedMilestones });
+  processQueue().catch((err) => console.error('[tts] queue error:', err));
 }

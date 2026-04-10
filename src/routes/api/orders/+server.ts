@@ -114,12 +114,13 @@ export const POST: RequestHandler = async ({ request }) => {
     });
   }
 
-  // TTS announcement (non-critical, fire-and-forget)
+  // TTS announcement — queued, non-critical
   announceDrinkOrder(
+    profile.id,
     profile.name,
     drink.name,
     firedMilestones.map((m) => ({ threshold: m.threshold, scope: m.scope }))
-  ).catch((err) => console.error('[tts] announce failed:', err));
+  );
 
   const payload = {
     order: { ...inserted, profileName: profile.name, profileColor: profile.color, drinkName: drink.name },

@@ -1,4 +1,5 @@
 import { getSetting, setSetting } from '$lib/server/db/settings';
+import { hashPin } from '$lib/server/auth';
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -34,6 +35,23 @@ export const actions: Actions = {
     setSetting('tts_service', ttsService);
 
     return { saved: true };
+  },
+
+  changePin: async ({ request }) => {
+    const fd = await request.formData();
+    const current = (fd.get('currentPin') as string | null)?.trim() ?? '';
+    const newPin = (fd.get('newPin') as string | null)?.trim() ?? '';
+    const confirm = (fd.get('confirmPin') as string | null)?.trim() ?? '';
+
+    if (!/^\d{4}$/.test(current)) return fail(400, { pinError: 'Current PIN must be 4 digits.' });
+    if (!/^\d{4}$/.test(newPin)) return fail(400, { pinError: 'New PIN must be 4 digits.' });
+    if (newPin !== confirm) return fail(400, { pinError: 'New PINs do not match.' });
+
+    const storedHash = getSetting('admin_pin_hash') ?? '';
+    if (hashPin(current) !== storedHash) return fail(401, { pinError: 'Current PIN is incorrect.' });
+
+    setSetting('admin_pin_hash', hashPin(newPin));
+    return { pinChanged: true };
   },
 
   test: async ({ request }) => {

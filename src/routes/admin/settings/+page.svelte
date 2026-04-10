@@ -15,6 +15,12 @@
 {#if form?.testError}
   <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.testError}</div>
 {/if}
+{#if form?.pinChanged}
+  <div class="mb-4 px-4 py-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-sm text-emerald-300">PIN updated. You will be logged out on your next visit.</div>
+{/if}
+{#if form?.pinError}
+  <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.pinError}</div>
+{/if}
 
 <form method="POST" action="?/save" class="space-y-6 max-w-lg">
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
@@ -63,8 +69,8 @@
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
     <h2 class="text-base font-semibold">Text-to-Speech</h2>
     <p class="text-xs text-slate-500">
-      Announces drink orders on a media player via HA TTS. A 1-minute cooldown prevents spam.
-      Milestone thresholds (1 daily, 5, 10) add a fun extra line.
+      Announces drink orders on a media player via HA TTS. Each profile is limited to 3 announcements
+      per minute; orders are queued and played sequentially. Milestone thresholds (1 daily, 5, 10) add a fun extra line.
     </p>
 
     <div class="flex items-center gap-2">
@@ -127,6 +133,49 @@
       class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition"
     >
       Test HA connection
+    </button>
+  </div>
+</form>
+
+<form method="POST" action="?/changePin" class="space-y-4 max-w-lg mt-8">
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+    <h2 class="text-base font-semibold">Change admin PIN</h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm text-slate-400 mb-1" for="currentPin">Current PIN</label>
+        <input
+          id="currentPin" name="currentPin" type="password"
+          inputmode="numeric" maxlength="4" placeholder="••••"
+          autocomplete="current-password"
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-center tracking-widest focus:outline-none focus:border-slate-500"
+        />
+      </div>
+      <div>
+        <label class="block text-sm text-slate-400 mb-1" for="newPin">New PIN</label>
+        <input
+          id="newPin" name="newPin" type="password"
+          inputmode="numeric" maxlength="4" placeholder="••••"
+          autocomplete="new-password"
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-center tracking-widest focus:outline-none focus:border-slate-500"
+        />
+      </div>
+      <div>
+        <label class="block text-sm text-slate-400 mb-1" for="confirmPin">Confirm PIN</label>
+        <input
+          id="confirmPin" name="confirmPin" type="password"
+          inputmode="numeric" maxlength="4" placeholder="••••"
+          autocomplete="new-password"
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-center tracking-widest focus:outline-none focus:border-slate-500"
+        />
+      </div>
+    </div>
+
+    <button
+      type="submit"
+      class="px-4 py-2 rounded-lg bg-slate-700 text-slate-200 text-sm hover:bg-slate-600 transition"
+    >
+      Update PIN
     </button>
   </div>
 </form>
