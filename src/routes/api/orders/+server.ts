@@ -6,6 +6,7 @@ import { fireEvent } from '$lib/server/ha';
 import { evaluateMilestones } from '$lib/server/milestones';
 import { broadcast } from '$lib/server/stream';
 import { checkRateLimit } from '$lib/server/ratelimit';
+import { announceDrinkOrder } from '$lib/server/tts';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ url }) => {
@@ -112,6 +113,13 @@ export const POST: RequestHandler = async ({ request }) => {
       drink: drink.name
     });
   }
+
+  // TTS announcement (non-critical, fire-and-forget)
+  announceDrinkOrder(
+    profile.name,
+    drink.name,
+    firedMilestones.map((m) => ({ threshold: m.threshold, scope: m.scope }))
+  ).catch((err) => console.error('[tts] announce failed:', err));
 
   const payload = {
     order: { ...inserted, profileName: profile.name, profileColor: profile.color, drinkName: drink.name },

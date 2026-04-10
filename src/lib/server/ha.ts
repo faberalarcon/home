@@ -4,6 +4,37 @@ import { getSetting, setSetting } from './db/settings';
 
 const TIMEOUT_MS = 3000;
 
+export async function callService(
+  domain: string,
+  service: string,
+  data: Record<string, unknown>
+): Promise<{ success: boolean; error?: string }> {
+  const baseUrl = getSetting('ha_base_url') ?? '';
+  const token = getSetting('ha_token') ?? '';
+
+  if (!token || !baseUrl) {
+    return { success: false, error: 'HA not configured' };
+  }
+
+  const url = `${baseUrl.replace(/\/$/, '')}/api/services/${encodeURIComponent(domain)}/${encodeURIComponent(service)}`;
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (res.ok) return { success: true };
+    return { success: false, error: `HTTP ${res.status} ${res.statusText}` };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 export async function fireEvent(
   eventType: string,
   payload: Record<string, unknown>

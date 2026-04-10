@@ -60,6 +60,49 @@
     </div>
   </div>
 
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+    <h2 class="text-base font-semibold">Text-to-Speech</h2>
+    <p class="text-xs text-slate-500">
+      Announces drink orders on a media player via HA TTS. A 1-minute cooldown prevents spam.
+      Milestone thresholds (1 daily, 5, 10) add a fun extra line.
+    </p>
+
+    <div class="flex items-center gap-2">
+      <input
+        id="ttsEnabled" name="ttsEnabled" type="checkbox"
+        checked={data.ttsEnabled}
+        class="rounded"
+      />
+      <label for="ttsEnabled" class="text-sm text-slate-300">Enable TTS announcements</label>
+    </div>
+
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="ttsEntityId">Media player entity ID</label>
+      <input
+        id="ttsEntityId" name="ttsEntityId" type="text"
+        value={data.ttsEntityId}
+        placeholder="media_player.living_room"
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+      />
+    </div>
+
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="ttsService">TTS service</label>
+      <input
+        id="ttsService" name="ttsService" type="text"
+        value={data.ttsService}
+        placeholder="tts/google_translate_say"
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+      />
+      <p class="text-xs text-slate-500 mt-1">
+        Format: <code class="text-slate-400">domain/service</code>.
+        Common values: <code class="text-slate-400">tts/google_translate_say</code>,
+        <code class="text-slate-400">tts/cloud_say</code>,
+        <code class="text-slate-400">tts/speak</code>.
+      </p>
+    </div>
+  </div>
+
   <div class="flex gap-3">
     <button
       type="submit"
