@@ -196,3 +196,42 @@ Phases 1–5 are complete and deployed. A full audit of the codebase against the
 
 - **i18n scaffolding** — single household, all English. Not worth the tax.
 - **WebSocket fallback for SSE** — LAN-only deployment, SSE works on every browser we use. Phase 6's `Last-Event-ID` catch-up covers the real pain (restart gaps).
+
+---
+
+## Security Hardening Roadmap
+
+The app is now internet-exposed, so the next work should not be framed as feature polish. The hardening work is split into three follow-on phases that can be implemented after the current shared-password gate.
+
+### Phase 9 — Edge Access & Authentication Hardening
+
+Doc: [phase-9-edge-auth-hardening.md](./phase-9-edge-auth-hardening.md)
+
+Focus:
+- HTTPS enforcement and correct proxy headers
+- re-enable CSRF protection
+- nginx Basic Auth as a first-line shield
+- remove weak admin defaults
+- move all runtime secrets to env-backed config
+
+### Phase 10 — App Abuse Resistance & Authorization Tightening
+
+Doc: [phase-10-app-abuse-resistance.md](./phase-10-app-abuse-resistance.md)
+
+Focus:
+- IP + session aware rate limits
+- explicit authorization on order mutation routes
+- reduce exposure of recent/stats/kiosk/stream/uploads
+- stronger request validation
+- logout and session hygiene
+
+### Phase 11 — Operational Security, Monitoring & Container Hardening
+
+Doc: [phase-11-operational-security.md](./phase-11-operational-security.md)
+
+Focus:
+- stop publishing the app container directly
+- run with a tighter container profile
+- add security headers
+- log auth failures and blocked requests
+- document recovery and rotation procedures
