@@ -11,9 +11,6 @@ server {
     ssl_certificate /etc/letsencrypt/live/drinks.example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/drinks.example.com/privkey.pem;
 
-    auth_basic "drink-hub";
-    auth_basic_user_file /etc/nginx/.htpasswd-drink-hub;
-
     add_header X-Frame-Options DENY always;
     add_header X-Content-Type-Options nosniff always;
     add_header Referrer-Policy no-referrer always;

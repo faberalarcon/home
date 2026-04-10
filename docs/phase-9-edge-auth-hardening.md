@@ -50,22 +50,11 @@ Implemented in repo:
 
 ### 3. Gate the whole site at the edge
 
-- Add nginx HTTP Basic Auth in front of the site as a first-line shield.
-- Keep the app-level shared-password login as the second layer.
-- Exempt only health checks if needed.
+~~Add nginx HTTP Basic Auth in front of the site as a first-line shield.~~
 
-Files:
-- nginx site config
-- deployment docs
-
-Verify:
-- anonymous browser gets the nginx auth prompt first
-- valid edge auth + valid app session reaches the app
-- `/api/health` remains reachable only if intentionally allowed
-
-Implemented in repo:
-- example nginx Basic Auth config checked in under `deploy/nginx/`
-- app-level shared-password gate kept in place behind it
+**Reverted:** nginx Basic Auth removed. The domain is now on split-DNS (internal intranet only,
+not reachable from outside the network), so the nginx layer no longer needs a basic-auth shield.
+The app-level shared-password gate (SITE_PASSWORD) remains as the only login layer.
 
 ### 4. Remove weak admin defaults
 
