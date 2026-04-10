@@ -1,10 +1,7 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
   import type { ActionData } from './$types';
 
   let { form }: { form: ActionData } = $props();
-
-  let pin = $state('');
 </script>
 
 <svelte:head>
@@ -22,14 +19,12 @@
       </div>
     {/if}
 
-    <form method="POST" use:enhance class="space-y-4">
+    <form method="POST" class="space-y-4">
       <input
         type="password"
         name="pin"
         inputmode="numeric"
-        pattern="\d{4}"
         maxlength="4"
-        bind:value={pin}
         placeholder="••••"
         autofocus
         class="w-full text-center text-2xl tracking-[0.5em] bg-slate-900 border border-slate-700 rounded-xl px-4 py-4 focus:outline-none focus:border-slate-500"

@@ -1,15 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { getSetting, setSetting as _set } from '$lib/server/db/settings';
-import { hashPin, makeSessionToken, verifySessionToken } from '$lib/server/auth';
-import type { Actions, PageServerLoad } from './$types';
-
-export const load: PageServerLoad = async ({ cookies }) => {
-  const pinHash = getSetting('admin_pin_hash') ?? '';
-  if (verifySessionToken(cookies.get('admin_session'), pinHash)) {
-    throw redirect(303, '/admin');
-  }
-  return {};
-};
+import { getSetting } from '$lib/server/db/settings';
+import { hashPin, makeSessionToken } from '$lib/server/auth';
+import type { Actions } from './$types';
 
 export const actions: Actions = {
   default: async ({ request, cookies }) => {
