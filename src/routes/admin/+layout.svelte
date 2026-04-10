@@ -21,7 +21,7 @@
 
 <div class="mx-auto max-w-4xl min-h-screen flex flex-col">
   <div class="bg-amber-950/50 border-b border-amber-800/60 px-4 py-2 text-xs text-amber-300">
-    ⚠ Admin panel — LAN only. No authentication. Do not expose this device to the public internet without adding auth first.
+    ⚠ Admin panel uses a separate PIN gate. Keep nginx auth, HTTPS, and env-backed secrets enabled before exposing it publicly.
   </div>
 
   {#if data.haWarning}

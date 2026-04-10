@@ -15,12 +15,6 @@
 {#if form?.testError}
   <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.testError}</div>
 {/if}
-{#if form?.pinChanged}
-  <div class="mb-4 px-4 py-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-sm text-emerald-300">PIN updated. You will be logged out on your next visit.</div>
-{/if}
-{#if form?.pinError}
-  <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.pinError}</div>
-{/if}
 
 <form method="POST" action="?/save" class="space-y-6 max-w-lg">
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
@@ -137,45 +131,28 @@
   </div>
 </form>
 
-<form method="POST" action="?/changePin" class="space-y-4 max-w-lg mt-8">
-  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
-    <h2 class="text-base font-semibold">Change admin PIN</h2>
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4 max-w-lg mt-8">
+  <h2 class="text-base font-semibold">Security</h2>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm text-slate-400 mb-1" for="currentPin">Current PIN</label>
-        <input
-          id="currentPin" name="currentPin" type="password"
-          inputmode="numeric" maxlength="4" placeholder="••••"
-          autocomplete="current-password"
-          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-center tracking-widest focus:outline-none focus:border-slate-500"
-        />
-      </div>
-      <div>
-        <label class="block text-sm text-slate-400 mb-1" for="newPin">New PIN</label>
-        <input
-          id="newPin" name="newPin" type="password"
-          inputmode="numeric" maxlength="4" placeholder="••••"
-          autocomplete="new-password"
-          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-center tracking-widest focus:outline-none focus:border-slate-500"
-        />
-      </div>
-      <div>
-        <label class="block text-sm text-slate-400 mb-1" for="confirmPin">Confirm PIN</label>
-        <input
-          id="confirmPin" name="confirmPin" type="password"
-          inputmode="numeric" maxlength="4" placeholder="••••"
-          autocomplete="new-password"
-          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-center tracking-widest focus:outline-none focus:border-slate-500"
-        />
-      </div>
+  <div class="space-y-3 text-sm text-slate-300">
+    <div class="flex items-center justify-between gap-4">
+      <span>Shared site password</span>
+      <span class={data.sitePasswordConfigured ? 'text-emerald-400' : 'text-amber-400'}>
+        {data.sitePasswordConfigured ? 'Configured via environment' : 'Not configured'}
+      </span>
     </div>
-
-    <button
-      type="submit"
-      class="px-4 py-2 rounded-lg bg-slate-700 text-slate-200 text-sm hover:bg-slate-600 transition"
-    >
-      Update PIN
-    </button>
+    <div class="flex items-center justify-between gap-4">
+      <span>Admin PIN</span>
+      <span class={data.adminPinConfigured ? 'text-emerald-400' : 'text-amber-400'}>
+        {data.adminPinConfigured ? 'Configured via environment' : 'Not configured'}
+      </span>
+    </div>
   </div>
-</form>
+
+  <p class="text-xs text-slate-500">
+    Security credentials are now env-backed only. Set <code class="text-slate-400">SITE_PASSWORD</code> or
+    <code class="text-slate-400">SITE_PASSWORD_HASH</code>, plus
+    <code class="text-slate-400">ADMIN_PIN</code> or <code class="text-slate-400">ADMIN_PIN_HASH</code>,
+    in the deployment environment. The admin panel no longer writes secrets to the database.
+  </p>
+</div>

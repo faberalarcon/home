@@ -1,19 +1,28 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { getSetting } from '$lib/server/db/settings';
 import { hashPin, makeSessionToken } from '$lib/server/auth';
-import { isSecureRequest } from '$lib/server/site-access';
-import type { Actions } from './$types';
+import { getConfiguredAdminPinHash, isSecureRequest } from '$lib/server/site-access';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async () => {
+  return {
+    adminPinConfigured: !!getConfiguredAdminPinHash()
+  };
+};
 
 export const actions: Actions = {
   default: async ({ request, cookies, url }) => {
     const fd = await request.formData();
     const pin = (fd.get('pin') as string | null)?.trim() ?? '';
+    const storedHash = getConfiguredAdminPinHash();
+
+    if (!storedHash) {
+      return fail(503, { error: 'Admin PIN is not configured. Set ADMIN_PIN or ADMIN_PIN_HASH in the environment.' });
+    }
 
     if (!/^\d{4}$/.test(pin)) {
       return fail(400, { error: 'PIN must be exactly 4 digits.' });
     }
 
-    const storedHash = getSetting('admin_pin_hash') ?? '';
     if (hashPin(pin) !== storedHash) {
       return fail(401, { error: 'Incorrect PIN.' });
     }

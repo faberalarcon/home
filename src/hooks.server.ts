@@ -1,8 +1,8 @@
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from '$lib/server/db';
-import { bootstrapSettings, getSetting } from '$lib/server/db/settings';
-import { hashPin, verifySessionToken } from '$lib/server/auth';
-import { getConfiguredSitePasswordHash } from '$lib/server/site-access';
+import { bootstrapSettings } from '$lib/server/db/settings';
+import { verifySessionToken } from '$lib/server/auth';
+import { getConfiguredAdminPinHash, getConfiguredSitePasswordHash } from '$lib/server/site-access';
 import { json, redirect, type Handle } from '@sveltejs/kit';
 
 let migrated = false;
@@ -19,8 +19,7 @@ if (!migrated) {
 bootstrapSettings({
   ha_base_url: 'http://ai.local:8123',
   ha_token: '',
-  site_name: 'drink-hub',
-  admin_pin_hash: hashPin('1234')
+  site_name: 'drink-hub'
 });
 
 function isPublicPath(path: string): boolean {
@@ -54,7 +53,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   if (path.startsWith('/admin') && !path.startsWith('/admin/login')) {
-    const pinHash = getSetting('admin_pin_hash') ?? '';
+    const pinHash = getConfiguredAdminPinHash();
     const token = event.cookies.get('admin_session');
     if (!verifySessionToken(token, pinHash)) {
       throw redirect(303, '/admin/login');

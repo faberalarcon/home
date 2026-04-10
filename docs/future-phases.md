@@ -207,6 +207,8 @@ The app is now internet-exposed, so the next work should not be framed as featur
 
 Doc: [phase-9-edge-auth-hardening.md](./phase-9-edge-auth-hardening.md)
 
+Status: ✅ Done
+
 Focus:
 - HTTPS enforcement and correct proxy headers
 - re-enable CSRF protection
@@ -218,6 +220,8 @@ Focus:
 
 Doc: [phase-10-app-abuse-resistance.md](./phase-10-app-abuse-resistance.md)
 
+Status: Planned
+
 Focus:
 - IP + session aware rate limits
 - explicit authorization on order mutation routes
@@ -228,6 +232,8 @@ Focus:
 ### Phase 11 — Operational Security, Monitoring & Container Hardening
 
 Doc: [phase-11-operational-security.md](./phase-11-operational-security.md)
+
+Status: Planned
 
 Focus:
 - stop publishing the app container directly

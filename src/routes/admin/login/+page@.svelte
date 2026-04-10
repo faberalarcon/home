@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { ActionData } from './$types';
+  import type { ActionData, PageData } from './$types';
 
-  let { form }: { form: ActionData } = $props();
+  let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
 <svelte:head>
@@ -19,22 +19,27 @@
       </div>
     {/if}
 
-    <form method="POST" class="space-y-4">
-      <input
-        type="password"
-        name="pin"
-        inputmode="numeric"
-        maxlength="4"
-        placeholder="••••"
-        autofocus
-        class="w-full text-center text-2xl tracking-[0.5em] bg-slate-900 border border-slate-700 rounded-xl px-4 py-4 focus:outline-none focus:border-slate-500"
-      />
-      <button
-        type="submit"
-        class="w-full py-3 rounded-xl bg-orange-500 text-slate-950 font-semibold text-sm hover:bg-orange-400 transition"
-      >
-        Unlock
-      </button>
-    </form>
+    {#if data.adminPinConfigured}
+      <form method="POST" class="space-y-4">
+        <input
+          type="password"
+          name="pin"
+          inputmode="numeric"
+          maxlength="4"
+          placeholder="••••"
+          class="w-full text-center text-2xl tracking-[0.5em] bg-slate-900 border border-slate-700 rounded-xl px-4 py-4 focus:outline-none focus:border-slate-500"
+        />
+        <button
+          type="submit"
+          class="w-full py-3 rounded-xl bg-orange-500 text-slate-950 font-semibold text-sm hover:bg-orange-400 transition"
+        >
+          Unlock
+        </button>
+      </form>
+    {:else}
+      <div class="rounded-xl border border-amber-800 bg-amber-950/60 px-4 py-4 text-sm text-amber-200">
+        Admin access is disabled until <code>ADMIN_PIN</code> or <code>ADMIN_PIN_HASH</code> is set in the environment.
+      </div>
+    {/if}
   </div>
 </div>

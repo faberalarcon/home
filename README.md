@@ -58,6 +58,8 @@ The SQLite database is written to `./data/drink-hub.db` (override with `DATABASE
 Home Assistant already runs on the Pi as a Docker container, so drink-hub runs as a sibling container.
 
 ```bash
+cp .env.example .env
+# set SITE_PASSWORD_HASH / ADMIN_PIN_HASH and CSRF_TRUSTED_ORIGINS
 docker compose up -d --build
 ```
 
@@ -65,7 +67,11 @@ Then on any device on the LAN, browse to `http://<pi-ip>:5173`.
 
 The `./data` directory is mounted as a volume so the SQLite database and uploaded images persist across rebuilds.
 
-To require a shared password before anyone can use the site, set either `SITE_PASSWORD` or `SITE_PASSWORD_HASH` in the compose environment before starting the container. `SITE_PASSWORD_HASH` should be the hex output of the app's scrypt-based site-password hash; if both are set, `SITE_PASSWORD_HASH` wins.
+To require a shared password before anyone can use the site, set either `SITE_PASSWORD` or `SITE_PASSWORD_HASH`. To enable admin access, set either `ADMIN_PIN` or `ADMIN_PIN_HASH`. Prefer the hashed variants in `.env`; if both plaintext and hash are set for the same secret, the hash wins.
+
+Set `CSRF_TRUSTED_ORIGINS` to the public HTTPS origin served by nginx, for example `https://drinks.example.com`. This is used at build time so cross-site form posts are blocked while same-origin requests still work behind the reverse proxy.
+
+An example hardened nginx config lives at [`deploy/nginx/drink-hub.conf.example`](./deploy/nginx/drink-hub.conf.example).
 
 ---
 
@@ -109,7 +115,7 @@ drink-hub/
 │       ├── uploads/[...path]/       # serves data/uploads/ files
 │       ├── stats/                   # live stats dashboard (SSE)
 │       ├── kiosk/                   # wall-tablet always-on display
-│       └── admin/                   # admin panel (no auth — LAN only)
+│       └── admin/                   # admin panel (separate env-backed PIN gate)
 │           ├── +layout.svelte
 │           ├── +page.svelte         # dashboard + stats
 │           ├── drinks/              # drink CRUD + image upload
@@ -117,6 +123,7 @@ drink-hub/
 │           ├── milestones/          # milestone CRUD
 │           ├── settings/            # HA URL/token + connection test
 │           └── ha-log/              # HA event dispatch log
+├── deploy/nginx/                    # example hardened nginx config
 ├── drizzle/                         # generated migrations
 ├── data/                            # gitignored; SQLite + uploads
 ├── docs/                            # phase plans

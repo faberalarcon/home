@@ -1,6 +1,6 @@
 # Phase 9 — Edge Access & Authentication Hardening
 
-**Status:** Planned
+**Status:** ✅ Done
 
 ## Goal
 
@@ -25,6 +25,10 @@ Verify:
 - login cookies are set with `Secure`
 - app behavior is correct behind nginx TLS termination
 
+Implemented in repo:
+- env-backed adapter-node proxy header configuration in `docker-compose.yml`
+- hardened nginx example in `deploy/nginx/drink-hub.conf.example`
+
 ### 2. Re-enable CSRF protection
 
 - Remove the current relaxed LAN-only CSRF configuration.
@@ -40,6 +44,10 @@ Verify:
 - cross-origin form submissions are rejected
 - no false positives when accessed through nginx
 
+Implemented in repo:
+- `svelte.config.js` now uses `csrf.trustedOrigins`
+- `Dockerfile` and `docker-compose.yml` pass `CSRF_TRUSTED_ORIGINS` at build time
+
 ### 3. Gate the whole site at the edge
 
 - Add nginx HTTP Basic Auth in front of the site as a first-line shield.
@@ -54,6 +62,10 @@ Verify:
 - anonymous browser gets the nginx auth prompt first
 - valid edge auth + valid app session reaches the app
 - `/api/health` remains reachable only if intentionally allowed
+
+Implemented in repo:
+- example nginx Basic Auth config checked in under `deploy/nginx/`
+- app-level shared-password gate kept in place behind it
 
 ### 4. Remove weak admin defaults
 
@@ -71,6 +83,10 @@ Verify:
 - fresh deployment does not silently create a weak admin secret
 - admin login only works after a real secret is configured
 
+Implemented in repo:
+- `src/hooks.server.ts` no longer bootstraps `1234`
+- admin access now depends on `ADMIN_PIN` or `ADMIN_PIN_HASH`
+
 ### 5. Move all runtime secrets to env-backed configuration
 
 - Keep shared-password and admin credentials out of tracked files.
@@ -86,6 +102,11 @@ Verify:
 - no real secrets appear in git-tracked files
 - a fresh deployment can be configured from env alone
 
+Implemented in repo:
+- site password and admin PIN are env-backed only
+- admin settings no longer writes secrets to the database
+- `.env.example` and `scripts/hash-secret.mjs` document the setup path
+
 ## End-to-end verification
 
 1. Reach the site over HTTP and confirm redirect to HTTPS.
@@ -93,6 +114,16 @@ Verify:
 3. Log in successfully and place an order.
 4. Clear cookies and confirm `/admin` still requires separate admin auth.
 5. Review tracked files and confirm no live secrets are present.
+
+## Smoke Test Snapshot
+
+Validated on the deployed container after implementation:
+
+- `GET /menu` returns `303` to `/login?next=%2Fmenu`
+- same-origin shared-password login succeeds when forwarded host/proto headers are present
+- same-origin admin PIN login succeeds when forwarded host/proto headers are present
+- cross-origin login POST is rejected with `403`
+- container starts cleanly with env-backed site/admin credentials
 
 ## Risks / decisions
 
