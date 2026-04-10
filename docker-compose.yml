@@ -13,6 +13,7 @@ services:
     environment:
       - DATABASE_PATH=/app/data/drink-hub.db
       - BODY_SIZE_LIMIT=10485760
+      - ORIGIN=${ORIGIN:-https://drink-hub.21bristoe.com}
       - PROTOCOL_HEADER=x-forwarded-proto
       - HOST_HEADER=x-forwarded-host
       - ADDRESS_HEADER=x-forwarded-for
