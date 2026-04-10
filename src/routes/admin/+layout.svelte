@@ -8,6 +8,7 @@
     { href: '/admin', label: 'Dashboard' },
     { href: '/admin/drinks', label: 'Drinks' },
     { href: '/admin/profiles', label: 'Profiles' },
+    { href: '/admin/orders', label: 'Orders' },
     { href: '/admin/milestones', label: 'Milestones' },
     { href: '/admin/settings', label: 'Settings' },
     { href: '/admin/ha-log', label: 'HA Log' }

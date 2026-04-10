@@ -13,6 +13,7 @@
   let topDrinks = $state(data.topDrinks);
 
   let tab = $state<'today' | 'all_time'>('today');
+  let dowCounts = $state(data.dowCounts);
   let milestoneToast = $state<string | null>(null);
   let source: EventSource | null = null;
 
@@ -119,6 +120,29 @@
           </div>
         </div>
       {/each}
+    </div>
+  </div>
+{/if}
+
+<!-- Day-of-week histogram -->
+{#if dowCounts.some((d) => d.count > 0)}
+  {@const maxDow = Math.max(...dowCounts.map((d) => d.count), 1)}
+  <div class="mb-8">
+    <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-3">Orders by day of week</h2>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <div class="flex items-end justify-between gap-1 h-24">
+        {#each dowCounts as d}
+          {@const pct = d.count / maxDow}
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="text-xs text-slate-400 tabular-nums">{d.count > 0 ? d.count : ''}</div>
+            <div
+              class="w-full rounded-t bg-orange-500/80 transition-all duration-500 min-h-[2px]"
+              style="height:{Math.max(pct * 72, d.count > 0 ? 4 : 2)}px"
+            ></div>
+            <div class="text-xs text-slate-500">{d.label}</div>
+          </div>
+        {/each}
+      </div>
     </div>
   </div>
 {/if}

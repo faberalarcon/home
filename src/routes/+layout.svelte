@@ -2,9 +2,14 @@
   import '../app.css';
   import { selectedProfile } from '$lib/profile';
   import { page } from '$app/stores';
+  import { pageTitle } from '$lib/stores/title';
 
   let { children } = $props();
 </script>
+
+<svelte:head>
+  <title>{$pageTitle}</title>
+</svelte:head>
 
 {#if $page.url.pathname === '/login'}
   {@render children()}

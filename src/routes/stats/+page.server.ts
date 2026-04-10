@@ -62,5 +62,22 @@ export const load: PageServerLoad = async () => {
     .limit(5)
     .all();
 
-  return { totalAllTime, totalToday, totalWeek, leaderAllTime, leaderToday, topDrinks };
+  // Day-of-week histogram (0=Sun … 6=Sat)
+  const dowRows = db
+    .select({
+      dow: sql<number>`cast(strftime('%w', datetime(${orders.createdAt}, 'unixepoch', 'localtime')) as integer)`,
+      c: sql<number>`count(*)`
+    })
+    .from(orders)
+    .where(sql`${orders.status} != 'deleted'`)
+    .groupBy(sql`strftime('%w', datetime(${orders.createdAt}, 'unixepoch', 'localtime'))`)
+    .all();
+
+  const dowLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dowCounts = dowLabels.map((label, i) => ({
+    label,
+    count: dowRows.find((r) => r.dow === i)?.c ?? 0
+  }));
+
+  return { totalAllTime, totalToday, totalWeek, leaderAllTime, leaderToday, topDrinks, dowCounts };
 };

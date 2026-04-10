@@ -6,6 +6,16 @@
 
   const CATEGORIES = ['cocktail', 'beer', 'wine', 'spirit', 'non-alcoholic', 'other'];
 
+  let search = $state('');
+  const visibleDrinks = $derived(
+    search.trim()
+      ? data.drinks.filter((d) =>
+          d.name.toLowerCase().includes(search.toLowerCase()) ||
+          d.category.toLowerCase().includes(search.toLowerCase())
+        )
+      : data.drinks
+  );
+
   // Scroll the edit form into view whenever we navigate to ?edit=<id>
   afterNavigate(() => {
     if (data.editing) {
@@ -34,6 +44,13 @@
   <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.error}</div>
 {/if}
 
+<input
+  type="search"
+  bind:value={search}
+  placeholder="Filter drinks…"
+  class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm mb-4 focus:outline-none focus:border-slate-600"
+/>
+
 <!-- Drink list table -->
 <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-8">
   <!-- overflow-x-auto lets the table scroll on narrow screens without clipping the actions column -->
@@ -49,7 +66,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each data.drinks as d (d.id)}
+        {#each visibleDrinks as d (d.id)}
           <tr class="border-b border-slate-800/50 last:border-0 {data.editing?.id === d.id ? 'bg-slate-800/40' : !d.active ? 'opacity-50 hover:opacity-75' : 'hover:bg-slate-800/20'} transition">
             <td class="px-4 py-3">
               <div class="flex items-center gap-2">
@@ -141,6 +158,14 @@
         value={data.editing?.description ?? ''}
         class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
       />
+    </div>
+
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="notes">Notes / recipe <span class="text-slate-600">(shown on menu when tapped)</span></label>
+      <textarea
+        id="notes" name="notes" rows="3"
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500 resize-y"
+      >{data.editing?.notes ?? ''}</textarea>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

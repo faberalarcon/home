@@ -28,6 +28,7 @@ export const actions: Actions = {
     const id = fd.get('id') ? Number(fd.get('id')) : null;
     const name = (fd.get('name') as string | null)?.trim();
     const description = (fd.get('description') as string | null)?.trim() || null;
+    const notes = (fd.get('notes') as string | null)?.trim() || null;
     const category = (fd.get('category') as string | null)?.trim() || 'drink';
     const haTriggerEvent = (fd.get('haTriggerEvent') as string | null)?.trim() || null;
     const active = fd.get('active') === 'on';
@@ -50,12 +51,12 @@ export const actions: Actions = {
       }
 
       db.update(drinks)
-        .set({ name, description, category, haTriggerEvent, active, sortOrder, imageUrl })
+        .set({ name, description, notes, category, haTriggerEvent, active, sortOrder, imageUrl })
         .where(eq(drinks.id, id))
         .run();
     } else {
       const inserted = db.insert(drinks)
-        .values({ name, description, category, haTriggerEvent, active, sortOrder })
+        .values({ name, description, notes, category, haTriggerEvent, active, sortOrder })
         .returning({ id: drinks.id })
         .get();
 

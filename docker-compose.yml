@@ -21,5 +21,6 @@ services:
       - SITE_PASSWORD_HASH=${SITE_PASSWORD_HASH:-}
       - ADMIN_PIN=${ADMIN_PIN:-}
       - ADMIN_PIN_HASH=${ADMIN_PIN_HASH:-}
+      - TZ=${TZ:-America/New_York}
     extra_hosts:
       - "ai.local:host-gateway"

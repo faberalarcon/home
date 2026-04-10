@@ -2,6 +2,13 @@
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
+
+  let search = $state('');
+  const visibleProfiles = $derived(
+    search.trim()
+      ? data.profiles.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+      : data.profiles
+  );
 </script>
 
 <div class="flex items-center justify-between mb-6">
@@ -12,6 +19,13 @@
 {#if form?.error}
   <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.error}</div>
 {/if}
+
+<input
+  type="search"
+  bind:value={search}
+  placeholder="Filter profiles…"
+  class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm mb-4 focus:outline-none focus:border-slate-600"
+/>
 
 <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-8">
   <table class="w-full text-sm">
@@ -24,7 +38,7 @@
       </tr>
     </thead>
     <tbody>
-      {#each data.profiles as p (p.id)}
+      {#each visibleProfiles as p (p.id)}
         <tr class="border-b border-slate-800/50 last:border-0 {data.editing?.id === p.id ? 'bg-slate-800/40' : 'hover:bg-slate-800/20'}">
           <td class="px-4 py-3">
             <div class="flex items-center gap-2">
@@ -54,7 +68,7 @@
           </td>
         </tr>
       {/each}
-      {#if data.profiles.length === 0}
+      {#if visibleProfiles.length === 0}
         <tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">No profiles yet.</td></tr>
       {/if}
     </tbody>

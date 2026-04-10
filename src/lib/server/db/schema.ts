@@ -16,6 +16,7 @@ export const drinks = sqliteTable('drinks', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   description: text('description'),
+  notes: text('notes'),
   category: text('category').notNull().default('drink'),
   imageUrl: text('image_url'),
   haTriggerEvent: text('ha_trigger_event'),
