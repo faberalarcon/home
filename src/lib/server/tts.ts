@@ -54,8 +54,13 @@ export async function announceDrinkOrder(
   const enabled = getSetting('tts_enabled');
   if (!enabled || enabled === 'false' || enabled === '0') return;
 
-  const entityId = (getSetting('tts_entity_id') ?? '').trim();
-  if (!entityId) return;
+  // tts_entity_id = the media player (e.g. media_player.living_room_speaker)
+  const mediaPlayerId = (getSetting('tts_entity_id') ?? '').trim();
+  if (!mediaPlayerId) return;
+
+  // tts_engine_id = the TTS engine entity (e.g. tts.google_translate_en_com)
+  // Optional — only needed for tts/speak. Falls back to media player entity for legacy services.
+  const engineId = (getSetting('tts_engine_id') ?? '').trim();
 
   const now = Date.now();
   if (now - lastAnnouncedAt < COOLDOWN_MS) return;
@@ -74,14 +79,21 @@ export async function announceDrinkOrder(
 
   const message = extra ? `${base} ${extra}` : base;
 
-  // Service stored as "domain/service", e.g. "tts/google_translate_say"
-  const svcRaw = (getSetting('tts_service') ?? 'tts/google_translate_say').trim();
+  // Service stored as "domain/service", e.g. "tts/speak"
+  const svcRaw = (getSetting('tts_service') ?? 'tts/speak').trim();
   const slash = svcRaw.indexOf('/');
   if (slash < 1) return;
   const domain = svcRaw.slice(0, slash);
   const service = svcRaw.slice(slash + 1);
 
-  const result = await callService(domain, service, { entity_id: entityId, message });
+  // tts/speak uses entity_id for the engine and media_player_entity_id for the player.
+  // Legacy services (cloud_say, google_translate_say) use entity_id for the player.
+  const serviceData: Record<string, string> =
+    service === 'speak' && engineId
+      ? { entity_id: engineId, media_player_entity_id: mediaPlayerId, message }
+      : { entity_id: mediaPlayerId, message };
+
+  const result = await callService(domain, service, serviceData);
   if (!result.success) {
     console.error(`[tts] ${domain}/${service} failed: ${result.error}`);
   }

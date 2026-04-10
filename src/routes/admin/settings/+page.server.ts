@@ -9,7 +9,8 @@ export const load: PageServerLoad = async () => {
     hasToken: !!(getSetting('ha_token') ?? ''),
     ttsEnabled: (getSetting('tts_enabled') ?? 'false') !== 'false' && (getSetting('tts_enabled') ?? '0') !== '0',
     ttsEntityId: getSetting('tts_entity_id') ?? '',
-    ttsService: getSetting('tts_service') ?? 'tts/google_translate_say'
+    ttsEngineId: getSetting('tts_engine_id') ?? '',
+    ttsService: getSetting('tts_service') ?? 'tts/speak'
   };
 };
 
@@ -21,13 +22,15 @@ export const actions: Actions = {
     const haToken = (fd.get('haToken') as string | null)?.trim() ?? '';
     const ttsEnabled = fd.get('ttsEnabled') === 'on' ? 'true' : 'false';
     const ttsEntityId = (fd.get('ttsEntityId') as string | null)?.trim() ?? '';
-    const ttsService = (fd.get('ttsService') as string | null)?.trim() || 'tts/google_translate_say';
+    const ttsEngineId = (fd.get('ttsEngineId') as string | null)?.trim() ?? '';
+    const ttsService = (fd.get('ttsService') as string | null)?.trim() || 'tts/speak';
 
     if (haBaseUrl) setSetting('ha_base_url', haBaseUrl);
     if (siteName) setSetting('site_name', siteName);
     if (haToken) setSetting('ha_token', haToken);
     setSetting('tts_enabled', ttsEnabled);
     setSetting('tts_entity_id', ttsEntityId);
+    setSetting('tts_engine_id', ttsEngineId);
     setSetting('tts_service', ttsService);
 
     return { saved: true };

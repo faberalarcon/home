@@ -81,7 +81,20 @@
       <input
         id="ttsEntityId" name="ttsEntityId" type="text"
         value={data.ttsEntityId}
-        placeholder="media_player.living_room"
+        placeholder="media_player.living_room_speaker"
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+      />
+    </div>
+
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="ttsEngineId">
+        TTS engine entity ID
+        <span class="text-slate-500">(only needed for tts/speak)</span>
+      </label>
+      <input
+        id="ttsEngineId" name="ttsEngineId" type="text"
+        value={data.ttsEngineId}
+        placeholder="tts.google_translate_en_com"
         class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
       />
     </div>
@@ -91,14 +104,13 @@
       <input
         id="ttsService" name="ttsService" type="text"
         value={data.ttsService}
-        placeholder="tts/google_translate_say"
+        placeholder="tts/speak"
         class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
       />
       <p class="text-xs text-slate-500 mt-1">
         Format: <code class="text-slate-400">domain/service</code>.
-        Common values: <code class="text-slate-400">tts/google_translate_say</code>,
-        <code class="text-slate-400">tts/cloud_say</code>,
-        <code class="text-slate-400">tts/speak</code>.
+        Use <code class="text-slate-400">tts/speak</code> with a TTS engine entity (modern HA),
+        or <code class="text-slate-400">tts/cloud_say</code> / <code class="text-slate-400">tts/google_translate_say</code> (legacy, no engine ID needed).
       </p>
     </div>
   </div>
