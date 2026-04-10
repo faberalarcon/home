@@ -1,10 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { getSetting } from '$lib/server/db/settings';
 import { hashPin, makeSessionToken } from '$lib/server/auth';
+import { isSecureRequest } from '$lib/server/site-access';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
-  default: async ({ request, cookies }) => {
+  default: async ({ request, cookies, url }) => {
     const fd = await request.formData();
     const pin = (fd.get('pin') as string | null)?.trim() ?? '';
 
@@ -20,7 +21,7 @@ export const actions: Actions = {
     cookies.set('admin_session', makeSessionToken(storedHash), {
       path: '/',
       httpOnly: true,
-      secure: false,
+      secure: isSecureRequest(url, request.headers.get('x-forwarded-proto')),
       maxAge: 24 * 60 * 60,
       sameSite: 'strict'
     });

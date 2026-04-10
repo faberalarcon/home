@@ -10,5 +10,7 @@ services:
     environment:
       - DATABASE_PATH=/app/data/drink-hub.db
       - BODY_SIZE_LIMIT=10485760
+      - SITE_PASSWORD=${SITE_PASSWORD:-}
+      - SITE_PASSWORD_HASH=${SITE_PASSWORD_HASH:-}
     extra_hosts:
       - "ai.local:host-gateway"

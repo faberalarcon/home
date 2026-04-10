@@ -65,6 +65,8 @@ Then on any device on the LAN, browse to `http://<pi-ip>:5173`.
 
 The `./data` directory is mounted as a volume so the SQLite database and uploaded images persist across rebuilds.
 
+To require a shared password before anyone can use the site, set either `SITE_PASSWORD` or `SITE_PASSWORD_HASH` in the compose environment before starting the container. `SITE_PASSWORD_HASH` should be the hex output of the app's scrypt-based site-password hash; if both are set, `SITE_PASSWORD_HASH` wins.
+
 ---
 
 ## Data model

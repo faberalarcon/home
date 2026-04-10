@@ -2,7 +2,10 @@
 declare global {
   namespace App {
     // interface Error {}
-    // interface Locals {}
+    interface Locals {
+      sitePasswordEnabled: boolean;
+      siteAuthenticated: boolean;
+    }
     // interface PageData {}
     // interface PageState {}
     // interface Platform {}

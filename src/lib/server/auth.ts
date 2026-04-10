@@ -1,10 +1,15 @@
-import { createHash, createHmac } from 'node:crypto';
+import { createHash, createHmac, scryptSync, timingSafeEqual } from 'node:crypto';
 
 const PIN_SALT = 'drink-hub-pin';
+const SITE_PASSWORD_SALT = 'drink-hub-site-password';
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
 export function hashPin(pin: string): string {
   return createHash('sha256').update(`${PIN_SALT}:${pin}`).digest('hex');
+}
+
+export function hashSitePassword(password: string): string {
+  return scryptSync(password, SITE_PASSWORD_SALT, 32).toString('hex');
 }
 
 export function makeSessionToken(pinHash: string): string {
@@ -22,5 +27,7 @@ export function verifySessionToken(token: string | undefined, pinHash: string): 
   const ts = Number(tsStr);
   if (isNaN(ts) || Date.now() - ts > SESSION_TTL_MS) return false;
   const expected = createHmac('sha256', pinHash).update(tsStr).digest('hex');
-  return hmac === expected;
+  const actualBuf = Buffer.from(hmac, 'hex');
+  const expectedBuf = Buffer.from(expected, 'hex');
+  return actualBuf.length === expectedBuf.length && timingSafeEqual(actualBuf, expectedBuf);
 }
