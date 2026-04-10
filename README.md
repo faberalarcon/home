@@ -2,7 +2,7 @@
 
 A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi alongside Home Assistant, serves a mobile-friendly menu on the local network, tracks orders per person, and dispatches fun automations through HA — speaker announcements, milestone light flashes, whatever you can wire up.
 
-> **Status:** All 5 phases complete. Phase 6–8 enhancements in progress — see [docs/future-phases.md](./docs/future-phases.md).
+> **Status:** Phases 1–9 complete. Phase 8 polish partially shipped — see [docs/future-phases.md](./docs/future-phases.md) for remaining items.
 
 ---
 
@@ -15,6 +15,10 @@ A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi 
 | [3 — Admin panel](./docs/phase-3-admin-panel.md) | ✅ Done | CRUD for drinks/profiles/milestones/settings, image uploads |
 | [4 — Milestones & stats](./docs/phase-4-milestones-stats.md) | ✅ Done | Milestone evaluator, stats dashboard, live SSE updates |
 | [5 — Polish & tablet mode](./docs/phase-5-polish-tablet.md) | ✅ Done | Kiosk view, PWA, nightly backups, final polish |
+| 6 — Correctness & hygiene | ✅ Done | Transactional milestones, soft-delete + undo, rate limiting, health endpoint, SSE catch-up, HA error banner, upload validation |
+| 7 — Power-user features | ✅ Done | Cart flow, profile picker "The usual" + last-ordered, drink notes, search/filter, admin orders page, CSV/JSON export, order reassign |
+| 8 — Polish & deployment | ⚠ Partial | Dynamic title, TZ env, day-of-week histogram done; dark mode, keyboard nav, notifications, service worker, kiosk rotation, spinners remain |
+| [9 — Security hardening](./docs/phase-9-edge-auth-hardening.md) | ✅ Done | Shared site password gate, env-backed admin PIN, HMAC session tokens, CSRF trusted origins, hardened nginx config |
 
 ---
 
@@ -94,12 +98,19 @@ Six tables managed by Drizzle (see `src/lib/server/db/schema.ts`):
 drink-hub/
 ├── src/
 │   ├── app.html, app.css, app.d.ts
-│   ├── hooks.server.ts              # runs migrations on boot
+│   ├── hooks.server.ts              # auth gates (site password, admin PIN), migrations on boot
 │   ├── lib/
 │   │   ├── profile.ts               # client-side selected-profile store
+│   │   ├── stores/title.ts          # dynamic document title store
 │   │   └── server/
-│   │       ├── ha.ts                # HA event client
-│   │       ├── uploads.ts           # image upload + sharp resize
+│   │       ├── auth.ts              # HMAC session token helpers
+│   │       ├── ha.ts                # HA event + service client
+│   │       ├── milestones.ts        # milestone evaluator (transactional)
+│   │       ├── ratelimit.ts         # in-memory token bucket
+│   │       ├── site-access.ts       # env-backed PIN/password config helpers
+│   │       ├── stream.ts            # SSE broadcaster with Last-Event-ID ring buffer
+│   │       ├── tts.ts               # queued TTS announcements via HA
+│   │       ├── uploads.ts           # image upload + sharp resize + size validation
 │   │       └── db/
 │   │           ├── schema.ts
 │   │           ├── index.ts
@@ -108,25 +119,33 @@ drink-hub/
 │   │           └── settings.ts      # key/value settings helpers
 │   └── routes/
 │       ├── +layout.svelte
-│       ├── +page.svelte             # profile picker
-│       ├── menu/
-│       ├── recent/
-│       ├── api/orders/+server.ts
+│       ├── +page.svelte             # profile picker (last-ordered + "The usual")
+│       ├── login/                   # shared site password gate
+│       ├── menu/                    # drink menu with cart, search, expandable notes
+│       ├── recent/                  # recent orders feed
+│       ├── api/
+│       │   ├── orders/+server.ts    # GET (paginated) + POST (cart or single)
+│       │   ├── orders/[id]/         # DELETE (soft) + PATCH (reassign)
+│       │   ├── stream/+server.ts    # SSE stream with catch-up
+│       │   └── health/+server.ts    # health probe (db, ha, uptime)
 │       ├── uploads/[...path]/       # serves data/uploads/ files
-│       ├── stats/                   # live stats dashboard (SSE)
+│       ├── stats/                   # live stats dashboard (SSE, day-of-week histogram)
 │       ├── kiosk/                   # wall-tablet always-on display
-│       └── admin/                   # admin panel (separate env-backed PIN gate)
+│       └── admin/                   # admin panel (env-backed PIN gate)
+│           ├── login/               # PIN login page
 │           ├── +layout.svelte
-│           ├── +page.svelte         # dashboard + stats
-│           ├── drinks/              # drink CRUD + image upload
+│           ├── +page.svelte         # dashboard
+│           ├── drinks/              # drink CRUD + image upload + notes
 │           ├── profiles/            # profile CRUD + avatar upload
 │           ├── milestones/          # milestone CRUD
-│           ├── settings/            # HA URL/token + connection test
+│           ├── orders/              # paginated order list + delete + reassign
+│           │   └── export/          # CSV/JSON export endpoint
+│           ├── settings/            # HA config, TTS config, PIN change
 │           └── ha-log/              # HA event dispatch log
 ├── deploy/nginx/                    # example hardened nginx config
 ├── drizzle/                         # generated migrations
 ├── data/                            # gitignored; SQLite + uploads
-├── docs/                            # phase plans
+├── docs/                            # phase plans + security docs
 ├── Dockerfile
 └── docker-compose.yml
 ```
