@@ -28,6 +28,7 @@ export const actions: Actions = {
     cookies.set('admin_session', makeSessionToken(storedHash), {
       path: '/',
       httpOnly: true,
+      secure: false,
       maxAge: 24 * 60 * 60,
       sameSite: 'strict'
     });
