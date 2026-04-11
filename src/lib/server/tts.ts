@@ -1,8 +1,11 @@
 import { getSetting } from './db/settings';
 import { callService } from './ha';
 
-// Message pools per milestone category, cycled in order
+// Message pools per milestone category, cycled in order.
+// Keys are checked against the milestone's haTriggerEvent first (exact match),
+// then fall back to threshold+scope for the legacy built-in milestones.
 const MILESTONE_MESSAGES: Record<string, string[]> = {
+  // --- built-in (legacy threshold+scope keys) ---
   first_daily: [
     'And so it begins. First drink of the day!',
     'Day one, drink one. Let the evening commence.',
@@ -23,6 +26,22 @@ const MILESTONE_MESSAGES: Record<string, string[]> = {
     'T-E-N. Someone is having a very good time.',
     'Ten drinks achieved. The hall of fame awaits.',
     'Double digits. History is being made tonight.'
+  ],
+
+  // --- keyed by HA trigger event name ---
+  all_time_15: [
+    'Fifteen orders all time. The drink-hub is officially a historic landmark.',
+    'All-time drink fifteen! We are legends. Absolute, hydrated legends.',
+    'Number fifteen, all-time. The scoreboard is getting embarrassing — in the best way.',
+    'Fifteen all-time orders. The liver has filed a formal complaint. It was denied.',
+    "We've hit fifteen all-time. Someone frame this moment."
+  ],
+  '6_7_drink_profile': [
+    'Personal drink number six! Someone is not here to play games. They are here to win.',
+    'Six personal orders. The body is a temple. This person is doing renovations.',
+    'Drink six, personally. Going where few have gone before and looking fantastic doing it.',
+    'Six drinks in personally. This is commitment. This is dedication. This is inspiring.',
+    'Their sixth personal drink. Honestly? Respect. Absolute respect.'
   ]
 };
 
@@ -36,11 +55,32 @@ function nextMessage(key: string): string | null {
   return pool[idx];
 }
 
-function milestoneKey(threshold: number, scope: string): string | null {
+function peekMessage(key: string): string | null {
+  const pool = MILESTONE_MESSAGES[key];
+  if (!pool?.length) return null;
+  return pool[(counters[key] ?? 0) % pool.length];
+}
+
+function milestoneKey(threshold: number, scope: string, haTriggerEvent = ''): string | null {
+  // Exact match by HA event name first — covers any admin-defined milestone
+  if (haTriggerEvent && MILESTONE_MESSAGES[haTriggerEvent]) return haTriggerEvent;
+  // Legacy threshold+scope fallbacks for the three built-in pools
   if (scope === 'daily' && threshold === 1) return 'first_daily';
   if (threshold === 5) return 'five';
   if (threshold === 10) return 'ten';
   return null;
+}
+
+/** Returns the next TTS quip for a milestone, advancing the pool counter. */
+export function nextMilestoneMessage(threshold: number, scope: string, haTriggerEvent: string): string | null {
+  const key = milestoneKey(threshold, scope, haTriggerEvent);
+  return key ? nextMessage(key) : null;
+}
+
+/** Peeks at the next TTS quip without advancing the counter. Used for HA event payloads. */
+export function previewMilestoneText(threshold: number, scope: string, haTriggerEvent: string): string | null {
+  const key = milestoneKey(threshold, scope, haTriggerEvent);
+  return key ? peekMessage(key) : null;
 }
 
 // Per-profile rate limit: max 3 announcements per 60 seconds
@@ -64,7 +104,7 @@ function isRateLimited(profileId: number): boolean {
 type TtsJob = {
   profileName: string;
   drinkName: string;
-  firedMilestones: Array<{ threshold: number; scope: string }>;
+  firedMilestones: Array<{ threshold: number; scope: string; haTriggerEvent?: string }>;
 };
 
 const queue: TtsJob[] = [];
@@ -82,7 +122,7 @@ async function processQueue(): Promise<void> {
   processing = false;
 }
 
-async function doAnnounce(job: TtsJob): Promise<void> {
+async function ttsCall(message: string): Promise<void> {
   const enabled = getSetting('tts_enabled');
   if (!enabled || enabled === 'false' || enabled === '0') return;
 
@@ -90,20 +130,6 @@ async function doAnnounce(job: TtsJob): Promise<void> {
   if (!mediaPlayerId) return;
 
   const engineId = (getSetting('tts_engine_id') ?? '').trim();
-
-  const base = `${job.profileName} ordered a ${job.drinkName}.`;
-
-  let extra: string | null = null;
-  for (const m of job.firedMilestones) {
-    const key = milestoneKey(m.threshold, m.scope);
-    if (key) {
-      extra = nextMessage(key);
-      if (extra) break;
-    }
-  }
-
-  const message = extra ? `${base} ${extra}` : base;
-
   const svcRaw = (getSetting('tts_service') ?? 'tts/speak').trim();
   const slash = svcRaw.indexOf('/');
   if (slash < 1) return;
@@ -121,11 +147,31 @@ async function doAnnounce(job: TtsJob): Promise<void> {
   }
 }
 
+async function doAnnounce(job: TtsJob): Promise<void> {
+  const base = `${job.profileName} ordered a ${job.drinkName}.`;
+
+  let extra: string | null = null;
+  for (const m of job.firedMilestones) {
+    const key = milestoneKey(m.threshold, m.scope, m.haTriggerEvent ?? '');
+    if (key) {
+      extra = nextMessage(key);
+      if (extra) break;
+    }
+  }
+
+  await ttsCall(extra ? `${base} ${extra}` : base);
+}
+
+/** Speak any arbitrary message through TTS — bypasses rate limiting and queue. */
+export async function speakText(message: string): Promise<void> {
+  await ttsCall(message);
+}
+
 export function announceDrinkOrder(
   profileId: number,
   profileName: string,
   drinkName: string,
-  firedMilestones: Array<{ threshold: number; scope: string }>
+  firedMilestones: Array<{ threshold: number; scope: string; haTriggerEvent?: string }>
 ): void {
   if (isRateLimited(profileId)) {
     console.log(`[tts] rate limit hit for profile ${profileId}, dropping announcement`);

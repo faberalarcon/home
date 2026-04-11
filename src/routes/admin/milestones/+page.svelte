@@ -27,6 +27,12 @@
   <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.error}</div>
 {/if}
 
+{#if form?.tested}
+  <div class="mb-4 px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-300">
+    <span class="text-slate-400">TTS fired:</span> "{form.ttsMessage}"
+  </div>
+{/if}
+
 <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-8">
   <table class="w-full text-sm">
     <thead>
@@ -47,8 +53,12 @@
           <td class="px-4 py-3 text-slate-400 hidden sm:table-cell">{m.scope}</td>
           <td class="px-4 py-3 text-slate-500 text-xs hidden sm:table-cell">{m.haTriggerEvent}</td>
           <td class="px-4 py-3 text-center">{m.enabled ? '✓' : '–'}</td>
-          <td class="px-4 py-3 text-right">
-            <a href="/admin/milestones?edit={m.id}" class="text-slate-400 hover:text-white text-xs mr-3">Edit</a>
+          <td class="px-4 py-3 text-right space-x-3">
+            <form method="POST" action="?/testTts" class="inline">
+              <input type="hidden" name="id" value={m.id} />
+              <button type="submit" class="text-sky-500 hover:text-sky-400 text-xs">Test TTS</button>
+            </form>
+            <a href="/admin/milestones?edit={m.id}" class="text-slate-400 hover:text-white text-xs">Edit</a>
             <form method="POST" action="?/delete" class="inline" onsubmit={(e) => { if (!confirm(`Delete ${m.name}?`)) e.preventDefault(); }}>
               <input type="hidden" name="id" value={m.id} />
               <button type="submit" class="text-red-500 hover:text-red-400 text-xs">Delete</button>

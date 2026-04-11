@@ -6,7 +6,7 @@ import { fireEvent } from '$lib/server/ha';
 import { evaluateMilestones } from '$lib/server/milestones';
 import { broadcast } from '$lib/server/stream';
 import { checkRateLimit } from '$lib/server/ratelimit';
-import { announceDrinkOrder } from '$lib/server/tts';
+import { announceDrinkOrder, previewMilestoneText } from '$lib/server/tts';
 import type { RequestHandler } from './$types';
 
 const MAX_CART_SIZE = 20;
@@ -131,25 +131,30 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     }
   }
 
+  // TTS — announce all drinks in one message
+  const drinkName = drinkRows.length === 1
+    ? drinkRows[0].name
+    : drinkRows.slice(0, -1).map((d) => d.name).join(', ') + ' and ' + drinkRows[drinkRows.length - 1].name;
+
   for (const m of firedMilestones) {
+    const ttsExtra = previewMilestoneText(m.threshold, m.scope, m.haTriggerEvent);
     await fireEvent(m.haTriggerEvent, {
       milestone: m.name,
       threshold: m.threshold,
       scope: m.scope,
       profile: profile.name,
-      drink: drinkRows[0].name
+      drink: drinkRows[0].name,
+      tts_text: ttsExtra
+        ? `${profile.name} ordered a ${drinkName}. ${ttsExtra}`
+        : `${profile.name} ordered a ${drinkName}.`
     });
   }
 
-  // TTS — announce all drinks in one message
-  const drinkName = drinkRows.length === 1
-    ? drinkRows[0].name
-    : drinkRows.slice(0, -1).map((d) => d.name).join(', ') + ' and ' + drinkRows[drinkRows.length - 1].name;
   announceDrinkOrder(
     profile.id,
     profile.name,
     drinkName,
-    firedMilestones.map((m) => ({ threshold: m.threshold, scope: m.scope }))
+    firedMilestones.map((m) => ({ threshold: m.threshold, scope: m.scope, haTriggerEvent: m.haTriggerEvent }))
   );
 
   // Broadcast each inserted order via SSE

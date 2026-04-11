@@ -2,6 +2,7 @@ import { db } from '$lib/server/db';
 import { milestones, drinks, profiles } from '$lib/server/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
+import { speakText, nextMilestoneMessage } from '$lib/server/tts';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -59,5 +60,22 @@ export const actions: Actions = {
     if (!id) return fail(400, { error: 'Missing id' });
     db.delete(milestones).where(eq(milestones.id, id)).run();
     redirect(303, '/admin/milestones');
+  },
+
+  testTts: async ({ request }) => {
+    const fd = await request.formData();
+    const id = Number(fd.get('id'));
+    if (!id) return fail(400, { error: 'Missing id', tested: null, ttsMessage: null });
+
+    const m = db.select().from(milestones).where(eq(milestones.id, id)).get();
+    if (!m) return fail(404, { error: 'Milestone not found', tested: null, ttsMessage: null });
+
+    const extra = nextMilestoneMessage(m.threshold, m.scope, m.haTriggerEvent);
+    const ttsMessage = extra ?? `No TTS message configured for "${m.name}".`;
+
+    await speakText(ttsMessage);
+    console.log(`[milestones] test TTS fired for "${m.name}": ${ttsMessage}`);
+
+    return { tested: id, ttsMessage, error: null };
   }
 };
