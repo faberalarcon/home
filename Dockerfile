@@ -32,9 +32,13 @@ COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/drizzle ./drizzle
 
 # Create data directory and set ownership before dropping to non-root
-RUN mkdir -p /app/data/uploads && chown -R node:node /app/data
+RUN mkdir -p /app/data/uploads/items /app/data/uploads/profiles && chown -R node:node /app/data
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 USER node
 
 EXPOSE 3000
-CMD ["node", "build/index.js"]
+# Entrypoint runs as node user, ensures upload subdirs exist, then execs the app
+ENTRYPOINT ["/entrypoint.sh"]
