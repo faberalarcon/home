@@ -1,6 +1,8 @@
 import { db } from '$lib/server/db';
 import { orders, profiles, drinks } from '$lib/server/db/schema';
 import { eq, sql, desc, count } from 'drizzle-orm';
+import { getStatsResetAt } from '$lib/server/db/settings';
+import { estimateBAC } from '$lib/server/bac';
 import type { PageServerLoad } from './$types';
 
 function startOfDayLocal(): number {
@@ -20,15 +22,18 @@ function startOfWeekLocal(): number {
 export const load: PageServerLoad = async () => {
   const dayStart = startOfDayLocal();
   const weekStart = startOfWeekLocal();
+  const resetAt = getStatsResetAt();
 
-  const totalAllTime = db.select({ c: count() }).from(orders).get()?.c ?? 0;
+  const totalAllTime = db.select({ c: count() }).from(orders)
+    .where(sql`${orders.createdAt} > ${resetAt}`)
+    .get()?.c ?? 0;
 
   const totalToday = db.select({ c: count() }).from(orders)
-    .where(sql`${orders.createdAt} >= ${dayStart}`)
+    .where(sql`${orders.createdAt} >= ${dayStart} AND ${orders.createdAt} > ${resetAt}`)
     .get()?.c ?? 0;
 
   const totalWeek = db.select({ c: count() }).from(orders)
-    .where(sql`${orders.createdAt} >= ${weekStart}`)
+    .where(sql`${orders.createdAt} >= ${weekStart} AND ${orders.createdAt} > ${resetAt}`)
     .get()?.c ?? 0;
 
   // Leaderboard — all time
@@ -36,6 +41,7 @@ export const load: PageServerLoad = async () => {
     .select({ id: profiles.id, name: profiles.name, color: profiles.color, c: sql<number>`count(*)` })
     .from(orders)
     .innerJoin(profiles, eq(orders.profileId, profiles.id))
+    .where(sql`${orders.createdAt} > ${resetAt}`)
     .groupBy(profiles.id)
     .orderBy(desc(sql`count(*)`))
     .limit(10)
@@ -46,7 +52,7 @@ export const load: PageServerLoad = async () => {
     .select({ id: profiles.id, name: profiles.name, color: profiles.color, c: sql<number>`count(*)` })
     .from(orders)
     .innerJoin(profiles, eq(orders.profileId, profiles.id))
-    .where(sql`${orders.createdAt} >= ${dayStart}`)
+    .where(sql`${orders.createdAt} >= ${dayStart} AND ${orders.createdAt} > ${resetAt}`)
     .groupBy(profiles.id)
     .orderBy(desc(sql`count(*)`))
     .limit(10)
@@ -57,6 +63,7 @@ export const load: PageServerLoad = async () => {
     .select({ id: drinks.id, name: drinks.name, category: drinks.category, c: sql<number>`count(*)` })
     .from(orders)
     .innerJoin(drinks, eq(orders.drinkId, drinks.id))
+    .where(sql`${orders.createdAt} > ${resetAt}`)
     .groupBy(drinks.id)
     .orderBy(desc(sql`count(*)`))
     .limit(5)
@@ -69,7 +76,7 @@ export const load: PageServerLoad = async () => {
       c: sql<number>`count(*)`
     })
     .from(orders)
-    .where(sql`${orders.status} != 'deleted'`)
+    .where(sql`${orders.status} != 'deleted' AND ${orders.createdAt} > ${resetAt}`)
     .groupBy(sql`strftime('%w', datetime(${orders.createdAt}, 'unixepoch', 'localtime'))`)
     .all();
 
@@ -79,5 +86,45 @@ export const load: PageServerLoad = async () => {
     count: dowRows.find((r) => r.dow === i)?.c ?? 0
   }));
 
-  return { totalAllTime, totalToday, totalWeek, leaderAllTime, leaderToday, topDrinks, dowCounts };
+  // BAC estimation — today's orders per profile with drink ABV/volume
+  const todayDrinkData = db
+    .select({
+      profileId: orders.profileId,
+      abv: drinks.abv,
+      volumeMl: drinks.volumeMl,
+      orderedAt: orders.createdAt
+    })
+    .from(orders)
+    .innerJoin(drinks, eq(orders.drinkId, drinks.id))
+    .where(sql`${orders.createdAt} >= ${dayStart} AND ${orders.status} != 'deleted' AND ${orders.createdAt} > ${resetAt}`)
+    .all();
+
+  const profileBodyMap = new Map(
+    db.select({ id: profiles.id, weightKg: profiles.weightKg, biologicalSex: profiles.biologicalSex })
+      .from(profiles)
+      .all()
+      .map((p) => [p.id, p])
+  );
+
+  const nowSec = Math.floor(Date.now() / 1000);
+
+  const leaderTodayWithBAC = leaderToday.map((entry) => {
+    const body = profileBodyMap.get(entry.id);
+    const drinkEntries = todayDrinkData
+      .filter((o) => o.profileId === entry.id)
+      .map((o) => ({
+        abv: o.abv,
+        volumeMl: o.volumeMl,
+        orderedAtSec: Math.floor((o.orderedAt as Date).getTime() / 1000)
+      }));
+    const { bac, hasData } = estimateBAC(
+      drinkEntries,
+      body?.weightKg ?? null,
+      body?.biologicalSex ?? null,
+      nowSec
+    );
+    return { ...entry, bac, bacHasData: hasData };
+  });
+
+  return { totalAllTime, totalToday, totalWeek, leaderAllTime, leaderToday: leaderTodayWithBAC, topDrinks, dowCounts, resetAt };
 };

@@ -34,7 +34,7 @@
       } else {
         leaderToday = [
           ...leaderToday,
-          { id: pid, name: ev.order.profileName, color: ev.order.profileColor, c: 1 }
+          { id: pid, name: ev.order.profileName, color: ev.order.profileColor, c: 1, bac: 0, bacHasData: false }
         ].sort((a, b) => b.c - a.c);
       }
 
@@ -96,6 +96,15 @@
             {p.name[0]}
           </div>
           <div class="flex-1 font-medium">{p.name}</div>
+          {#if tab === 'today' && (p as any).bacHasData}
+            {@const pct = (p as any).bac as number}
+            <span class="text-xs px-2 py-0.5 rounded border tabular-nums
+              {pct >= 0.08 ? 'bg-red-900/60 text-red-300 border-red-800'
+              : pct >= 0.04 ? 'bg-amber-900/60 text-amber-300 border-amber-800'
+              : 'bg-slate-800 text-slate-400 border-slate-700'}">
+              ~{(pct * 100).toFixed(2)}%
+            </span>
+          {/if}
           <div class="text-lg font-bold tabular-nums">{p.c}</div>
         </div>
       {/each}

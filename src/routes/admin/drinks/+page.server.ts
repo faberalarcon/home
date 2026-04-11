@@ -33,6 +33,8 @@ export const actions: Actions = {
     const haTriggerEvent = (fd.get('haTriggerEvent') as string | null)?.trim() || null;
     const active = fd.get('active') === 'on';
     const sortOrder = Number(fd.get('sortOrder') ?? 0) || 0;
+    const abv = fd.get('abv') ? Number(fd.get('abv')) : null;
+    const volumeMl = fd.get('volume_ml') ? Number(fd.get('volume_ml')) : null;
     const imageFile = fd.get('image') as File | null;
 
     if (!name) return fail(400, { error: 'Name is required', fields: { name, description, category, haTriggerEvent, active, sortOrder } });
@@ -44,25 +46,25 @@ export const actions: Actions = {
       let imageUrl = existing.imageUrl;
       if (imageFile && imageFile.size > 0) {
         try {
-          imageUrl = await saveImage(imageFile, 'drinks', id, name);
+          imageUrl = await saveImage(imageFile, 'items', id, name);
         } catch (err) {
           return fail(400, { error: err instanceof Error ? err.message : 'Image upload failed' });
         }
       }
 
       db.update(drinks)
-        .set({ name, description, notes, category, haTriggerEvent, active, sortOrder, imageUrl })
+        .set({ name, description, notes, category, haTriggerEvent, active, sortOrder, imageUrl, abv, volumeMl })
         .where(eq(drinks.id, id))
         .run();
     } else {
       const inserted = db.insert(drinks)
-        .values({ name, description, notes, category, haTriggerEvent, active, sortOrder })
+        .values({ name, description, notes, category, haTriggerEvent, active, sortOrder, abv, volumeMl })
         .returning({ id: drinks.id })
         .get();
 
       if (imageFile && imageFile.size > 0) {
         try {
-          const imageUrl = await saveImage(imageFile, 'drinks', inserted.id, name);
+          const imageUrl = await saveImage(imageFile, 'items', inserted.id, name);
           db.update(drinks).set({ imageUrl }).where(eq(drinks.id, inserted.id)).run();
         } catch (err) {
           return fail(400, { error: err instanceof Error ? err.message : 'Image upload failed' });

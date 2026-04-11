@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, integer, text, real } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const profiles = sqliteTable('profiles', {
@@ -9,7 +9,9 @@ export const profiles = sqliteTable('profiles', {
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
-    .default(sql`(unixepoch())`)
+    .default(sql`(unixepoch())`),
+  weightKg: real('weight_kg'),
+  biologicalSex: text('biological_sex')
 });
 
 export const drinks = sqliteTable('drinks', {
@@ -21,7 +23,9 @@ export const drinks = sqliteTable('drinks', {
   imageUrl: text('image_url'),
   haTriggerEvent: text('ha_trigger_event'),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
-  sortOrder: integer('sort_order').notNull().default(0)
+  sortOrder: integer('sort_order').notNull().default(0),
+  abv: real('abv'),
+  volumeMl: real('volume_ml')
 });
 
 export const orders = sqliteTable('orders', {

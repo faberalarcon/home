@@ -1,8 +1,8 @@
 import { db } from '$lib/server/db';
 import { orders, drinks, profiles, haEventsLog } from '$lib/server/db/schema';
 import { eq, sql, count } from 'drizzle-orm';
-import { getSetting } from '$lib/server/db/settings';
-import type { PageServerLoad } from './$types';
+import { getSetting, setStatsResetAt } from '$lib/server/db/settings';
+import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async () => {
   const totalOrders = db.select({ c: count() }).from(orders).get()?.c ?? 0;
@@ -27,4 +27,11 @@ export const load: PageServerLoad = async () => {
   }
 
   return { totalOrders, activeDrinks, activeProfiles, failedEvents, haStatus };
+};
+
+export const actions: Actions = {
+  clearStats: async () => {
+    setStatsResetAt(Math.floor(Date.now() / 1000));
+    return { cleared: true };
+  }
 };

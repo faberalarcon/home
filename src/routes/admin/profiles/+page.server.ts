@@ -19,6 +19,9 @@ export const actions: Actions = {
     const name = (fd.get('name') as string | null)?.trim();
     const color = (fd.get('color') as string | null)?.trim() || '#f97316';
     const active = fd.get('active') === 'on';
+    const weightKg = fd.get('weight_kg') ? Number(fd.get('weight_kg')) : null;
+    const biologicalSexRaw = (fd.get('biological_sex') as string | null) || null;
+    const biologicalSex = (biologicalSexRaw === 'male' || biologicalSexRaw === 'female') ? biologicalSexRaw : null;
     const imageFile = fd.get('avatar') as File | null;
 
     if (!name) return fail(400, { error: 'Name is required' });
@@ -36,10 +39,10 @@ export const actions: Actions = {
         }
       }
 
-      db.update(profiles).set({ name, color, active, avatarUrl }).where(eq(profiles.id, id)).run();
+      db.update(profiles).set({ name, color, active, avatarUrl, weightKg, biologicalSex }).where(eq(profiles.id, id)).run();
     } else {
       const inserted = db.insert(profiles)
-        .values({ name, color, active })
+        .values({ name, color, active, weightKg, biologicalSex })
         .returning({ id: profiles.id })
         .get();
 

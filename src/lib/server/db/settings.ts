@@ -13,6 +13,14 @@ export function setSetting(key: string, value: string): void {
     .run();
 }
 
+export function getStatsResetAt(): number {
+  return Number(getSetting('stats_reset_at') ?? '0');
+}
+
+export function setStatsResetAt(ts: number): void {
+  setSetting('stats_reset_at', String(ts));
+}
+
 export function bootstrapSettings(defaults: Record<string, string>): void {
   for (const [key, value] of Object.entries(defaults)) {
     db.insert(settings).values({ key, value }).onConflictDoNothing().run();

@@ -108,8 +108,9 @@
             {#if d.imageUrl}
               <img src={d.imageUrl} alt={d.name} class="w-full aspect-square object-cover" />
             {:else}
+              {@const emoji = ({food:'🍽️',snack:'🍿',dessert:'🍰','non-alcoholic':'🥤',beer:'🍺',wine:'🍷',spirit:'🥃',cocktail:'🍸'} as Record<string,string>)[d.category] ?? '🍽️'}
               <div class="w-full aspect-square bg-slate-800 flex items-center justify-center text-4xl">
-                🍸
+                {emoji}
               </div>
             {/if}
           </button>

@@ -4,7 +4,7 @@
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
 
-  const CATEGORIES = ['cocktail', 'beer', 'wine', 'spirit', 'non-alcoholic', 'other'];
+  const CATEGORIES = ['cocktail', 'beer', 'wine', 'spirit', 'non-alcoholic', 'food', 'snack', 'dessert', 'other'];
 
   let search = $state('');
   const visibleDrinks = $derived(
@@ -27,7 +27,7 @@
 
 <div class="flex items-center justify-between mb-6">
   <div class="flex items-center gap-3">
-    <h1 class="text-2xl font-semibold">Drinks</h1>
+    <h1 class="text-2xl font-semibold">Menu Items</h1>
     {#if data.inactiveCount > 0}
       <a
         href="/admin/drinks?{data.showInactive ? '' : 'inactive=1'}"
@@ -37,7 +37,7 @@
       </a>
     {/if}
   </div>
-  <a href="/admin/drinks" class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New drink</a>
+  <a href="/admin/drinks" class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New item</a>
 </div>
 
 {#if form?.error}
@@ -47,7 +47,7 @@
 <input
   type="search"
   bind:value={search}
-  placeholder="Filter drinks…"
+  placeholder="Filter items…"
   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm mb-4 focus:outline-none focus:border-slate-600"
 />
 
@@ -73,7 +73,7 @@
                 {#if d.imageUrl}
                   <img src={d.imageUrl.replace('.webp', '-thumb.webp')} alt="" class="w-8 h-8 rounded object-cover shrink-0" />
                 {:else}
-                  <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-base shrink-0">🍸</div>
+                  <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-base shrink-0">🍽️</div>
                 {/if}
                 <span class="font-medium">{d.name}</span>
               </div>
@@ -103,7 +103,7 @@
         {/each}
         {#if data.drinks.length === 0}
           <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">
-            {data.showInactive ? 'No drinks.' : 'No active drinks.'}
+            {data.showInactive ? 'No items.' : 'No active items.'}
           </td></tr>
         {/if}
       </tbody>
@@ -118,7 +118,7 @@
     {data.editing ? 'border-orange-700/60' : 'border-slate-800'}"
 >
   <h2 class="text-lg font-semibold mb-4">
-    {data.editing ? `Editing — ${data.editing.name}` : 'New drink'}
+    {data.editing ? `Editing — ${data.editing.name}` : 'New item'}
   </h2>
 
   <form method="POST" action="?/save" enctype="multipart/form-data" class="space-y-4">
@@ -148,6 +148,27 @@
             <option value={c}></option>
           {/each}
         </datalist>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm text-slate-400 mb-1" for="abv">ABV % <span class="text-slate-600">(alcohol by volume)</span></label>
+        <input
+          id="abv" name="abv" type="number" min="0" max="100" step="0.1"
+          value={data.editing?.abv ?? ''}
+          placeholder="e.g. 5.0"
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+        />
+      </div>
+      <div>
+        <label class="block text-sm text-slate-400 mb-1" for="volume_ml">Serving size (mL)</label>
+        <input
+          id="volume_ml" name="volume_ml" type="number" min="0" step="1"
+          value={data.editing?.volumeMl ?? ''}
+          placeholder="e.g. 355 for a can"
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+        />
       </div>
     </div>
 
@@ -221,7 +242,7 @@
         type="submit"
         class="px-4 py-2 rounded-lg bg-orange-500 text-slate-950 font-semibold text-sm hover:bg-orange-400 transition"
       >
-        {data.editing ? 'Save changes' : 'Create drink'}
+        {data.editing ? 'Save changes' : 'Create item'}
       </button>
       {#if data.editing}
         <a href="/admin/drinks" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">

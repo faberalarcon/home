@@ -109,6 +109,33 @@
       </div>
     </div>
 
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm text-slate-400 mb-1" for="weight_kg">
+          Weight (kg) <span class="text-slate-600">(for BAC estimation)</span>
+        </label>
+        <input
+          id="weight_kg" name="weight_kg" type="number" min="1" max="500" step="0.1"
+          value={data.editing?.weightKg ?? ''}
+          placeholder="optional"
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+        />
+      </div>
+      <div>
+        <label class="block text-sm text-slate-400 mb-1" for="biological_sex">
+          Biological sex <span class="text-slate-600">(for BAC estimation)</span>
+        </label>
+        <select
+          id="biological_sex" name="biological_sex"
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+        >
+          <option value="">— not set —</option>
+          <option value="male" selected={data.editing?.biologicalSex === 'male'}>Male</option>
+          <option value="female" selected={data.editing?.biologicalSex === 'female'}>Female</option>
+        </select>
+      </div>
+    </div>
+
     <div>
       <label class="block text-sm text-slate-400 mb-1" for="avatar">
         Avatar {data.editing?.avatarUrl ? '(leave blank to keep current)' : '(optional)'}
