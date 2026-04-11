@@ -115,7 +115,7 @@
 <!-- Top drinks bar chart -->
 {#if topDrinks.length > 0}
   <div class="mb-6">
-    <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-3">Top drinks (all time)</h2>
+    <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-3">Top items (all time)</h2>
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
       {#each topDrinks as d (d.id)}
         {@const pct = Math.round((d.c / maxDrinkCount) * 100)}
