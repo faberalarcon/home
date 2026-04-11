@@ -24,7 +24,7 @@
   </div>
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
     <div class="text-3xl font-bold">{data.activeDrinks}</div>
-    <div class="text-sm text-slate-400 mt-1">Active drinks</div>
+    <div class="text-sm text-slate-400 mt-1">Active items</div>
   </div>
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
     <div class="text-3xl font-bold">{data.activeProfiles}</div>

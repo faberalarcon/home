@@ -90,7 +90,7 @@
 <input
   type="search"
   bind:value={search}
-  placeholder="Search drinks…"
+  placeholder="Search items…"
   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm mb-4 focus:outline-none focus:border-slate-600"
 />
 
@@ -157,7 +157,7 @@
 {/each}
 
 {#if filtered.length === 0}
-  <p class="text-center text-slate-500 text-sm py-12">No drinks match "{search}"</p>
+  <p class="text-center text-slate-500 text-sm py-12">No items match "{search}"</p>
 {/if}
 
 <!-- Floating cart button -->

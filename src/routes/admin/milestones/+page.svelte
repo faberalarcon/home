@@ -33,14 +33,14 @@
   </div>
 {/if}
 
-<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-8">
-  <table class="w-full text-sm">
+<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto mb-8">
+  <table class="min-w-full text-sm whitespace-nowrap">
     <thead>
       <tr class="border-b border-slate-800 text-slate-400 text-left">
         <th class="px-4 py-3 font-medium">Name</th>
-        <th class="px-4 py-3 font-medium hidden sm:table-cell">Threshold</th>
-        <th class="px-4 py-3 font-medium hidden sm:table-cell">Scope</th>
-        <th class="px-4 py-3 font-medium hidden sm:table-cell">HA event</th>
+        <th class="px-4 py-3 font-medium">Threshold</th>
+        <th class="px-4 py-3 font-medium">Scope</th>
+        <th class="px-4 py-3 font-medium">HA event</th>
         <th class="px-4 py-3 font-medium text-center">Enabled</th>
         <th class="px-4 py-3 font-medium text-right">Actions</th>
       </tr>
@@ -49,9 +49,9 @@
       {#each data.milestones as m (m.id)}
         <tr class="border-b border-slate-800/50 last:border-0 {data.editing?.id === m.id ? 'bg-slate-800/40' : 'hover:bg-slate-800/20'}">
           <td class="px-4 py-3 font-medium">{m.name}</td>
-          <td class="px-4 py-3 text-slate-400 hidden sm:table-cell">{m.threshold}</td>
-          <td class="px-4 py-3 text-slate-400 hidden sm:table-cell">{m.scope}</td>
-          <td class="px-4 py-3 text-slate-500 text-xs hidden sm:table-cell">{m.haTriggerEvent}</td>
+          <td class="px-4 py-3 text-slate-400">{m.threshold}</td>
+          <td class="px-4 py-3 text-slate-400">{m.scope}</td>
+          <td class="px-4 py-3 text-slate-500 text-xs font-mono">{m.haTriggerEvent}</td>
           <td class="px-4 py-3 text-center">{m.enabled ? '✓' : '–'}</td>
           <td class="px-4 py-3 text-right space-x-3">
             <form method="POST" action="?/testTts" class="inline">
