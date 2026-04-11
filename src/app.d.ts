@@ -5,6 +5,7 @@ declare global {
     interface Locals {
       sitePasswordEnabled: boolean;
       siteAuthenticated: boolean;
+      adminAuthenticated: boolean;
     }
     // interface PageData {}
     // interface PageState {}

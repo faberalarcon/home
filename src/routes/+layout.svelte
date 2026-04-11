@@ -4,7 +4,7 @@
   import { page } from '$app/stores';
   import { pageTitle } from '$lib/stores/title';
 
-  let { children } = $props();
+  let { children, data } = $props();
 </script>
 
 <svelte:head>
@@ -17,7 +17,7 @@
   <div class="mx-auto max-w-2xl min-h-screen flex flex-col">
     <header class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
       <a href="/menu" class="text-lg font-semibold tracking-tight">🍹 drink-hub</a>
-      <nav class="flex gap-3 text-sm text-slate-300">
+      <nav class="flex gap-3 text-sm text-slate-300 items-center">
         <a href="/menu" class:text-white={$page.url.pathname === '/menu'}>Menu</a>
         <a href="/recent" class:text-white={$page.url.pathname === '/recent'}>Recent</a>
         <a href="/stats" class:text-white={$page.url.pathname === '/stats'}>Stats</a>
@@ -33,6 +33,11 @@
           </button>
         {:else}
           <a href="/">Pick profile</a>
+        {/if}
+        {#if data.sitePasswordEnabled && data.siteAuthenticated}
+          <form method="POST" action="/login?/logout">
+            <button type="submit" class="text-slate-500 hover:text-slate-300 text-xs">Sign out</button>
+          </form>
         {/if}
       </nav>
     </header>

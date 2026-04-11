@@ -31,7 +31,10 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/drizzle ./drizzle
 
-RUN mkdir -p /app/data/uploads
+# Create data directory and set ownership before dropping to non-root
+RUN mkdir -p /app/data/uploads && chown -R node:node /app/data
+
+USER node
 
 EXPOSE 3000
 CMD ["node", "build/index.js"]

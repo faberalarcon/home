@@ -1,7 +1,19 @@
 import { subscribe, getMissedEvents } from '$lib/server/stream';
+import { checkRateLimit } from '$lib/server/ratelimit';
+import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ request }) => {
+export const GET: RequestHandler = ({ request, getClientAddress }) => {
+  const ip = getClientAddress();
+  const rateCheck = checkRateLimit('sse', ip);
+  if (!rateCheck.allowed) {
+    console.warn(`[rate-limit] sse blocked ip=${ip} at=${new Date().toISOString()}`);
+    return json({ error: 'Too many connections' }, {
+      status: 429,
+      headers: { 'Retry-After': String(rateCheck.retryAfter ?? 10) }
+    });
+  }
+
   const lastEventId = Number(request.headers.get('Last-Event-ID') ?? 0);
 
   const encoder = new TextEncoder();

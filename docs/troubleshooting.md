@@ -86,3 +86,53 @@ This means two processes tried to write at the same time. The database runs in W
 ## Restore after accidental data loss
 
 See [backup-restore.md](./backup-restore.md).
+
+---
+
+## Security operations
+
+### Rotating the shared site password
+
+1. Generate a new password hash:
+   ```bash
+   node -e "const {scryptSync}=require('crypto'); console.log(scryptSync('NEWPASSWORD','drink-hub-site-password',32).toString('hex'))"
+   ```
+2. Set `SITE_PASSWORD_HASH=<hash>` in your `.env` (or environment) and remove `SITE_PASSWORD` if set.
+3. Restart the container: `docker compose restart drink-hub`.
+4. All existing `site_session` cookies are invalidated immediately because they are HMAC'd against the old hash.
+5. Distribute the new password to household members.
+
+### Rotating the admin PIN
+
+1. Generate a new PIN hash:
+   ```bash
+   node -e "const {createHash}=require('crypto'); console.log(createHash('sha256').update('drink-hub-pin:NEWPIN').digest('hex'))"
+   ```
+2. Set `ADMIN_PIN_HASH=<hash>` (or `ADMIN_PIN=NEWPIN`) and restart.
+3. All `admin_session` cookies are invalidated immediately.
+
+### Reviewing auth and rate-limit logs
+
+Failed logins and rate-limit events are written to stdout with the prefix `[auth]` or `[rate-limit]`:
+
+```bash
+docker compose logs drink-hub | grep -E '\[(auth|rate-limit)\]'
+```
+
+Each log line includes an ISO timestamp and the client IP. Passwords and PINs are never logged.
+
+### Recovering from suspected abuse
+
+1. Rotate the site password immediately (see above) to force all sessions to re-authenticate.
+2. If an admin session may be compromised, rotate the admin PIN as well.
+3. Review order history in `/admin/orders` for unexpected entries and use the delete/restore controls as needed.
+4. Check logs for the abusive IP and, if on a network you control, block it at the router or nginx level.
+
+### Restoring from backup after compromise
+
+See [backup-restore.md](./backup-restore.md) for database restore procedures.
+
+After restoring:
+1. Rotate both the site password and admin PIN.
+2. Rebuild and restart the container: `docker compose up -d --build`.
+3. Verify the app starts cleanly: `docker compose logs -f drink-hub`.

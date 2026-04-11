@@ -9,6 +9,8 @@ import { checkRateLimit } from '$lib/server/ratelimit';
 import { announceDrinkOrder } from '$lib/server/tts';
 import type { RequestHandler } from './$types';
 
+const MAX_CART_SIZE = 20;
+
 export const GET: RequestHandler = ({ url }) => {
   const limit = Math.min(Number(url.searchParams.get('limit') ?? 20), 100);
   const before = url.searchParams.get('before') ? Number(url.searchParams.get('before')) : null;
@@ -47,34 +49,52 @@ export const GET: RequestHandler = ({ url }) => {
   return json({ items, hasMore, nextBefore });
 };
 
-export const POST: RequestHandler = async ({ request }) => {
-  const body = await request.json().catch(() => null);
-  if (!body || typeof body.profileId !== 'number') {
-    throw error(400, 'profileId required');
+export const POST: RequestHandler = async ({ request, getClientAddress }) => {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    throw error(400, 'Invalid JSON body');
+  }
+
+  if (!body || typeof body !== 'object') throw error(400, 'Request body must be a JSON object');
+
+  const b = body as Record<string, unknown>;
+
+  if (typeof b.profileId !== 'number' || !Number.isInteger(b.profileId) || b.profileId < 1) {
+    throw error(400, 'profileId must be a positive integer');
   }
 
   // Accept either a single drinkId or an array drinkIds (cart)
-  const drinkIds: number[] = Array.isArray(body.drinkIds)
-    ? body.drinkIds
-    : typeof body.drinkId === 'number'
-      ? [body.drinkId]
+  const drinkIds: number[] = Array.isArray(b.drinkIds)
+    ? b.drinkIds
+    : typeof b.drinkId === 'number'
+      ? [b.drinkId]
       : [];
-  if (!drinkIds.length) throw error(400, 'drinkId or drinkIds required');
 
-  const rateCheck = checkRateLimit(body.profileId);
+  if (!drinkIds.length) throw error(400, 'drinkId or drinkIds required');
+  if (drinkIds.length > MAX_CART_SIZE) throw error(400, `Cart may not exceed ${MAX_CART_SIZE} items`);
+
+  for (const id of drinkIds) {
+    if (!Number.isInteger(id) || id < 1) throw error(400, 'All drink IDs must be positive integers');
+  }
+
+  const ip = getClientAddress();
+  const rateCheck = checkRateLimit('order', ip, String(b.profileId));
   if (!rateCheck.allowed) {
+    console.warn(`[rate-limit] order blocked ip=${ip} profile=${b.profileId} at=${new Date().toISOString()}`);
     return json({ error: 'Too many orders' }, {
       status: 429,
       headers: { 'Retry-After': String(rateCheck.retryAfter ?? 3) }
     });
   }
 
-  const profile = db.select().from(profiles).where(eq(profiles.id, body.profileId)).get();
-  if (!profile) throw error(404, 'profile not found');
+  const profile = db.select().from(profiles).where(eq(profiles.id, b.profileId)).get();
+  if (!profile) throw error(404, 'Profile not found');
 
   const drinkRows = drinkIds.map((id) => {
     const d = db.select().from(drinks).where(eq(drinks.id, id)).get();
-    if (!d) throw error(404, `drink ${id} not found`);
+    if (!d) throw error(404, 'Drink not found');
     return d;
   });
 
@@ -83,7 +103,7 @@ export const POST: RequestHandler = async ({ request }) => {
     const dayStart = Math.floor(new Date(new Date().toDateString()).getTime() / 1000);
 
     const ins = drinkIds.map((drinkId) =>
-      tx.insert(orders).values({ profileId: body.profileId, drinkId }).returning().get()
+      tx.insert(orders).values({ profileId: b.profileId as number, drinkId }).returning().get()
     );
 
     const allTime = tx.select({ c: sql<number>`count(*)` }).from(orders)
@@ -93,7 +113,7 @@ export const POST: RequestHandler = async ({ request }) => {
       .where(sql`${orders.createdAt} >= ${dayStart} AND ${orders.status} != 'deleted'`)
       .get()?.c ?? 0;
 
-    const fired = evaluateMilestones({ profileId: body.profileId, drinkId: drinkIds[drinkIds.length - 1] }, tx);
+    const fired = evaluateMilestones({ profileId: b.profileId as number, drinkId: drinkIds[drinkIds.length - 1] }, tx);
 
     return { inserted: ins, firedMilestones: fired, countAllTime: allTime, countToday: today };
   });
