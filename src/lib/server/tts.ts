@@ -122,6 +122,39 @@ async function processQueue(): Promise<void> {
   processing = false;
 }
 
+/** Returns a fully-saturated random RGB color as a [r, g, b] triple. */
+function randomVibrantRgb(): [number, number, number] {
+  const h = Math.random();
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const q = 1 - f;
+  let r: number, g: number, b: number;
+  switch (i % 6) {
+    case 0: [r, g, b] = [1, f, 0]; break;
+    case 1: [r, g, b] = [q, 1, 0]; break;
+    case 2: [r, g, b] = [0, 1, f]; break;
+    case 3: [r, g, b] = [0, q, 1]; break;
+    case 4: [r, g, b] = [f, 0, 1]; break;
+    default: [r, g, b] = [1, 0, q]; break;
+  }
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+/** Flash the configured lights entity with a random vivid color. Fire-and-forget. */
+async function flashLights(): Promise<void> {
+  const entityId = (getSetting('lights_entity_id') ?? '').trim();
+  if (!entityId) return;
+  const rgb = randomVibrantRgb();
+  const result = await callService('light', 'turn_on', {
+    entity_id: entityId,
+    rgb_color: rgb,
+    flash: 'short'
+  });
+  if (!result.success) {
+    console.error(`[tts] light flash failed: ${result.error}`);
+  }
+}
+
 async function ttsCall(message: string): Promise<void> {
   const enabled = getSetting('tts_enabled');
   if (!enabled || enabled === 'false' || enabled === '0') return;
@@ -141,7 +174,11 @@ async function ttsCall(message: string): Promise<void> {
       ? { entity_id: engineId, media_player_entity_id: mediaPlayerId, message }
       : { entity_id: mediaPlayerId, message };
 
-  const result = await callService(domain, service, serviceData);
+  // Fire TTS and light flash in parallel — light flash is non-critical
+  const [result] = await Promise.all([
+    callService(domain, service, serviceData),
+    flashLights()
+  ]);
   if (!result.success) {
     console.error(`[tts] ${domain}/${service} failed: ${result.error}`);
   }

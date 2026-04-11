@@ -113,6 +113,17 @@
         or <code class="text-slate-400">tts/cloud_say</code> / <code class="text-slate-400">tts/google_translate_say</code> (legacy, no engine ID needed).
       </p>
     </div>
+
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="lightsEntityId">Lights entity ID <span class="text-slate-600">(optional)</span></label>
+      <input
+        id="lightsEntityId" name="lightsEntityId" type="text"
+        value={data.lightsEntityId}
+        placeholder="light.living_room"
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+      />
+      <p class="text-xs text-slate-500 mt-1">When set, flashes this light a random color on every TTS announcement.</p>
+    </div>
   </div>
 
   <div class="flex gap-3">

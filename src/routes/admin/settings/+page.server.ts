@@ -13,7 +13,8 @@ export const load: PageServerLoad = async () => {
     ttsEnabled: (getSetting('tts_enabled') ?? 'false') !== 'false' && (getSetting('tts_enabled') ?? '0') !== '0',
     ttsEntityId: getSetting('tts_entity_id') ?? '',
     ttsEngineId: getSetting('tts_engine_id') ?? '',
-    ttsService: getSetting('tts_service') ?? 'tts/speak'
+    ttsService: getSetting('tts_service') ?? 'tts/speak',
+    lightsEntityId: getSetting('lights_entity_id') ?? ''
   };
 };
 
@@ -27,6 +28,7 @@ export const actions: Actions = {
     const ttsEntityId = (fd.get('ttsEntityId') as string | null)?.trim() ?? '';
     const ttsEngineId = (fd.get('ttsEngineId') as string | null)?.trim() ?? '';
     const ttsService = (fd.get('ttsService') as string | null)?.trim() || 'tts/speak';
+    const lightsEntityId = (fd.get('lightsEntityId') as string | null)?.trim() ?? '';
 
     if (haBaseUrl) setSetting('ha_base_url', haBaseUrl);
     if (siteName) setSetting('site_name', siteName);
@@ -35,6 +37,7 @@ export const actions: Actions = {
     setSetting('tts_entity_id', ttsEntityId);
     setSetting('tts_engine_id', ttsEngineId);
     setSetting('tts_service', ttsService);
+    setSetting('lights_entity_id', lightsEntityId);
 
     return { saved: true };
   },
