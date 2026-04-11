@@ -35,6 +35,40 @@ export async function callService(
   }
 }
 
+export async function getLightState(entityId: string): Promise<{
+  on: boolean;
+  brightness?: number;
+  rgb?: [number, number, number];
+  colorTemp?: number;
+} | null> {
+  const baseUrl = getSetting('ha_base_url') ?? '';
+  const token = getSetting('ha_token') ?? '';
+  if (!token || !baseUrl) return null;
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const res = await fetch(
+      `${baseUrl.replace(/\/$/, '')}/api/states/${encodeURIComponent(entityId)}`,
+      { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
+    );
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const body = await res.json() as { state: string; attributes: Record<string, unknown> };
+    const a = body.attributes;
+    return {
+      on: body.state === 'on',
+      brightness: typeof a.brightness === 'number' ? a.brightness : undefined,
+      rgb: Array.isArray(a.rgb_color) && a.rgb_color.length === 3
+        ? a.rgb_color as [number, number, number]
+        : undefined,
+      colorTemp: typeof a.color_temp === 'number' ? a.color_temp : undefined
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function fireEvent(
   eventType: string,
   payload: Record<string, unknown>

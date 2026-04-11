@@ -1,5 +1,5 @@
 import { getSetting } from './db/settings';
-import { callService } from './ha';
+import { callService, getLightState } from './ha';
 
 // Message pools per milestone category, cycled in order.
 // Keys are checked against the milestone's haTriggerEvent first (exact match),
@@ -140,19 +140,40 @@ function randomVibrantRgb(): [number, number, number] {
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
-/** Flash the configured lights entity with a random vivid color. Fire-and-forget. */
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Pulse the configured lights entity twice with a random vivid color, then restore. */
 async function flashLights(): Promise<void> {
   const entityId = (getSetting('lights_entity_id') ?? '').trim();
   if (!entityId) return;
+
+  // Capture current state so we can restore afterwards
+  const prev = await getLightState(entityId);
+
   const rgb = randomVibrantRgb();
-  const result = await callService('light', 'turn_on', {
-    entity_id: entityId,
-    rgb_color: rgb,
-    flash: 'short'
-  });
-  if (!result.success) {
-    console.error(`[tts] light flash failed: ${result.error}`);
+  const on = (color: [number, number, number]) =>
+    callService('light', 'turn_on', { entity_id: entityId, rgb_color: color, brightness: 255 });
+  const off = () => callService('light', 'turn_off', { entity_id: entityId });
+
+  // Two rapid color pulses
+  await on(rgb);
+  await sleep(350);
+  await off();
+  await sleep(200);
+  await on(randomVibrantRgb()); // second pulse gets its own random color
+  await sleep(350);
+  await off();
+  await sleep(150);
+
+  // Restore previous state
+  if (prev?.on) {
+    const restore: Record<string, unknown> = { entity_id: entityId };
+    if (prev.brightness !== undefined) restore.brightness = prev.brightness;
+    if (prev.rgb !== undefined) restore.rgb_color = prev.rgb;
+    else if (prev.colorTemp !== undefined) restore.color_temp = prev.colorTemp;
+    await callService('light', 'turn_on', restore);
   }
+  // If lights were already off, leave them off
 }
 
 async function ttsCall(message: string): Promise<void> {
