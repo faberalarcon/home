@@ -21,7 +21,7 @@
       </div>
     {/if}
 
-    <form method="POST" class="space-y-4">
+    <form method="POST" action="?/login" class="space-y-4">
       <input type="hidden" name="next" value={form?.next ?? data.next} />
       <label class="block space-y-2">
         <span class="text-sm text-slate-300">Shared password</span>

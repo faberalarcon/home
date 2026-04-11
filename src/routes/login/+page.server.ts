@@ -19,7 +19,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-  default: async ({ request, cookies, url, getClientAddress }) => {
+  login: async ({ request, cookies, url, getClientAddress }) => {
     const fd = await request.formData();
     const password = (fd.get('password') as string | null)?.trim() ?? '';
     const next = normalizeNextPath((fd.get('next') as string | null) ?? url.searchParams.get('next'));

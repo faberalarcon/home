@@ -11,7 +11,7 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-  default: async ({ request, cookies, url, getClientAddress }) => {
+  login: async ({ request, cookies, url, getClientAddress }) => {
     const fd = await request.formData();
     const pin = (fd.get('pin') as string | null)?.trim() ?? '';
     const storedHash = getConfiguredAdminPinHash();

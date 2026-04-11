@@ -20,7 +20,7 @@
     {/if}
 
     {#if data.adminPinConfigured}
-      <form method="POST" class="space-y-4">
+      <form method="POST" action="?/login" class="space-y-4">
         <input
           type="password"
           name="pin"
