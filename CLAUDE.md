@@ -55,8 +55,8 @@ See plan: ~/.claude/plans/generic-watching-papert.md
 - [x] Phase 1: Astro scaffolding ✓
 - [x] Phase 2: Homepage UI build ✓ (all 7 sections + 404)
 - [x] Phase 3: Content & personalization ✓ (placeholder assets; real photos TBD)
-- [ ] Phase 4: Infrastructure & SSL
-- [ ] Phase 5: Endpoint validation & launch
+- [x] Phase 4: Infrastructure & SSL ✓
+- [x] Phase 5: Endpoint validation & launch ✓ (28/28 checks passing)
 
 ## Image assets status
 Placeholder images are in place (solid color PNGs). Replace with real photos:
@@ -65,13 +65,20 @@ Placeholder images are in place (solid color PNGs). Replace with real photos:
 - `public/icon-192.png`, `public/icon-512.png` → replace with real icon art
 - See `src/assets/images/IMAGES.md` for the full list of component images needed
 
-## Next step
-**Phase 4: Infrastructure & SSL**
-1. Create `deploy/nginx/21bristoe.com.conf`
-2. Install nginx config and update `/etc/nginx/sites-available/default`
-3. Run certbot for 21bristoe.com + www.21bristoe.com
-4. Deploy build to `/var/www/21bristoe.com`
-5. Create `deploy/deploy.sh`
+## Site is LIVE
+- https://21bristoe.com — serving the homepage
+- SSL cert: Let's Encrypt, valid until 2026-07-11, auto-renews
+- All 28 endpoint/SSL/security/redirect checks passing
 
-DNS must resolve publicly before certbot will work:
-`dig 21bristoe.com @8.8.8.8` should return 24.170.229.234
+## Deploy
+```bash
+./deploy/deploy.sh          # build + backup + rsync + reload nginx
+./deploy/validate.sh        # run full validation suite
+```
+
+## SSL cert renewal
+Managed automatically by certbot timer. Manual check:
+```bash
+sudo certbot renew --dry-run
+sudo certbot certificates
+```
