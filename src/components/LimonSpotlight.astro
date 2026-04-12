@@ -1,0 +1,69 @@
+---
+// Limón Spotlight — the golden retriever feature section
+
+const facts = [
+  { label: 'Breed', value: 'Golden Retriever' },
+  { label: 'Specialty', value: 'Maximum cuteness' },
+  { label: 'Hobbies', value: 'Walks, naps, zoomies' },
+  { label: 'Mood', value: 'Always happy to see you' },
+];
+---
+
+<section id="limon" class="py-20 px-6 bg-gradient-to-br from-warm-100 to-warm-50" aria-labelledby="limon-heading">
+  <div class="max-w-5xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <!-- Photo placeholder -->
+      <div
+        class="order-2 md:order-1 rounded-3xl overflow-hidden aspect-square bg-gradient-to-br from-warm-300 via-warm-400 to-warm-500 flex items-center justify-center shadow-2xl relative"
+        aria-label="Limón the golden retriever"
+      >
+        <!-- Golden glow effect -->
+        <div class="absolute inset-0 bg-gradient-to-t from-warm-600/30 to-transparent" aria-hidden="true"></div>
+        <div class="relative text-center p-8">
+          <div class="text-8xl mb-4" role="img" aria-label="Dog emoji">🐕</div>
+          <p class="text-warm-900 font-bold text-2xl" style="font-family: var(--font-display);">Limón</p>
+          <p class="text-warm-800 text-sm mt-1">The Golden Boy</p>
+        </div>
+        <!-- Paw print decorations -->
+        <span class="absolute top-6 right-6 text-warm-200 text-2xl opacity-50" aria-hidden="true">🐾</span>
+        <span class="absolute bottom-6 left-6 text-warm-200 text-2xl opacity-50" aria-hidden="true">🐾</span>
+      </div>
+
+      <!-- Text content -->
+      <div class="order-1 md:order-2">
+        <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-3">Meet the Resident Expert</p>
+        <h2
+          id="limon-heading"
+          class="text-4xl md:text-5xl font-bold text-warm-800 mb-6"
+          style="font-family: var(--font-display);"
+        >
+          Limón
+        </h2>
+        <p class="text-gray-600 leading-relaxed mb-8">
+          Limón is our golden retriever and the undisputed heart of the household. Named for the
+          sunshine-yellow coat and the bright energy he brings to every single morning. Whether
+          he's greeting you at the door, stealing a spot on the couch, or doing zoomies through
+          the backyard — life with Limón is never boring.
+        </p>
+
+        <!-- Facts grid -->
+        <dl class="grid grid-cols-2 gap-4">
+          {facts.map(({ label, value }) => (
+            <div class="bg-white rounded-xl p-4 border border-warm-200 shadow-sm">
+              <dt class="text-xs font-semibold text-warm-500 uppercase tracking-wide mb-1">{label}</dt>
+              <dd class="text-warm-800 font-medium text-sm">{value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <!-- Fun quote -->
+        <blockquote class="mt-8 pl-4 border-l-4 border-warm-400">
+          <p class="text-warm-700 italic text-base leading-relaxed">
+            "He has never met a stranger. He has also never turned down a treat."
+          </p>
+          <cite class="text-warm-500 text-sm mt-2 block not-italic">— Faber & Kasey</cite>
+        </blockquote>
+      </div>
+    </div>
+  </div>
+</section>

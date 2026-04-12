@@ -1,0 +1,62 @@
+---
+// Neighborhood Highlights — Meades Crossing / Taneytown facts and features
+
+const highlights = [
+  {
+    icon: '🏘️',
+    title: 'Meades Crossing',
+    description:
+      'A welcoming planned community in Carroll County — quiet streets, friendly neighbors, and a real sense of place just outside the bustle of the city.',
+  },
+  {
+    icon: '🌿',
+    title: 'Taneytown Charm',
+    description:
+      'Founded in 1754, Taneytown blends small-town warmth with modern convenience. Parks, local shops, and a thriving community make it a place worth calling home.',
+  },
+  {
+    icon: '🌄',
+    title: 'Maryland Countryside',
+    description:
+      'Rolling hills, open farmland, and scenic vistas — Carroll County offers the kind of wide-open beauty that never gets old on a morning walk or evening drive.',
+  },
+  {
+    icon: '🐾',
+    title: 'Dog-Friendly',
+    description:
+      'From trails to open green spaces, the neighborhood is perfect for four-legged residents. Limón approves.',
+  },
+];
+---
+
+<section id="neighborhood" class="py-20 px-6 bg-white" aria-labelledby="neighborhood-heading">
+  <div class="max-w-5xl mx-auto">
+    <!-- Section header -->
+    <div class="text-center mb-14">
+      <p class="text-sage-600 text-sm font-medium uppercase tracking-widest mb-2">Where We Live</p>
+      <h2
+        id="neighborhood-heading"
+        class="text-4xl md:text-5xl font-bold text-warm-800 mb-4"
+        style="font-family: var(--font-display);"
+      >
+        Our Neighborhood
+      </h2>
+      <p class="text-gray-500 text-lg max-w-2xl mx-auto">
+        Meades Crossing in Taneytown, Maryland — a slice of real community in the heart of Carroll County.
+      </p>
+    </div>
+
+    <!-- Cards grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {highlights.map((item) => (
+        <article class="bg-warm-50 rounded-2xl p-8 border border-warm-100 hover:border-warm-300 hover:shadow-md transition-all duration-200">
+          <div class="text-4xl mb-4" aria-hidden="true">{item.icon}</div>
+          <h3 class="text-xl font-semibold text-warm-800 mb-3" style="font-family: var(--font-display);">
+            {item.title}
+          </h3>
+          <p class="text-gray-600 leading-relaxed">{item.description}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout
+  title="Page Not Found"
+  description="The page you're looking for doesn't exist. Head back home."
+>
+  <Header />
+  <main id="main-content" class="min-h-[70vh] flex items-center justify-center px-6 py-20 bg-warm-50">
+    <div class="text-center max-w-md">
+      <!-- Large emoji -->
+      <div class="text-8xl mb-6" role="img" aria-label="Lost dog emoji">🐕</div>
+
+      <h1
+        class="text-5xl font-bold text-warm-800 mb-4"
+        style="font-family: var(--font-display);"
+      >
+        404
+      </h1>
+      <p class="text-xl text-warm-700 mb-3 font-medium">
+        Limón couldn't find that page.
+      </p>
+      <p class="text-gray-500 mb-10 leading-relaxed">
+        Looks like this page wandered off — maybe it's on a walk with Limón.
+        Let's get you back home.
+      </p>
+
+      <a
+        href="/"
+        class="inline-flex items-center gap-2 bg-warm-500 text-white px-8 py-3 rounded-xl font-semibold hover:bg-warm-600 transition-colors shadow-md"
+      >
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 2L1 9h2v9h5v-5h4v5h5V9h2L10 2z"/>
+        </svg>
+        Back Home
+      </a>
+    </div>
+  </main>
+  <Footer />
+</BaseLayout>

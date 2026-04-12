@@ -1,0 +1,42 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="w-full bg-warm-900 text-warm-100 py-12 px-6 mt-auto">
+  <div class="max-w-5xl mx-auto">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <!-- Left: branding -->
+      <div>
+        <p class="text-2xl font-bold text-warm-200 mb-1" style="font-family: var(--font-display);">21 Bristoe</p>
+        <p class="text-warm-400 text-sm">Meades Crossing · Taneytown, Maryland</p>
+        <p class="text-warm-500 text-xs mt-1">Home of Faber, Kasey & Limón</p>
+      </div>
+
+      <!-- Right: links -->
+      <nav aria-label="Footer navigation">
+        <ul class="flex flex-col gap-2 text-sm list-none" role="list">
+          <li>
+            <a
+              href="https://drink-hub.21bristoe.com"
+              class="text-warm-300 hover:text-warm-100 transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Drink Hub →
+            </a>
+          </li>
+          <li>
+            <a href="/sitemap-index.xml" class="text-warm-400 hover:text-warm-200 transition-colors text-xs">
+              Sitemap
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="mt-8 pt-6 border-t border-warm-800 text-warm-500 text-xs">
+      <p>© {year} 21 Bristoe. Made with love for the household.</p>
+    </div>
+  </div>
+</footer>

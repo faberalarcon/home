@@ -1,0 +1,92 @@
+---
+// QuickLinks section — useful links and household quick actions
+
+const links = [
+  {
+    icon: '🍹',
+    title: 'Drink Hub',
+    description: 'Browse our cocktail recipes, home bar inventory, and drink recommendations.',
+    href: 'https://drink-hub.21bristoe.com',
+    external: true,
+    accent: 'bg-warm-50 border-warm-200 hover:border-warm-400',
+    iconBg: 'bg-warm-100',
+  },
+  {
+    icon: '🌤️',
+    title: 'Taneytown Weather',
+    description: 'Current conditions and forecast for Taneytown, Carroll County, Maryland.',
+    href: 'https://forecast.weather.gov/MapClick.php?CityName=Taneytown&state=MD&site=LWX&textField1=39.6576&textField2=-77.1763',
+    external: true,
+    accent: 'bg-sage-50 border-sage-200 hover:border-sage-400',
+    iconBg: 'bg-sage-100',
+  },
+  {
+    icon: '🏛️',
+    title: 'Carroll County',
+    description: 'Local government, services, parks, and community resources for Carroll County residents.',
+    href: 'https://ccgovernment.carr.org',
+    external: true,
+    accent: 'bg-warm-50 border-warm-200 hover:border-warm-400',
+    iconBg: 'bg-warm-100',
+  },
+  {
+    icon: '🗺️',
+    title: 'Taneytown, MD',
+    description: 'Explore Taneytown on the map — parks, local businesses, and all the spots we love.',
+    href: 'https://www.google.com/maps/search/Taneytown+MD',
+    external: true,
+    accent: 'bg-sage-50 border-sage-200 hover:border-sage-400',
+    iconBg: 'bg-sage-100',
+  },
+];
+---
+
+<section class="py-20 px-6 bg-white" aria-labelledby="quicklinks-heading">
+  <div class="max-w-5xl mx-auto">
+    <!-- Section header -->
+    <div class="text-center mb-14">
+      <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-2">Around the House</p>
+      <h2
+        id="quicklinks-heading"
+        class="text-4xl md:text-5xl font-bold text-warm-800 mb-4"
+        style="font-family: var(--font-display);"
+      >
+        Quick Links
+      </h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">
+        The household's most-used links and resources, one click away.
+      </p>
+    </div>
+
+    <!-- Links grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {links.map(({ icon, title, description, href, external, accent, iconBg }) => (
+        <a
+          href={href}
+          target={external ? '_blank' : undefined}
+          rel={external ? 'noopener noreferrer' : undefined}
+          class={`group flex gap-5 p-6 rounded-2xl border-2 transition-all duration-200 shadow-sm hover:shadow-md ${accent}`}
+          aria-label={`${title}${external ? ' (opens in new tab)' : ''}`}
+        >
+          <!-- Icon -->
+          <div class={`flex-shrink-0 w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center text-2xl`} aria-hidden="true">
+            {icon}
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0">
+            <h3 class="font-semibold text-warm-800 group-hover:text-warm-600 transition-colors flex items-center gap-2">
+              {title}
+              {external && (
+                <svg class="w-3.5 h-3.5 text-warm-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              )}
+            </h3>
+            <p class="text-gray-500 text-sm mt-1 leading-relaxed">{description}</p>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
