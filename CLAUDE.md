@@ -72,18 +72,12 @@ Placeholder images are in place (solid color PNGs). Replace with real photos:
 - See `src/assets/images/IMAGES.md` for the full list of component images needed
 
 ## Image admin panel
-- URL: `http://admin.21bristoe.com` (HTTP only until DNS A record added)
-- Login: `faber` / `bristoe21` (change with: `sudo htpasswd /etc/nginx/.htpasswd-admin faber`)
+- URL: `https://admin.21bristoe.com` ✓ SSL live
+- Login: `faber` / (saved separately — change with: `sudo htpasswd /etc/nginx/.htpasswd-admin faber`)
 - Service: `sudo systemctl status 21bristoe-admin`
 - Uploads saved to: `/var/www/21bristoe-media/` (never wiped by `deploy.sh`)
 - Served at: `https://21bristoe.com/uploads/`
 - Features: drag-and-drop upload, reorder, delete — changes appear on homepage immediately
-
-### To enable HTTPS for admin panel
-1. Add DNS A record: `admin.21bristoe.com` → `24.170.229.234`
-2. `sudo certbot --nginx -d admin.21bristoe.com`
-3. `sudo cp deploy/nginx/admin.21bristoe.com.conf /etc/nginx/sites-available/admin.21bristoe.com`
-4. `sudo nginx -t && sudo systemctl reload nginx`
 
 ## Site is LIVE
 - https://21bristoe.com — serving the homepage
