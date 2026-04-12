@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://21bristoe.com/sitemap-index.xml

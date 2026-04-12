@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/* Custom design tokens for 21 Bristoe */
+@theme {
+  /* Warm amber/gold palette */
+  --color-warm-50: #fdf8f0;
+  --color-warm-100: #f5ead6;
+  --color-warm-200: #e8d5b0;
+  --color-warm-300: #d4b882;
+  --color-warm-400: #c9a04a;
+  --color-warm-500: #b8860b;
+  --color-warm-600: #9a6f09;
+  --color-warm-700: #7a5707;
+  --color-warm-800: #5c4206;
+  --color-warm-900: #3d2c04;
+
+  /* Sage green palette */
+  --color-sage-50: #f0f4f0;
+  --color-sage-100: #dce8dc;
+  --color-sage-200: #b8d0b8;
+  --color-sage-300: #90b490;
+  --color-sage-400: #7aa07a;
+  --color-sage-500: #6b8e6b;
+  --color-sage-600: #547054;
+  --color-sage-700: #3f5a3f;
+  --color-sage-800: #2a3d2a;
+  --color-sage-900: #182418;
+
+  /* Typography */
+  --font-display: 'Georgia', 'Times New Roman', serif;
+  --font-body: 'system-ui', '-apple-system', 'Segoe UI', 'Helvetica Neue', sans-serif;
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background-color: var(--color-warm-50);
+  color: #2d2318;
+  font-family: var(--font-body);
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-warm-500);
+  color: white;
+  font-weight: 600;
+  border-radius: 0 0 0.5rem 0.5rem;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--color-warm-500);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
