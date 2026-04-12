@@ -1,48 +1,46 @@
 ---
-// Hero section — full-width family branding with gradient background
+// Hero section — full-viewport with dynamic photo slideshow
+import Slideshow from './Slideshow.astro';
 ---
 
 <section
   class="relative w-full min-h-[90vh] md:min-h-screen flex items-center justify-center overflow-hidden"
   aria-label="Welcome hero"
 >
-  <!-- Gradient background (always shown; image overlaid if available) -->
-  <div
-    class="absolute inset-0 bg-gradient-to-br from-warm-800 via-warm-700 to-sage-700"
-    aria-hidden="true"
-  ></div>
+  <!-- Slideshow (gradient fallback built in when no photos uploaded yet) -->
+  <Slideshow />
 
   <!-- Subtle texture overlay -->
   <div
-    class="absolute inset-0 opacity-10"
+    class="absolute inset-0 opacity-10 z-10 pointer-events-none"
     style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;);"
     aria-hidden="true"
   ></div>
 
   <!-- Content -->
-  <div class="relative z-10 text-center px-6 max-w-4xl mx-auto">
+  <div class="relative z-20 text-center px-6 max-w-4xl mx-auto">
     <!-- Pre-heading -->
-    <p class="text-warm-300 text-sm md:text-base font-medium uppercase tracking-widest mb-4">
+    <p class="text-warm-300 text-sm md:text-base font-medium uppercase tracking-widest mb-4 drop-shadow">
       Welcome Home
     </p>
 
     <!-- Main heading -->
     <h1
-      class="text-6xl md:text-8xl lg:text-9xl font-bold text-warm-50 mb-6 leading-none"
+      class="text-6xl md:text-8xl lg:text-9xl font-bold text-warm-50 mb-6 leading-none drop-shadow-lg"
       style="font-family: var(--font-display);"
     >
       21 Bristoe
     </h1>
 
     <!-- Subtitle -->
-    <p class="text-warm-100 text-xl md:text-2xl mb-4 font-light">
+    <p class="text-warm-100 text-xl md:text-2xl mb-4 font-light drop-shadow">
       Home of <strong class="font-semibold text-warm-200">Faber</strong>,{' '}
       <strong class="font-semibold text-warm-200">Kasey</strong> &amp;{' '}
       <strong class="font-semibold text-warm-300">Limón</strong>
     </p>
 
     <!-- Location -->
-    <p class="text-warm-300 text-base md:text-lg flex items-center justify-center gap-2">
+    <p class="text-warm-300 text-base md:text-lg flex items-center justify-center gap-2 drop-shadow">
       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
         <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
       </svg>

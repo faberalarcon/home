@@ -12,24 +12,29 @@ Built with Astro 6 + Tailwind CSS 4, deployed as static HTML via nginx on a Rasp
 - Astro 6 (static output, zero client JS)
 - Tailwind CSS 4 (via @tailwindcss/vite)
 - @astrojs/sitemap
+- Admin panel: Node/Express at `admin/` (image uploads, port 3001)
 
 ## Key paths
 - Source: `src/`
   - `src/layouts/` — shared HTML layouts
   - `src/pages/` — routes (file = URL)
   - `src/components/` — reusable Astro components
+  - `src/components/Slideshow.astro` — hero slideshow (reads `/uploads/manifest.json` at runtime)
   - `src/assets/images/` — local images (optimized at build time by Astro)
   - `src/styles/global.css` — Tailwind + custom design tokens
 - Build output: `dist/` (gitignored, built on server)
-- Nginx config: `deploy/nginx/21bristoe.com.conf`
+- Nginx config: `deploy/nginx/21bristoe.com.ssl.conf`
 - Deploy script: `deploy/deploy.sh`
+- Validation script: `deploy/validate.sh`
 - Public assets: `public/` (copied to dist/ as-is)
+- Uploaded photos: `/var/www/21bristoe-media/` (served at `/uploads/`, never wiped by deploy)
 
 ## Build & Deploy
 ```bash
 npm run dev           # local dev server at localhost:4321
 npm run build         # produces dist/
-./deploy/deploy.sh    # build + deploy to /var/www/21bristoe.com + reload nginx
+./deploy/deploy.sh    # build + backup + rsync + reload nginx
+./deploy/validate.sh  # run 28-check validation suite
 ```
 
 ## Server
@@ -57,6 +62,7 @@ See plan: ~/.claude/plans/generic-watching-papert.md
 - [x] Phase 3: Content & personalization ✓ (placeholder assets; real photos TBD)
 - [x] Phase 4: Infrastructure & SSL ✓
 - [x] Phase 5: Endpoint validation & launch ✓ (28/28 checks passing)
+- [x] Phase 6: Image admin panel + slideshow ✓
 
 ## Image assets status
 Placeholder images are in place (solid color PNGs). Replace with real photos:
@@ -64,6 +70,20 @@ Placeholder images are in place (solid color PNGs). Replace with real photos:
 - `public/apple-touch-icon.png` → replace with real icon art
 - `public/icon-192.png`, `public/icon-512.png` → replace with real icon art
 - See `src/assets/images/IMAGES.md` for the full list of component images needed
+
+## Image admin panel
+- URL: `http://admin.21bristoe.com` (HTTP only until DNS A record added)
+- Login: `faber` / `bristoe21` (change with: `sudo htpasswd /etc/nginx/.htpasswd-admin faber`)
+- Service: `sudo systemctl status 21bristoe-admin`
+- Uploads saved to: `/var/www/21bristoe-media/` (never wiped by `deploy.sh`)
+- Served at: `https://21bristoe.com/uploads/`
+- Features: drag-and-drop upload, reorder, delete — changes appear on homepage immediately
+
+### To enable HTTPS for admin panel
+1. Add DNS A record: `admin.21bristoe.com` → `24.170.229.234`
+2. `sudo certbot --nginx -d admin.21bristoe.com`
+3. `sudo cp deploy/nginx/admin.21bristoe.com.conf /etc/nginx/sites-available/admin.21bristoe.com`
+4. `sudo nginx -t && sudo systemctl reload nginx`
 
 ## Site is LIVE
 - https://21bristoe.com — serving the homepage

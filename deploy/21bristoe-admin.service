@@ -1,0 +1,23 @@
+[Unit]
+Description=21 Bristoe Image Admin Panel
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=faber
+WorkingDirectory=/home/faber/projects/home/admin
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=UPLOADS_DIR=/var/www/21bristoe-media
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=21bristoe-admin
+
+[Install]
+WantedBy=multi-user.target

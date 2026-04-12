@@ -1,0 +1,161 @@
+---
+// Slideshow — fetches /uploads/manifest.json at runtime and cycles through images.
+// Falls back to a warm gradient when no images are uploaded yet.
+// Used inside the Hero section.
+---
+
+<div class="slideshow" id="heroSlideshow" aria-label="Family photo slideshow" role="region">
+  <!-- Gradient fallback (shown until images load, or if none exist) -->
+  <div
+    class="slide-fallback absolute inset-0 bg-gradient-to-br from-warm-800 via-warm-700 to-sage-700"
+    id="slideFallback"
+    aria-hidden="true"
+  ></div>
+
+  <!-- Image slides injected by JS -->
+  <div id="slideTrack" class="absolute inset-0" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Dot indicators -->
+  <div
+    id="slideDots"
+    class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20"
+    role="tablist"
+    aria-label="Slideshow navigation"
+  ></div>
+</div>
+
+<style>
+  .slideshow {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1.2s ease-in-out;
+    will-change: opacity;
+  }
+
+  .slide.active {
+    opacity: 1;
+  }
+
+  /* Dark overlay so text is always readable over photos */
+  .slide::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.25) 0%,
+      rgba(0,0,0,0.15) 50%,
+      rgba(0,0,0,0.45) 100%
+    );
+  }
+
+  .slide-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.45);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.3s, transform 0.3s;
+  }
+  .slide-dot.active {
+    background: white;
+    transform: scale(1.3);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition: none; }
+  }
+</style>
+
+<script>
+  (async function initSlideshow() {
+    const INTERVAL_MS = 6000;
+    const track = document.getElementById('slideTrack');
+    const dotsEl = document.getElementById('slideDots');
+    const fallback = document.getElementById('slideFallback');
+
+    let images = [];
+    let current = 0;
+    let timer = null;
+
+    try {
+      const res = await fetch('/uploads/manifest.json', { cache: 'no-cache' });
+      if (!res.ok) return; // no manifest yet — keep gradient
+      const data = await res.json();
+      images = (data.images || []).filter(img => img.url || img.filename);
+    } catch {
+      return; // network error or no manifest — keep gradient
+    }
+
+    if (images.length === 0) return; // nothing uploaded yet
+
+    // Hide gradient fallback once we have real images
+    fallback.style.display = 'none';
+
+    // Build slide elements
+    images.forEach((img, i) => {
+      const url = img.url || `/uploads/${img.filename}`;
+      const slide = document.createElement('div');
+      slide.className = 'slide' + (i === 0 ? ' active' : '');
+      slide.style.backgroundImage = `url(${JSON.stringify(url)})`;
+      slide.setAttribute('aria-label', `Photo ${i + 1} of ${images.length}`);
+      slide.setAttribute('role', 'img');
+      track.appendChild(slide);
+    });
+
+    // Build dots (only if more than 1 image)
+    if (images.length > 1) {
+      images.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.className = 'slide-dot' + (i === 0 ? ' active' : '');
+        dot.setAttribute('role', 'tab');
+        dot.setAttribute('aria-label', `Go to photo ${i + 1}`);
+        dot.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+        dot.addEventListener('click', () => { goTo(i); resetTimer(); });
+        dotsEl.appendChild(dot);
+      });
+    }
+
+    const slides = track.querySelectorAll('.slide');
+    const dots = dotsEl.querySelectorAll('.slide-dot');
+
+    function goTo(index) {
+      slides[current].classList.remove('active');
+      if (dots[current]) { dots[current].classList.remove('active'); dots[current].setAttribute('aria-selected', 'false'); }
+      current = (index + images.length) % images.length;
+      slides[current].classList.add('active');
+      if (dots[current]) { dots[current].classList.add('active'); dots[current].setAttribute('aria-selected', 'true'); }
+    }
+
+    function next() { goTo(current + 1); }
+
+    function resetTimer() {
+      clearInterval(timer);
+      timer = setInterval(next, INTERVAL_MS);
+    }
+
+    // Pause on hover
+    const slideshowEl = document.getElementById('heroSlideshow');
+    slideshowEl.addEventListener('mouseenter', () => clearInterval(timer));
+    slideshowEl.addEventListener('mouseleave', resetTimer);
+
+    // Pause when tab is hidden (accessibility + performance)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) clearInterval(timer);
+      else resetTimer();
+    });
+
+    resetTimer();
+  })();
+</script>
