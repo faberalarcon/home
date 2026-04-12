@@ -52,8 +52,26 @@ See plan: ~/.claude/plans/generic-watching-papert.md
 
 ## Phase progress
 - [x] Phase 0: Git setup ✓
-- [ ] Phase 1: Astro scaffolding
-- [ ] Phase 2: Homepage UI build
-- [ ] Phase 3: Content & personalization
+- [x] Phase 1: Astro scaffolding ✓
+- [x] Phase 2: Homepage UI build ✓ (all 7 sections + 404)
+- [x] Phase 3: Content & personalization ✓ (placeholder assets; real photos TBD)
 - [ ] Phase 4: Infrastructure & SSL
 - [ ] Phase 5: Endpoint validation & launch
+
+## Image assets status
+Placeholder images are in place (solid color PNGs). Replace with real photos:
+- `public/og-image.png` → replace with a 1200×630 lifestyle/home photo
+- `public/apple-touch-icon.png` → replace with real icon art
+- `public/icon-192.png`, `public/icon-512.png` → replace with real icon art
+- See `src/assets/images/IMAGES.md` for the full list of component images needed
+
+## Next step
+**Phase 4: Infrastructure & SSL**
+1. Create `deploy/nginx/21bristoe.com.conf`
+2. Install nginx config and update `/etc/nginx/sites-available/default`
+3. Run certbot for 21bristoe.com + www.21bristoe.com
+4. Deploy build to `/var/www/21bristoe.com`
+5. Create `deploy/deploy.sh`
+
+DNS must resolve publicly before certbot will work:
+`dig 21bristoe.com @8.8.8.8` should return 24.170.229.234
