@@ -268,6 +268,7 @@
 
 <script>
   const API = '';
+  const MEDIA_BASE = 'https://21bristoe.com';
   let manifest = { images: [] };
   let dragSrc = null;
 
@@ -298,7 +299,7 @@
 
     grid.innerHTML = manifest.images.map((img, i) => `
       <div class="image-card" draggable="true" data-filename="${img.filename}" data-index="${i}">
-        <img src="/uploads/${img.filename}" alt="${img.originalName || img.filename}" loading="lazy" />
+        <img src="${MEDIA_BASE}/uploads/${img.filename}" alt="${img.originalName || img.filename}" loading="lazy" />
         <div class="image-card-body">
           <span class="drag-handle" title="Drag to reorder">⠿</span>
           <span class="image-card-name">${img.originalName || img.filename}</span>
