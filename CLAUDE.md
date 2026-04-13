@@ -53,7 +53,7 @@ https://21bristoe.com (www redirects to non-www)
 - Georgia/serif for headings, system sans-serif for body
 
 ## Current implementation status
-See plan: ~/.claude/plans/generic-watching-papert.md
+See plan: `docs/improvement-plan.md`
 
 ## Phase progress
 - [x] Phase 0: Git setup ✓
@@ -63,6 +63,12 @@ See plan: ~/.claude/plans/generic-watching-papert.md
 - [x] Phase 4: Infrastructure & SSL ✓
 - [x] Phase 5: Endpoint validation & launch ✓ (28/28 checks passing)
 - [x] Phase 6: Image admin panel + slideshow ✓
+- [ ] Phase 7: Admin panel security hardening (planned)
+- [ ] Phase 8: Manifest safety & error handling (planned)
+- [ ] Phase 9: Health check + expanded validation (planned)
+- [ ] Phase 10: Deploy script improvements (planned)
+- [ ] Phase 11: CSP tightening + admin JS extraction (planned)
+- [ ] Phase 12: SEO & structured data (planned)
 
 ## Image assets status
 Placeholder images are in place (solid color PNGs). Replace with real photos:
