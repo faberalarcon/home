@@ -192,7 +192,7 @@ Polish search appearance for local queries.
 
 | Phase | Name | Category | Impact | Complexity | Status |
 |-------|------|----------|--------|------------|--------|
-| 7 | Admin security hardening | Security | High | Medium | Planned |
+| 7 | Admin security hardening | Security | High | Medium | Done ✓ |
 | 8 | Manifest safety | Code quality | Medium | Small | Planned |
 | 9 | Health check + validation | Infrastructure | Medium | Small | Planned |
 | 10 | Deploy improvements | Infrastructure | Medium | Small | Planned |

@@ -63,7 +63,7 @@ See plan: `docs/improvement-plan.md`
 - [x] Phase 4: Infrastructure & SSL ✓
 - [x] Phase 5: Endpoint validation & launch ✓ (28/28 checks passing)
 - [x] Phase 6: Image admin panel + slideshow ✓
-- [ ] Phase 7: Admin panel security hardening (planned)
+- [x] Phase 7: Admin panel security hardening ✓
 - [ ] Phase 8: Manifest safety & error handling (planned)
 - [ ] Phase 9: Health check + expanded validation (planned)
 - [ ] Phase 10: Deploy script improvements (planned)
@@ -84,6 +84,9 @@ Placeholder images are in place (solid color PNGs). Replace with real photos:
 - Uploads saved to: `/var/www/21bristoe-media/` (never wiped by `deploy.sh`)
 - Served at: `https://21bristoe.com/uploads/`
 - Features: drag-and-drop upload, reorder, delete — changes appear on homepage immediately
+- Security (Phase 7): rate limiting (30 uploads/min, 60 API/min), proxy guard (rejects direct
+  localhost hits in production), magic byte validation, global error handler, audit logging to journalctl
+- View audit log: `sudo journalctl -u 21bristoe-admin --since "1 hour ago" | grep AUDIT`
 
 ## Site is LIVE
 - https://21bristoe.com — serving the homepage
