@@ -14,9 +14,9 @@ export interface BACResult {
 }
 
 const ETHANOL_DENSITY = 0.789;  // g/mL
-const ELIMINATION_RATE = 0.015; // % per hour (Widmark average)
-const R_MALE = 0.68;            // Widmark r factor for males
-const R_FEMALE = 0.55;          // Widmark r factor for females
+const ELIMINATION_RATE = 0.013; // % per hour (lower-bound Widmark, gives higher readings)
+const R_MALE = 0.58;            // Widmark r factor for males (lower bound)
+const R_FEMALE = 0.49;          // Widmark r factor for females (lower bound)
 
 export function estimateBAC(
   drinks: DrinkEntry[],

@@ -64,7 +64,7 @@
       } else {
         leaderToday = [
           ...leaderToday,
-          { id: pid, name: ev.order.profileName, color: ev.order.profileColor, c: 1 }
+          { id: pid, name: ev.order.profileName, color: ev.order.profileColor, c: 1, bac: 0, bacHasData: false }
         ].sort((a, b) => b.c - a.c).slice(0, 3);
       }
 
@@ -164,7 +164,14 @@
             >
               {p.name[0]}
             </div>
-            <div class="flex-1 font-medium truncate">{p.name}</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium truncate">{p.name}</div>
+              {#if p.bacHasData}
+                <div class="text-xs tabular-nums {p.bac >= 0.08 ? 'text-red-400' : p.bac >= 0.05 ? 'text-yellow-400' : 'text-slate-500'}">
+                  BAC ~{p.bac.toFixed(3)}%
+                </div>
+              {/if}
+            </div>
             <div class="text-xl font-bold tabular-nums text-orange-400">{p.c}</div>
           </div>
         {/each}
