@@ -96,11 +96,9 @@ Focus:
 - Hardened nginx config with HTTPS, proxy headers, security headers
 - nginx Basic Auth: **reverted** — site now intranet-only via split DNS; the app's own password gate is sufficient
 
-### Phase 10 — App Abuse Resistance & Authorization Tightening
+### Phase 10 — App Abuse Resistance & Authorization Tightening ✅ Done
 
 Doc: [phase-10-app-abuse-resistance.md](./phase-10-app-abuse-resistance.md)
-
-Status: Planned
 
 Focus:
 - IP + session aware rate limits
@@ -109,11 +107,9 @@ Focus:
 - stronger request validation
 - logout and session hygiene
 
-### Phase 11 — Operational Security, Monitoring & Container Hardening
+### Phase 11 — Operational Security, Monitoring & Container Hardening ✅ Done
 
 Doc: [phase-11-operational-security.md](./phase-11-operational-security.md)
-
-Status: Planned
 
 Focus:
 - stop publishing the app container directly
@@ -121,3 +117,13 @@ Focus:
 - add security headers
 - log auth failures and blocked requests
 - document recovery and rotation procedures
+
+---
+
+## Post-Phase Features
+
+The following features were added outside the original phase plan:
+
+- **BAC estimation** — Widmark formula BAC calculation using profile weight/biological sex and drink ABV/volume. Displayed on the stats leaderboard and kiosk view.
+- **Light flash on TTS** — Milestone TTS announcements now flash a configured light entity with random vibrant colors, restoring previous light state afterward.
+- **Footer** — Site footer with GitHub link and attribution.

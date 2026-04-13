@@ -2,7 +2,7 @@
 
 A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi alongside Home Assistant, serves a mobile-friendly menu on the local network, tracks orders per person, and dispatches fun automations through HA — speaker announcements, milestone light flashes, whatever you can wire up.
 
-> **Status:** Phases 1–9 complete. Phase 8 polish partially shipped — see [docs/future-phases.md](./docs/future-phases.md) for remaining items.
+> **Status:** Phases 1–11 complete. Phase 8 polish partially shipped — see [docs/future-phases.md](./docs/future-phases.md) for remaining items.
 
 ---
 
@@ -19,6 +19,8 @@ A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi 
 | 7 — Power-user features | ✅ Done | Cart flow, profile picker "The usual" + last-ordered, drink notes, search/filter, admin orders page, CSV/JSON export, order reassign |
 | 8 — Polish & deployment | ⚠ Partial | Dynamic title, TZ env, day-of-week histogram done; dark mode, keyboard nav, notifications, service worker, kiosk rotation, spinners remain |
 | [9 — Security hardening](./docs/phase-9-edge-auth-hardening.md) | ✅ Done | Shared site password gate, env-backed admin PIN, HMAC session tokens, CSRF trusted origins, hardened nginx config |
+| [10 — App abuse resistance](./docs/phase-10-app-abuse-resistance.md) | ✅ Done | IP+session rate limits, auth on mutation routes, request validation, logout/session hygiene |
+| [11 — Operational security](./docs/phase-11-operational-security.md) | ✅ Done | Container hardening, security headers, auth failure logging, recovery runbooks |
 
 ---
 
@@ -83,8 +85,8 @@ An example hardened nginx config lives at [`deploy/nginx/drink-hub.conf.example`
 
 Six tables managed by Drizzle (see `src/lib/server/db/schema.ts`):
 
-- **profiles** — household members / guests (name, color, avatar)
-- **drinks** — menu items (name, description, category, image, HA trigger event)
+- **profiles** — household members / guests (name, color, avatar, weight, biological sex for BAC)
+- **drinks** — menu items (name, description, category, image, ABV, volume, HA trigger event)
 - **orders** — every order ever placed (profile + drink + timestamp)
 - **milestones** — data-driven triggers (threshold, scope, HA event)
 - **settings** — key/value store for HA URL, token, site config
@@ -105,6 +107,7 @@ drink-hub/
 │   │   └── server/
 │   │       ├── auth.ts              # HMAC session token helpers
 │   │       ├── ha.ts                # HA event + service client
+│   │       ├── bac.ts               # Widmark formula BAC estimation
 │   │       ├── milestones.ts        # milestone evaluator (transactional)
 │   │       ├── ratelimit.ts         # in-memory token bucket
 │   │       ├── site-access.ts       # env-backed PIN/password config helpers
