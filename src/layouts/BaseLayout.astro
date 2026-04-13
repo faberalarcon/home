@@ -53,10 +53,33 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "21 Bristoe",
-        "url": "https://21bristoe.com",
-        "description": "Home of Faber, Kasey, and Limón — Meades Crossing, Taneytown, Maryland."
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://21bristoe.com/#website",
+            "name": "21 Bristoe",
+            "url": "https://21bristoe.com",
+            "description": "Home of Faber, Kasey, and Limón — Meades Crossing, Taneytown, Maryland."
+          },
+          {
+            "@type": "Residence",
+            "@id": "https://21bristoe.com/#home",
+            "name": "21 Bristoe",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "21 Bristoe St",
+              "addressLocality": "Taneytown",
+              "addressRegion": "MD",
+              "postalCode": "21787",
+              "addressCountry": "US"
+            },
+            "description": "The home of Faber, Kasey, and Limón at Meades Crossing.",
+            "occupant": [
+              { "@type": "Person", "name": "Faber" },
+              { "@type": "Person", "name": "Kasey" }
+            ]
+          }
+        ]
       }
     </script>
   </head>

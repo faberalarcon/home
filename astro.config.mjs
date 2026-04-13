@@ -9,6 +9,10 @@ export default defineConfig({
   output: 'static',
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      // Prevent Vite from inlining small scripts/assets — keeps script-src 'self' in CSP valid
+      assetsInlineLimit: 0,
+    },
   },
   integrations: [sitemap()],
   build: {

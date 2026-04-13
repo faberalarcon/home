@@ -36,8 +36,7 @@ const highlights = [
       <p class="text-sage-600 text-sm font-medium uppercase tracking-widest mb-2">Where We Live</p>
       <h2
         id="neighborhood-heading"
-        class="text-4xl md:text-5xl font-bold text-warm-800 mb-4"
-        style="font-family: var(--font-display);"
+        class="text-4xl md:text-5xl font-bold text-warm-800 mb-4 font-display"
       >
         Our Neighborhood
       </h2>
@@ -51,7 +50,7 @@ const highlights = [
       {highlights.map((item) => (
         <article class="bg-warm-50 rounded-2xl p-8 border border-warm-100 hover:border-warm-300 hover:shadow-md transition-all duration-200">
           <div class="text-4xl mb-4" aria-hidden="true">{item.icon}</div>
-          <h3 class="text-xl font-semibold text-warm-800 mb-3" style="font-family: var(--font-display);">
+          <h3 class="text-xl font-semibold text-warm-800 mb-3 font-display">
             {item.title}
           </h3>
           <p class="text-gray-600 leading-relaxed">{item.description}</p>

@@ -10,10 +10,9 @@ import Slideshow from './Slideshow.astro';
   <!-- Slideshow (gradient fallback built in when no photos uploaded yet) -->
   <Slideshow />
 
-  <!-- Subtle texture overlay -->
+  <!-- Subtle texture overlay — class defined in global.css to avoid inline style= attribute -->
   <div
-    class="absolute inset-0 opacity-10 z-10 pointer-events-none"
-    style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;);"
+    class="hero-texture absolute inset-0 opacity-10 z-10 pointer-events-none"
     aria-hidden="true"
   ></div>
 
@@ -24,11 +23,8 @@ import Slideshow from './Slideshow.astro';
       Welcome Home
     </p>
 
-    <!-- Main heading -->
-    <h1
-      class="text-6xl md:text-8xl lg:text-9xl font-bold text-warm-50 mb-6 leading-none drop-shadow-lg"
-      style="font-family: var(--font-display);"
-    >
+    <!-- Main heading — font-family via scoped CSS to avoid inline style= attribute -->
+    <h1 class="hero-title text-6xl md:text-8xl lg:text-9xl font-bold text-warm-50 mb-6 leading-none drop-shadow-lg">
       21 Bristoe
     </h1>
 
@@ -53,3 +49,10 @@ import Slideshow from './Slideshow.astro';
     </div>
   </div>
 </section>
+
+<style>
+  /* Scoped to Hero — avoids inline style= attribute on h1 */
+  .hero-title {
+    font-family: var(--font-display);
+  }
+</style>

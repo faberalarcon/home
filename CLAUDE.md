@@ -25,7 +25,7 @@ Built with Astro 6 + Tailwind CSS 4, deployed as static HTML via nginx on a Rasp
 - Build output: `dist/` (gitignored, built on server)
 - Nginx config: `deploy/nginx/21bristoe.com.ssl.conf`
 - Deploy script: `deploy/deploy.sh`
-- Validation script: `deploy/validate.sh`
+- Validation script: `deploy/validate.sh` (31 checks including admin panel)
 - Public assets: `public/` (copied to dist/ as-is)
 - Uploaded photos: `/var/www/21bristoe-media/` (served at `/uploads/`, never wiped by deploy)
 
@@ -64,11 +64,11 @@ See plan: `docs/improvement-plan.md`
 - [x] Phase 5: Endpoint validation & launch ✓ (28/28 checks passing)
 - [x] Phase 6: Image admin panel + slideshow ✓
 - [x] Phase 7: Admin panel security hardening ✓
-- [ ] Phase 8: Manifest safety & error handling (planned)
-- [ ] Phase 9: Health check + expanded validation (planned)
-- [ ] Phase 10: Deploy script improvements (planned)
-- [ ] Phase 11: CSP tightening + admin JS extraction (planned)
-- [ ] Phase 12: SEO & structured data (planned)
+- [x] Phase 8: Manifest safety & error handling ✓
+- [x] Phase 9: Health check + expanded validation ✓ (31/31 checks)
+- [x] Phase 10: Deploy script improvements ✓
+- [x] Phase 11: CSP tightening + admin JS extraction ✓
+- [x] Phase 12: SEO & structured data ✓
 
 ## Image assets status
 Placeholder images are in place (solid color PNGs). Replace with real photos:

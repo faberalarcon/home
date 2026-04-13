@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # deploy.sh — Build and deploy 21bristoe.com to production
 #
-# Usage: ./deploy/deploy.sh [--no-backup]
+# Usage: ./deploy/deploy.sh [--no-backup | --rollback]
 #
 # Requirements:
 #   - Run from the project root: /home/faber/projects/home
@@ -15,7 +15,27 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WEB_ROOT="/var/www/21bristoe.com"
 NGINX_CONF_REPO="$REPO_DIR/deploy/nginx/21bristoe.com.ssl.conf"
 NGINX_CONF_LIVE="/etc/nginx/sites-available/21bristoe.com"
-SKIP_BACKUP="${1:-}"
+FLAG="${1:-}"
+
+# --- Rollback mode ---
+if [[ "$FLAG" == "--rollback" ]]; then
+    LATEST_BAK=$(ls -dt "${WEB_ROOT}".bak-* 2>/dev/null | head -1 || true)
+    if [[ -z "$LATEST_BAK" ]]; then
+        echo "ERROR: No backup found to roll back to."
+        exit 1
+    fi
+    BROKEN_DIR="${WEB_ROOT}.broken-$(date +%Y%m%d-%H%M%S)"
+    echo ""
+    echo "==> Rolling back to: $LATEST_BAK"
+    sudo mv "$WEB_ROOT" "$BROKEN_DIR"
+    sudo mv "$LATEST_BAK" "$WEB_ROOT"
+    sudo systemctl reload nginx
+    echo ""
+    echo "Rollback complete."
+    echo "Broken deployment saved at: $BROKEN_DIR"
+    echo "Remove it when satisfied: sudo rm -rf $BROKEN_DIR"
+    exit 0
+fi
 
 echo ""
 echo "==> 21bristoe.com deploy"
@@ -30,12 +50,20 @@ npm run build
 echo "      Build complete. Pages: $(find dist -name '*.html' | wc -l)"
 
 # 2. Backup (unless --no-backup)
-if [[ "$SKIP_BACKUP" != "--no-backup" ]]; then
+BACKUP_DIR=""
+if [[ "$FLAG" != "--no-backup" ]]; then
     BACKUP_DIR="${WEB_ROOT}.bak-$(date +%Y%m%d-%H%M%S)"
     if [[ -d "$WEB_ROOT" ]]; then
         echo "[2/5] Backing up current deployment to $BACKUP_DIR..."
         sudo cp -r "$WEB_ROOT" "$BACKUP_DIR"
         echo "      Backup created."
+
+        # Rotate: keep only the 3 most recent backups to save disk space
+        BAK_COUNT=$(ls -dt "${WEB_ROOT}".bak-* 2>/dev/null | wc -l || echo 0)
+        if [[ "$BAK_COUNT" -gt 3 ]]; then
+            ls -dt "${WEB_ROOT}".bak-* | tail -n "+4" | xargs sudo rm -rf
+            echo "      Rotated old backups (keeping 3 most recent)."
+        fi
     else
         echo "[2/5] No existing deployment to back up — skipping."
         sudo mkdir -p "$WEB_ROOT"
@@ -63,15 +91,18 @@ echo "      nginx reloaded."
 echo ""
 echo "==> Deploy complete!"
 echo ""
-echo "Verify with:"
-echo "  curl -sI https://21bristoe.com/ | head -5"
-echo "  curl -sI http://21bristoe.com   | grep -E '^(HTTP|Location)'"
-echo ""
 
-# Quick rollback reminder
-if [[ -n "${BACKUP_DIR:-}" ]]; then
-    echo "Rollback if needed:"
-    echo "  sudo rm -rf $WEB_ROOT"
-    echo "  sudo mv $BACKUP_DIR $WEB_ROOT"
-    echo "  sudo systemctl reload nginx"
+# Post-deploy validation gate
+echo "==> Running validation checks..."
+if "$REPO_DIR/deploy/validate.sh"; then
+    echo ""
+    echo "All checks passed — deploy successful!"
+else
+    echo ""
+    echo "WARNING: Some validation checks FAILED after deploy."
+    echo "         Run './deploy/validate.sh' for details."
+    if [[ -n "$BACKUP_DIR" ]]; then
+        echo "         To roll back: ./deploy/deploy.sh --rollback"
+    fi
+    exit 1
 fi

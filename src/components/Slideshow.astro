@@ -2,6 +2,13 @@
 // Slideshow — fetches /uploads/manifest.json at runtime and cycles through images.
 // Falls back to a warm gradient when no images are uploaded yet.
 // Used inside the Hero section.
+//
+// Global CSS for .bristoe-slide / .bristoe-slide-dot lives in src/styles/global.css
+// so it compiles into the external stylesheet (avoids inline <style> that would
+// require 'unsafe-inline' in the CSP style-src directive).
+//
+// The <script> block is bundled by Vite into an external file (assetsInlineLimit: 0
+// in astro.config.mjs) so script-src 'self' works without 'unsafe-inline'.
 ---
 
 <div class="slideshow" id="heroSlideshow" aria-label="Family photo slideshow" role="region">
@@ -33,57 +40,8 @@
   }
 </style>
 
-<style is:global>
-  /* These classes are applied to elements created dynamically by JS,
-     so they must be global — Astro's scoped hash won't reach them. */
-  .bristoe-slide {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    opacity: 0;
-    transition: opacity 1.2s ease-in-out;
-    will-change: opacity;
-  }
-
-  .bristoe-slide.active {
-    opacity: 1;
-  }
-
-  /* Dark gradient overlay so text stays readable over any photo */
-  .bristoe-slide::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to bottom,
-      rgba(0,0,0,0.25) 0%,
-      rgba(0,0,0,0.15) 50%,
-      rgba(0,0,0,0.45) 100%
-    );
-  }
-
-  .bristoe-slide-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.45);
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    transition: background 0.3s, transform 0.3s;
-  }
-  .bristoe-slide-dot.active {
-    background: white;
-    transform: scale(1.3);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .bristoe-slide { transition: none; }
-  }
-</style>
-
 <script>
+  // Dynamically created .bristoe-slide / .bristoe-slide-dot styles are in global.css
   (async function initSlideshow() {
     const INTERVAL_MS = 6000;
     const track = document.getElementById('slideTrack');
