@@ -35,8 +35,17 @@ const year = new Date().getFullYear();
     </div>
 
     <!-- Bottom bar -->
-    <div class="mt-8 pt-6 border-t border-warm-800 text-warm-500 text-xs">
+    <div class="mt-8 pt-6 border-t border-warm-800 text-warm-500 text-xs flex flex-col sm:flex-row justify-between gap-2">
       <p>© {year} 21 Bristoe. Made with love for the household.</p>
+      <p>
+        Built by Faber Alarcon ·
+        <a
+          href="https://github.com/faberalarcon/home"
+          class="text-warm-400 hover:text-warm-200 transition-colors"
+          target="_blank"
+          rel="noopener noreferrer"
+        >GitHub</a>
+      </p>
     </div>
   </div>
 </footer>

@@ -12,22 +12,49 @@ const facts = [
 <section id="limon" class="py-20 px-6 bg-gradient-to-br from-warm-100 to-warm-50" aria-labelledby="limon-heading">
   <div class="max-w-5xl mx-auto">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-      <!-- Photo placeholder -->
+      <!-- Photo (uploaded) or emoji fallback -->
       <div
-        class="order-2 md:order-1 rounded-3xl overflow-hidden aspect-square bg-gradient-to-br from-warm-300 via-warm-400 to-warm-500 flex items-center justify-center shadow-2xl relative"
+        class="order-2 md:order-1 rounded-3xl overflow-hidden aspect-square shadow-2xl relative"
         aria-label="Limón the golden retriever"
       >
-        <!-- Golden glow effect -->
-        <div class="absolute inset-0 bg-gradient-to-t from-warm-600/30 to-transparent" aria-hidden="true"></div>
-        <div class="relative text-center p-8">
-          <div class="text-8xl mb-4" role="img" aria-label="Dog emoji">🐕</div>
-          <p class="text-warm-900 font-bold text-2xl font-display">Limón</p>
-          <p class="text-warm-800 text-sm mt-1">The Golden Girl</p>
+        <!-- Uploaded profile photo — hidden until it loads successfully -->
+        <img
+          id="limonProfileImg"
+          hidden
+          src="/uploads/limon-profile.jpg"
+          alt="Limón the golden retriever"
+          class="w-full h-full object-cover"
+        />
+
+        <!-- Emoji fallback shown when no photo is uploaded -->
+        <div
+          id="limonFallback"
+          class="w-full h-full bg-gradient-to-br from-warm-300 via-warm-400 to-warm-500 flex items-center justify-center relative"
+        >
+          <div class="absolute inset-0 bg-gradient-to-t from-warm-600/30 to-transparent" aria-hidden="true"></div>
+          <div class="relative text-center p-8">
+            <div class="text-8xl mb-4" role="img" aria-label="Dog emoji">🐕</div>
+            <p class="text-warm-900 font-bold text-2xl font-display">Limón</p>
+            <p class="text-warm-800 text-sm mt-1">The Golden Girl</p>
+          </div>
+          <span class="absolute top-6 right-6 text-warm-200 text-2xl opacity-50" aria-hidden="true">🐾</span>
+          <span class="absolute bottom-6 left-6 text-warm-200 text-2xl opacity-50" aria-hidden="true">🐾</span>
         </div>
-        <!-- Paw print decorations -->
-        <span class="absolute top-6 right-6 text-warm-200 text-2xl opacity-50" aria-hidden="true">🐾</span>
-        <span class="absolute bottom-6 left-6 text-warm-200 text-2xl opacity-50" aria-hidden="true">🐾</span>
       </div>
+
+      <script>
+        const img = document.getElementById('limonProfileImg');
+        const fallback = document.getElementById('limonFallback');
+        if (img && fallback) {
+          img.addEventListener('load', () => {
+            img.removeAttribute('hidden');
+            fallback.setAttribute('hidden', '');
+          });
+          img.addEventListener('error', () => {
+            // Photo missing — keep fallback visible (already default state)
+          });
+        }
+      </script>
 
       <!-- Text content -->
       <div class="order-1 md:order-2">

@@ -172,7 +172,7 @@ Remove `unsafe-inline` from CSP where possible. Extract admin inline JS for clea
 Polish search appearance for local queries.
 
 ### Changes
-1. **Enhanced JSON-LD** — Add `Place` schema with address (21 Bristoe St, Taneytown, MD 21787), and `Person` entities for household members.
+1. **Enhanced JSON-LD** — Add `Place` schema with address (21 Bristoe Station Rd, Taneytown, MD 21787), and `Person` entities for household members.
 2. **WebPage schema** — Add `mainEntity` pointing to the Place.
 3. **Review meta description** — Ensure it's optimized for "21 Bristoe St Taneytown" local searches.
 

@@ -227,6 +227,48 @@ app.delete('/api/images/:filename', apiLimiter, async (req, res, next) => {
   }
 });
 
+// --- API: Limón profile photo (fixed path, not in manifest) ---
+const LIMON_PATH = path.join(UPLOADS_DIR, 'limon-profile.jpg');
+
+app.get('/api/limon-image', apiLimiter, (_req, res) => {
+  const exists = fs.existsSync(LIMON_PATH);
+  res.json({ exists, url: exists ? `/uploads/limon-profile.jpg` : null });
+});
+
+app.post('/api/limon-image', uploadLimiter, upload.single('image'), async (req, res, next) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+  try {
+    if (!isValidImageBuffer(req.file.buffer)) {
+      auditLog('limon_upload_rejected', `reason=invalid_signature`, req);
+      return res.status(400).json({ error: 'Invalid image file (signature check failed)' });
+    }
+
+    await sharp(req.file.buffer)
+      .rotate()
+      .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 85, progressive: true })
+      .toFile(LIMON_PATH);
+
+    auditLog('limon_upload', `original=${req.file.originalname}`, req);
+    res.json({ ok: true, url: `/uploads/limon-profile.jpg` });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/limon-image', apiLimiter, (req, res) => {
+  let fileRemoved = false;
+  try {
+    fs.unlinkSync(LIMON_PATH);
+    fileRemoved = true;
+  } catch (err) {
+    console.warn(`[WARN] Could not delete limon-profile.jpg: ${err.message}`);
+  }
+  auditLog('limon_delete', `fileRemoved=${fileRemoved}`, req);
+  res.json({ ok: true, fileRemoved });
+});
+
 // --- API: reorder images (drag-and-drop reorder) ---
 app.put('/api/images/reorder', apiLimiter, async (req, res, next) => {
   const { order } = req.body; // array of filenames in new order

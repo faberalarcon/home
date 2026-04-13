@@ -145,6 +145,82 @@ async function deleteImage(filename) {
   }
 }
 
+// --- Limón profile photo ---
+async function loadLimonImage() {
+  try {
+    const res = await fetch(`${API}/api/limon-image`);
+    const data = await res.json();
+    renderLimonCard(data);
+  } catch {
+    showToast('Failed to load Limón photo', 'error');
+  }
+}
+
+function renderLimonCard(data) {
+  const section = document.getElementById('limonSection');
+  if (data.exists && data.url) {
+    section.innerHTML = `
+      <div class="limon-card">
+        <img src="${MEDIA_BASE}${data.url}?t=${Date.now()}" alt="Limón profile photo" class="limon-preview" />
+        <div class="limon-card-body">
+          <span class="limon-card-label">Current photo</span>
+          <div class="limon-card-actions">
+            <label class="btn-replace">
+              Replace
+              <input type="file" accept="image/*" class="limon-file-input" />
+            </label>
+            <button class="btn-delete-limon" aria-label="Remove Limón photo">Remove</button>
+          </div>
+        </div>
+      </div>`;
+    section.querySelector('.limon-file-input').addEventListener('change', e => {
+      const files = Array.from(e.target.files);
+      if (files.length) uploadLimonImage(files[0]);
+    });
+    section.querySelector('.btn-delete-limon').addEventListener('click', deleteLimonImage);
+  } else {
+    section.innerHTML = `
+      <div class="limon-empty">
+        <span class="limon-empty-icon">🐕</span>
+        <p>No photo set — upload one to replace the emoji placeholder on the site.</p>
+        <label class="btn-upload-limon">
+          Upload photo
+          <input type="file" accept="image/*" class="limon-file-input" />
+        </label>
+      </div>`;
+    section.querySelector('.limon-file-input').addEventListener('change', e => {
+      const files = Array.from(e.target.files);
+      if (files.length) uploadLimonImage(files[0]);
+    });
+  }
+}
+
+async function uploadLimonImage(file) {
+  const formData = new FormData();
+  formData.append('image', file);
+  try {
+    const res = await fetch(`${API}/api/limon-image`, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    showToast('Limón photo updated!', 'success');
+    await loadLimonImage();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function deleteLimonImage() {
+  if (!confirm('Remove Limón profile photo?')) return;
+  try {
+    const res = await fetch(`${API}/api/limon-image`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Remove failed');
+    showToast('Photo removed', 'success');
+    await loadLimonImage();
+  } catch {
+    showToast('Remove failed', 'error');
+  }
+}
+
 // --- Drop zone ---
 const zone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -169,3 +245,4 @@ function showToast(msg, type = 'success') {
 }
 
 loadImages();
+loadLimonImage();
