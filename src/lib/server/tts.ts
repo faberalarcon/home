@@ -27,6 +27,50 @@ const MILESTONE_MESSAGES: Record<string, string[]> = {
     'Ten drinks achieved. The hall of fame awaits.',
     'Double digits. History is being made tonight.'
   ],
+  fifteen: [
+    'Fifteen drinks! This party is not messing around.',
+    'One-five. The legend counter is going up.',
+    'Fifteen rounds in. Commitment level: elite.',
+    'Fifteen drinks. The bar has been set impossibly high.',
+    'Drink number fifteen. Someone is definitely winning tonight.'
+  ],
+  twenty: [
+    'Twenty drinks! Absolutely historic. Frame this moment.',
+    'Two zero. This is not a party, this is a movement.',
+    'Twenty drinks in. The stuff of legends. Future generations will speak of this.',
+    'Twenty. The scoreboard is embarrassed. Impressive stuff.',
+    'Drink twenty. The liver has left the chat. Everyone else is thriving.'
+  ],
+
+  // --- per-person milestones ---
+  three_personal: [
+    'Third personal drink! Warmed up and ready to go.',
+    'Three down personally. The vibe is officially locked in.',
+    'Drink three, personally. No longer just warming up.',
+    'Personal round three. The trajectory is looking very interesting.',
+    'Three in. Solid foundation. Let\'s see where this goes.'
+  ],
+  five_personal: [
+    'Five personal drinks! Now we are talking.',
+    'Personal high five! Drink number five for this individual.',
+    'Five drinks, personally. This person is not playing around.',
+    'Their fifth personal drink. Absolute dedication to the cause.',
+    'Personal five. The commitment is real and it is spectacular.'
+  ],
+  eight_personal: [
+    'Eight personal drinks. An absolutely elite performance.',
+    'Personal drink eight. Someone is going for the high score.',
+    'Eight rounds personally. The dedication here is something else entirely.',
+    'Their eighth drink. Historically good. Medically questionable. Universally respected.',
+    'Personal eight. We are witnessing something special tonight.'
+  ],
+  ten_personal: [
+    'Ten personal drinks! A true champion of the evening.',
+    'Double digits, personally! This is an all-time performance.',
+    'Their tenth personal drink. A complete and total legend.',
+    'Personal ten. Hall of fame. Right now. Immediately.',
+    'Ten personal rounds. There are no words. Only respect.'
+  ],
 
   // --- keyed by HA trigger event name ---
   all_time_15: [
@@ -64,10 +108,19 @@ function peekMessage(key: string): string | null {
 function milestoneKey(threshold: number, scope: string, haTriggerEvent = ''): string | null {
   // Exact match by HA event name first — covers any admin-defined milestone
   if (haTriggerEvent && MILESTONE_MESSAGES[haTriggerEvent]) return haTriggerEvent;
-  // Legacy threshold+scope fallbacks for the three built-in pools
+  // Per-profile personal milestones
+  if (scope === 'per_profile') {
+    if (threshold === 3) return 'three_personal';
+    if (threshold === 5) return 'five_personal';
+    if (threshold === 8) return 'eight_personal';
+    if (threshold === 10) return 'ten_personal';
+  }
+  // Total/daily/weekly milestones by threshold
   if (scope === 'daily' && threshold === 1) return 'first_daily';
   if (threshold === 5) return 'five';
   if (threshold === 10) return 'ten';
+  if (threshold === 15) return 'fifteen';
+  if (threshold === 20) return 'twenty';
   return null;
 }
 

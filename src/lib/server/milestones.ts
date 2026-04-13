@@ -45,11 +45,14 @@ function getCount(m: Milestone, order: OrderRef, tx: Tx): number | null {
         .where(sql`${orders.drinkId} = ${m.drinkId} AND ${orders.status} != 'deleted'`)
         .get()?.c ?? 0;
 
-    case 'per_profile':
-      if (!m.profileId) return null;
+    case 'per_profile': {
+      // If milestone targets a specific profile, count that profile's orders.
+      // If no profileId set, count the ordering profile's orders (fires for anyone).
+      const pid = m.profileId ?? order.profileId;
       return tx.select({ c: sql<number>`count(*)` }).from(orders)
-        .where(sql`${orders.profileId} = ${m.profileId} AND ${orders.status} != 'deleted'`)
+        .where(sql`${orders.profileId} = ${pid} AND ${orders.status} != 'deleted'`)
         .get()?.c ?? 0;
+    }
 
     default:
       return null;
