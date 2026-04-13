@@ -38,6 +38,8 @@ export const actions: Actions = {
     const imageFile = fd.get('image') as File | null;
 
     if (!name) return fail(400, { error: 'Name is required', fields: { name, description, category, haTriggerEvent, active, sortOrder } });
+    if (abv !== null && (!Number.isFinite(abv) || abv < 0 || abv > 100)) return fail(400, { error: 'ABV must be between 0 and 100' });
+    if (volumeMl !== null && (!Number.isFinite(volumeMl) || volumeMl <= 0)) return fail(400, { error: 'Volume must be a positive number' });
 
     if (id) {
       const existing = db.select().from(drinks).where(eq(drinks.id, id)).get();

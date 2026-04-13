@@ -1,4 +1,4 @@
-import { subscribe, getMissedEvents } from '$lib/server/stream';
+import { subscribe, getMissedEvents, clientCount } from '$lib/server/stream';
 import { checkRateLimit } from '$lib/server/ratelimit';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -12,6 +12,10 @@ export const GET: RequestHandler = ({ request, getClientAddress }) => {
       status: 429,
       headers: { 'Retry-After': String(rateCheck.retryAfter ?? 10) }
     });
+  }
+
+  if (clientCount() >= 50) {
+    return json({ error: 'Too many connections' }, { status: 503 });
   }
 
   const lastEventId = Number(request.headers.get('Last-Event-ID') ?? 0);

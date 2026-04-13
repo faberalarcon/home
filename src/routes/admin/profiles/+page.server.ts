@@ -25,6 +25,8 @@ export const actions: Actions = {
     const imageFile = fd.get('avatar') as File | null;
 
     if (!name) return fail(400, { error: 'Name is required' });
+    if (weightKg !== null && (!Number.isFinite(weightKg) || weightKg < 1 || weightKg > 500)) return fail(400, { error: 'Weight must be between 1 and 500 kg' });
+    if (!/^#[0-9a-fA-F]{6}$/.test(color)) return fail(400, { error: 'Invalid color format' });
 
     if (id) {
       const existing = db.select().from(profiles).where(eq(profiles.id, id)).get();

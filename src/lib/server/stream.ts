@@ -22,6 +22,7 @@ export function subscribe(send: Sender): () => void {
 
 export function broadcast(event: string, data: unknown): void {
   const id = nextId++;
+  if (nextId > Number.MAX_SAFE_INTEGER) nextId = 1;
   const payload = `id: ${id}\nevent: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 
   ringBuffer.push({ id, chunk: payload });

@@ -166,13 +166,20 @@ let processing = false;
 async function processQueue(): Promise<void> {
   if (processing) return;
   processing = true;
-  while (queue.length > 0) {
-    const job = queue.shift()!;
-    await doAnnounce(job);
-    // Brief pause between consecutive announcements
-    if (queue.length > 0) await new Promise((r) => setTimeout(r, 400));
+  try {
+    while (queue.length > 0) {
+      const job = queue.shift()!;
+      try {
+        await doAnnounce(job);
+      } catch (err) {
+        console.error('[tts] announcement failed, skipping:', err);
+      }
+      // Brief pause between consecutive announcements
+      if (queue.length > 0) await new Promise((r) => setTimeout(r, 400));
+    }
+  } finally {
+    processing = false;
   }
-  processing = false;
 }
 
 /** Returns a fully-saturated random RGB color as a [r, g, b] triple. */
