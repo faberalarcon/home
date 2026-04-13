@@ -46,13 +46,18 @@ const facts = [
         const img = document.getElementById('limonProfileImg');
         const fallback = document.getElementById('limonFallback');
         if (img && fallback) {
-          img.addEventListener('load', () => {
+          function showPhoto() {
             img.removeAttribute('hidden');
             fallback.setAttribute('hidden', '');
-          });
-          img.addEventListener('error', () => {
-            // Photo missing — keep fallback visible (already default state)
-          });
+          }
+          // Module scripts are deferred — the image may have already loaded by
+          // the time this runs, so check img.complete before adding the listener.
+          if (img.complete && img.naturalWidth > 0) {
+            showPhoto();
+          } else {
+            img.addEventListener('load', showPhoto);
+            // On error keep fallback visible (already the default state)
+          }
         }
       </script>
 
