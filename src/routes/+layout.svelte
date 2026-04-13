@@ -44,5 +44,9 @@
     <main class="flex-1 p-4">
       {@render children()}
     </main>
+    <footer class="text-center text-xs text-slate-600 py-4 border-t border-slate-800">
+      Created by <span class="text-slate-500">faberalarcon</span> &mdash;
+      <a href="https://github.com/faberalarcon/drink-hub" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-slate-300">GitHub</a>
+    </footer>
   </div>
 {/if}
