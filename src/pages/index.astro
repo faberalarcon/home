@@ -2,10 +2,12 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
+import SkyStrip from '../components/SkyStrip.astro';
 import NeighborhoodHighlights from '../components/NeighborhoodHighlights.astro';
 import Welcome from '../components/Welcome.astro';
 import LimonSpotlight from '../components/LimonSpotlight.astro';
 import QuickLinks from '../components/QuickLinks.astro';
+import VisitorGuide from '../components/VisitorGuide.astro';
 import Footer from '../components/Footer.astro';
 ---
 
@@ -16,10 +18,12 @@ import Footer from '../components/Footer.astro';
   <Header />
   <main id="main-content">
     <Hero />
+    <SkyStrip />
     <Welcome />
     <NeighborhoodHighlights />
     <LimonSpotlight />
     <QuickLinks />
+    <VisitorGuide />
   </main>
   <Footer />
 </BaseLayout>

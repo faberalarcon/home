@@ -1,0 +1,12 @@
+[Unit]
+Description=21 Bristoe nightly site rebuild
+# Refreshes build-time content: weather widget, sun/moon strip, seasonal greetings
+
+[Service]
+Type=oneshot
+User=faber
+WorkingDirectory=/home/faber/projects/home
+ExecStart=/home/faber/projects/home/deploy/deploy.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=21bristoe-rebuild

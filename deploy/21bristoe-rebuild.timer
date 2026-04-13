@@ -1,0 +1,13 @@
+[Unit]
+Description=Rebuild 21bristoe.com nightly to refresh weather, sky strip, and seasonal greetings
+Requires=21bristoe-rebuild.service
+
+[Timer]
+# Fire at 6:00 AM every day. Persistent=true means if the Pi was off at 6am,
+# the rebuild runs on next boot instead of being silently skipped.
+OnCalendar=*-*-* 06:00:00
+AccuracySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

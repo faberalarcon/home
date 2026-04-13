@@ -1,0 +1,67 @@
+---
+// SkyStrip — today's sunrise, sunset, and moon phase for Taneytown, MD.
+// Computed at build time using suncalc (zero runtime cost, no client JS).
+// Pair with the nightly rebuild timer to stay current.
+
+// @ts-ignore — suncalc is CJS; Vite handles the interop automatically
+import SunCalc from 'suncalc';
+
+const LAT = 39.6576;
+const LNG = -77.1763;
+const now = new Date();
+
+const times = SunCalc.getTimes(now, LAT, LNG);
+
+function fmtTime(d: unknown): string {
+  if (!(d instanceof Date) || isNaN(d.getTime())) return '—';
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'America/New_York',
+  });
+}
+
+const sunriseStr = fmtTime(times.sunrise);
+const sunsetStr  = fmtTime(times.sunset);
+
+// Moon phase: 0 = new moon, 0.5 = full moon, 1 = new moon again
+const { phase } = SunCalc.getMoonIllumination(now) as { phase: number };
+
+const moonEmoji =
+  phase < 0.0625 ? '🌑'
+  : phase < 0.1875 ? '🌒'
+  : phase < 0.3125 ? '🌓'
+  : phase < 0.4375 ? '🌔'
+  : phase < 0.5625 ? '🌕'
+  : phase < 0.6875 ? '🌖'
+  : phase < 0.8125 ? '🌗'
+  : phase < 0.9375 ? '🌘'
+  : '🌑';
+
+const moonName =
+  phase < 0.0625 ? 'New Moon'
+  : phase < 0.1875 ? 'Waxing Crescent'
+  : phase < 0.3125 ? 'First Quarter'
+  : phase < 0.4375 ? 'Waxing Gibbous'
+  : phase < 0.5625 ? 'Full Moon'
+  : phase < 0.6875 ? 'Waning Gibbous'
+  : phase < 0.8125 ? 'Last Quarter'
+  : phase < 0.9375 ? 'Waning Crescent'
+  : 'New Moon';
+---
+
+<div
+  class="w-full bg-warm-900 text-warm-300 py-2 px-6"
+  role="complementary"
+  aria-label="Daily sky info for Taneytown, MD"
+>
+  <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-xs">
+    <span>🌅 Sunrise <strong class="font-medium text-warm-200">{sunriseStr}</strong></span>
+    <span class="text-warm-700 hidden sm:inline" aria-hidden="true">·</span>
+    <span>🌇 Sunset <strong class="font-medium text-warm-200">{sunsetStr}</strong></span>
+    <span class="text-warm-700 hidden sm:inline" aria-hidden="true">·</span>
+    <span aria-label={`Moon phase: ${moonName}`}>{moonEmoji} <strong class="font-medium text-warm-200">{moonName}</strong></span>
+    <span class="text-warm-700 hidden sm:inline" aria-hidden="true">·</span>
+    <span class="text-warm-600">Taneytown, MD</span>
+  </div>
+</div>

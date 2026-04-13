@@ -1,0 +1,78 @@
+---
+// Visitor Guide — practical info for guests.
+// Uses native <details>/<summary> for zero-JS collapsible panels (fully accessible, CSP-clean).
+// Edit the `tips` array below to keep the content current.
+
+const tips = [
+  {
+    icon: '🚗',
+    title: 'Parking',
+    body: 'There\'s usually room in the driveway, plus easy street parking on Bristoe Station Rd right out front.',
+  },
+  {
+    icon: '🚪',
+    title: 'The Door',
+    body: 'Come to the front door — ring the bell and give us just a moment.',
+  },
+  {
+    icon: '🐕',
+    title: 'Meeting Limón',
+    body: 'She will be very excited to meet you. She\'s friendly — just be ready for an enthusiastic welcome (and possibly a zoomie).',
+  },
+  {
+    icon: '📶',
+    title: 'Guest Wi-Fi',
+    body: 'Ask us for the guest network name and password when you arrive.',
+  },
+];
+---
+
+<section class="py-16 px-6 bg-warm-100" aria-labelledby="visitor-heading">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-10">
+      <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-2">For Visitors</p>
+      <h2
+        id="visitor-heading"
+        class="text-3xl md:text-4xl font-bold text-warm-800 font-display"
+      >
+        Coming Over?
+      </h2>
+      <p class="text-gray-500 text-base mt-3 max-w-md mx-auto">
+        Here's everything you need to know before you arrive.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+      {tips.map(({ icon, title, body }) => (
+        <details class="bg-white rounded-2xl border border-warm-200 shadow-sm overflow-hidden">
+          <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer select-none text-warm-800 font-semibold hover:bg-warm-50 transition-colors">
+            <span class="text-xl flex-shrink-0" aria-hidden="true">{icon}</span>
+            <span>{title}</span>
+            <svg
+              class="ml-auto w-4 h-4 text-warm-400 chevron transition-transform duration-200"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </summary>
+          <p class="px-5 pb-5 pt-2 text-gray-600 text-sm leading-relaxed border-t border-warm-100">
+            {body}
+          </p>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Rotate chevron when panel is open — scoped, no inline style= needed */
+  details[open] .chevron {
+    transform: rotate(180deg);
+  }
+  /* Suppress default browser disclosure triangle */
+  summary { list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+</style>

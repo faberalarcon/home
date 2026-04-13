@@ -1,7 +1,7 @@
 # 21bristoe.com — Family Homepage
 
 ## What this is
-Static homepage for the household at 21 Bristoe St, Meades Crossing, Taneytown MD.
+Static homepage for the household at 21 Bristoe Station Rd, Meades Crossing, Taneytown MD.
 Built with Astro 6 + Tailwind CSS 4, deployed as static HTML via nginx on a Raspberry Pi.
 
 ## The household
@@ -12,6 +12,7 @@ Built with Astro 6 + Tailwind CSS 4, deployed as static HTML via nginx on a Rasp
 - Astro 6 (static output, zero client JS)
 - Tailwind CSS 4 (via @tailwindcss/vite)
 - @astrojs/sitemap
+- suncalc — build-time sun/moon calculations for SkyStrip
 - Admin panel: Node/Express at `admin/` (image uploads, port 3001)
 
 ## Key paths
@@ -20,6 +21,9 @@ Built with Astro 6 + Tailwind CSS 4, deployed as static HTML via nginx on a Rasp
   - `src/pages/` — routes (file = URL)
   - `src/components/` — reusable Astro components
   - `src/components/Slideshow.astro` — hero slideshow (reads `/uploads/manifest.json` at runtime)
+  - `src/components/SkyStrip.astro` — sunrise/sunset/moon phase bar (build-time, suncalc)
+  - `src/components/WeatherCard.astro` — live weather widget (build-time fetch, Open-Meteo)
+  - `src/components/VisitorGuide.astro` — collapsible visitor tips (HTML details/summary, zero JS)
   - `src/assets/images/` — local images (optimized at build time by Astro)
   - `src/styles/global.css` — Tailwind + custom design tokens
 - Build output: `dist/` (gitignored, built on server)
@@ -69,6 +73,7 @@ See plan: `docs/improvement-plan.md`
 - [x] Phase 10: Deploy script improvements ✓
 - [x] Phase 11: CSP tightening + admin JS extraction ✓
 - [x] Phase 12: SEO & structured data ✓
+- [x] Phase A: Content enhancements ✓ (weather widget, sky strip, seasonal greetings, household cards, visitor guide)
 
 ## Image assets status
 Placeholder images are in place (solid color PNGs). Replace with real photos:
@@ -88,10 +93,18 @@ Placeholder images are in place (solid color PNGs). Replace with real photos:
   localhost hits in production), magic byte validation, global error handler, audit logging to journalctl
 - View audit log: `sudo journalctl -u 21bristoe-admin --since "1 hour ago" | grep AUDIT`
 
+## Build-time content (refreshed nightly)
+The weather widget, sky strip, and seasonal greeting are computed at build time:
+- **Weather**: Open-Meteo API (free, no key) — `src/components/WeatherCard.astro`
+- **Sun/moon**: suncalc library, lat/lon 39.6576, -77.1763 — `src/components/SkyStrip.astro`
+- **Seasonal note**: month-based logic in `src/components/Welcome.astro`
+- **Nightly rebuild**: `sudo systemctl status 21bristoe-rebuild.timer` (fires 6am daily)
+  - Install: `sudo cp deploy/21bristoe-rebuild.{service,timer} /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now 21bristoe-rebuild.timer`
+
 ## Site is LIVE
 - https://21bristoe.com — serving the homepage
 - SSL cert: Let's Encrypt, valid until 2026-07-11, auto-renews
-- All 28 endpoint/SSL/security/redirect checks passing
+- All 31 endpoint/SSL/security/redirect checks passing
 
 ## Deploy
 ```bash

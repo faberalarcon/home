@@ -1,5 +1,48 @@
 ---
 // Welcome section — household introduction
+
+// A3: Seasonal greeting — computed at build time; refreshed on each deploy.
+// Pair with the nightly rebuild timer (deploy/21bristoe-rebuild.timer) to stay seasonal.
+const month = new Date().getMonth(); // 0 = Jan, 11 = Dec
+const season =
+  month === 11        ? 'winter-holiday'
+  : month <= 1        ? 'winter'
+  : month <= 4        ? 'spring'
+  : month <= 7        ? 'summer'
+  :                     'autumn';
+
+const seasonalNote: Record<string, string> = {
+  'winter-holiday': 'Happy holidays from 21 Bristoe — wishing you warmth and joy this season.',
+  winter:           "Good winter from 21 Bristoe — hope you're staying cozy.",
+  spring:           'Good spring from 21 Bristoe — glad you stopped by.',
+  summer:           'Good summer from 21 Bristoe — hope it\'s a great one.',
+  autumn:           "Good autumn from 21 Bristoe — it's our favorite time of year.",
+};
+
+// A4: Household member vignettes
+const members = [
+  {
+    name: 'Faber',
+    emoji: '👨',
+    role: 'Co-owner',
+    bio: 'Loves a good cocktail, a well-crafted home project, and getting into the weeds on anything tech.',
+    cardClass: 'bg-warm-50 border-warm-200',
+  },
+  {
+    name: 'Kasey',
+    emoji: '👩',
+    role: 'Co-owner',
+    bio: 'Great cook, great eye for design, and the reason 21 Bristoe actually feels like a home.',
+    cardClass: 'bg-sage-50 border-sage-200',
+  },
+  {
+    name: 'Limón',
+    emoji: '🐕',
+    role: 'Chief Joy Officer',
+    bio: 'Certified zoomie expert. Will greet you at the door, steal your spot on the couch, and charm everyone in the room.',
+    cardClass: 'bg-warm-100 border-warm-300',
+  },
+];
 ---
 
 <section
@@ -13,10 +56,12 @@
         <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-3">The Household</p>
         <h2
           id="welcome-heading"
-          class="text-4xl md:text-5xl font-bold text-warm-800 mb-6 font-display"
+          class="text-4xl md:text-5xl font-bold text-warm-800 mb-3 font-display"
         >
           Welcome to Our Home
         </h2>
+        <!-- A3: Seasonal tagline -->
+        <p class="text-warm-500 italic text-sm mb-6">{seasonalNote[season]}</p>
         <div class="space-y-4 text-gray-600 leading-relaxed">
           <p>
             We're Faber and Kasey, and we've made our home here in Meades Crossing —
@@ -32,23 +77,9 @@
             share what we're up to, what we love, and yes, plenty of Limón content.
           </p>
         </div>
-
-        <!-- Household members -->
-        <div class="mt-8 flex flex-wrap gap-3">
-          {[
-            { name: 'Faber', emoji: '👨' },
-            { name: 'Kasey', emoji: '👩' },
-            { name: 'Limón', emoji: '🐕' },
-          ].map(({ name, emoji }) => (
-            <span class="flex items-center gap-2 bg-white border border-warm-200 text-warm-700 px-4 py-2 rounded-full text-sm font-medium shadow-sm">
-              <span aria-hidden="true">{emoji}</span>
-              {name}
-            </span>
-          ))}
-        </div>
       </div>
 
-      <!-- Visual placeholder / accent -->
+      <!-- Visual accent card -->
       <div
         class="rounded-3xl overflow-hidden aspect-[4/3] bg-gradient-to-br from-warm-200 via-warm-300 to-sage-300 flex items-center justify-center shadow-xl"
         aria-hidden="true"
@@ -59,6 +90,18 @@
           <p class="text-sm text-warm-600 mt-1">Taneytown, MD</p>
         </div>
       </div>
+    </div>
+
+    <!-- A4: Household member cards -->
+    <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6">
+      {members.map(({ name, emoji, role, bio, cardClass }) => (
+        <div class={`rounded-2xl border p-6 shadow-sm ${cardClass}`}>
+          <div class="text-3xl mb-3" aria-hidden="true">{emoji}</div>
+          <h3 class="text-warm-800 font-bold text-lg font-display mb-0.5">{name}</h3>
+          <p class="text-warm-500 text-xs font-medium uppercase tracking-wide mb-3">{role}</p>
+          <p class="text-gray-600 text-sm leading-relaxed">{bio}</p>
+        </div>
+      ))}
     </div>
   </div>
 </section>
