@@ -91,6 +91,88 @@ const upload = multer({
   },
 });
 
+// --- Site-config schema validation ---
+// site-config.json is read at build time by Astro components and rendered into
+// the public homepage. We allowlist exactly the shapes the templates consume,
+// to prevent arbitrary JSON from being persisted and surfaced to visitors.
+
+const SAFE_PHOTO_FILE = /^[a-zA-Z0-9_-]{1,72}\.(jpg|jpeg|png|webp)$/;
+const MAX_MEMBERS = 10;
+const MAX_TIPS = 20;
+const SITE_CONFIG_ALLOWED_KEYS = new Set(['members', 'visitorTips']);
+
+function isPlainString(v, max) {
+  return typeof v === 'string' && v.length <= max;
+}
+
+function validateSiteConfig(input) {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+    return { error: 'Body must be a JSON object' };
+  }
+  for (const key of Object.keys(input)) {
+    if (!SITE_CONFIG_ALLOWED_KEYS.has(key)) {
+      return { error: `Unknown key: ${key}` };
+    }
+  }
+  const out = {};
+
+  if ('members' in input) {
+    if (!Array.isArray(input.members)) return { error: 'members must be an array' };
+    if (input.members.length > MAX_MEMBERS) return { error: `members exceeds ${MAX_MEMBERS}` };
+    out.members = [];
+    for (const m of input.members) {
+      if (typeof m !== 'object' || m === null || Array.isArray(m)) {
+        return { error: 'each member must be an object' };
+      }
+      const cleaned = {};
+      if ('name' in m) {
+        if (!isPlainString(m.name, 60)) return { error: 'member.name must be a string ≤60 chars' };
+        cleaned.name = m.name;
+      }
+      if ('bio' in m) {
+        if (!isPlainString(m.bio, 500)) return { error: 'member.bio must be a string ≤500 chars' };
+        cleaned.bio = m.bio;
+      }
+      if ('role' in m) {
+        if (!isPlainString(m.role, 60)) return { error: 'member.role must be a string ≤60 chars' };
+        cleaned.role = m.role;
+      }
+      if ('emoji' in m) {
+        if (!isPlainString(m.emoji, 8)) return { error: 'member.emoji must be a string ≤8 chars' };
+        cleaned.emoji = m.emoji;
+      }
+      if ('photoFile' in m && m.photoFile !== null && m.photoFile !== undefined) {
+        if (!isPlainString(m.photoFile, 80) || !SAFE_PHOTO_FILE.test(m.photoFile)) {
+          return { error: 'member.photoFile must be a safe image filename' };
+        }
+        cleaned.photoFile = m.photoFile;
+      }
+      out.members.push(cleaned);
+    }
+  }
+
+  if ('visitorTips' in input) {
+    if (!Array.isArray(input.visitorTips)) return { error: 'visitorTips must be an array' };
+    if (input.visitorTips.length > MAX_TIPS) return { error: `visitorTips exceeds ${MAX_TIPS}` };
+    out.visitorTips = [];
+    for (const t of input.visitorTips) {
+      if (typeof t !== 'object' || t === null || Array.isArray(t)) {
+        return { error: 'each tip must be an object' };
+      }
+      const cleaned = {};
+      if (!isPlainString(t.title, 80)) return { error: 'tip.title must be a string ≤80 chars' };
+      if (!isPlainString(t.body, 500)) return { error: 'tip.body must be a string ≤500 chars' };
+      if ('icon' in t && !isPlainString(t.icon, 8)) return { error: 'tip.icon must be a string ≤8 chars' };
+      cleaned.title = t.title;
+      cleaned.body = t.body;
+      if (t.icon) cleaned.icon = t.icon;
+      out.visitorTips.push(cleaned);
+    }
+  }
+
+  return { value: out };
+}
+
 // --- Manifest helpers ---
 
 const LOCK_DIR = MANIFEST_PATH + '.lock';
@@ -345,10 +427,12 @@ app.get('/api/site-config', apiLimiter, (_req, res) => {
 
 app.put('/api/site-config', apiLimiter, async (req, res, next) => {
   try {
-    const cfg = req.body;
-    if (typeof cfg !== 'object' || cfg === null || Array.isArray(cfg)) {
-      return res.status(400).json({ error: 'Body must be a JSON object' });
+    const result = validateSiteConfig(req.body);
+    if (result.error) {
+      auditLog('site_config_rejected', `reason=${result.error}`, req);
+      return res.status(400).json({ error: result.error });
     }
+    const cfg = result.value;
     // Atomic write
     const tmp = SITE_CONFIG_PATH + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2));
@@ -382,15 +466,21 @@ app.post('/api/member-photo/:member', uploadLimiter, upload.single('image'), asy
       .jpeg({ quality: 85, progressive: true })
       .toFile(destPath);
 
-    // Update site-config.json with the photoFile for this member
+    // Update site-config.json with the photoFile for this member.
+    // Re-validate the existing on-disk config so a tampered file (from before
+    // schema validation existed) cannot be silently propagated forward.
     let cfg = {};
-    try { cfg = JSON.parse(fs.readFileSync(SITE_CONFIG_PATH, 'utf8')); } catch { /* new file */ }
+    try {
+      const existing = JSON.parse(fs.readFileSync(SITE_CONFIG_PATH, 'utf8'));
+      const v = validateSiteConfig(existing);
+      cfg = v.error ? {} : v.value;
+    } catch { /* new file */ }
     if (!Array.isArray(cfg.members)) {
       cfg.members = MEMBER_NAMES.map(n => ({ name: n.charAt(0).toUpperCase() + n.slice(1) }));
     }
     const idx = cfg.members.findIndex(m => m.name && m.name.toLowerCase() === member);
     if (idx >= 0) cfg.members[idx].photoFile = filename;
-    else cfg.members.push({ name: member, photoFile: filename });
+    else cfg.members.push({ name: member.charAt(0).toUpperCase() + member.slice(1), photoFile: filename });
     const tmp = SITE_CONFIG_PATH + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2));
     fs.renameSync(tmp, SITE_CONFIG_PATH);
