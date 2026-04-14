@@ -37,11 +37,17 @@ export const GET: RequestHandler = ({ url }) => {
     });
   }
 
-  // CSV
+  // CSV. Prefix a single quote to cells that would otherwise be interpreted
+  // as a formula by Excel / LibreOffice (leading = + - @ tab or CR). This
+  // blocks CSV-injection payloads like `=HYPERLINK(...)` smuggled via a
+  // profile or drink name.
   const header = 'id,created_at,profile,drink,category,status\n';
+  const esc = (s: string) => {
+    const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
   const lines = rows.map((r) => {
     const ts = r.createdAt ? new Date(r.createdAt).toISOString() : '';
-    const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
     return [r.id, ts, esc(r.profileName), esc(r.drinkName), esc(r.drinkCategory), r.status].join(',');
   });
 
