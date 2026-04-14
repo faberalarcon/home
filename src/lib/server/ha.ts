@@ -20,6 +20,32 @@ async function resolveHaTarget(path: string): Promise<{ url: string; token: stri
   return { url: `${clean}${path}`, token };
 }
 
+/**
+ * Health probe for /api/health. Returns 'unconfigured' when HA isn't set up,
+ * 'ok' when HA responds 2xx, 'degraded' on any other failure (invalid URL,
+ * network error, non-2xx). Always routes through validateOutboundUrl so a
+ * misconfigured ha_base_url never leaks the bearer token.
+ */
+export async function probeHa(timeoutMs = 2000): Promise<'ok' | 'degraded' | 'unconfigured'> {
+  const resolved = await resolveHaTarget('/api/');
+  if ('error' in resolved) {
+    // Only 'no token' / 'no base URL' counts as unconfigured; a bad URL is degraded.
+    if (resolved.error === 'no token configured' || resolved.error === 'no base URL configured') {
+      return 'unconfigured';
+    }
+    return 'degraded';
+  }
+  try {
+    const res = await fetch(resolved.url, {
+      headers: { Authorization: `Bearer ${resolved.token}` },
+      signal: AbortSignal.timeout(timeoutMs)
+    });
+    return res.ok ? 'ok' : 'degraded';
+  } catch {
+    return 'degraded';
+  }
+}
+
 export async function callService(
   domain: string,
   service: string,
