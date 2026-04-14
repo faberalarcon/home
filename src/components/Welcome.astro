@@ -139,17 +139,19 @@ try {
     </div>
   </div>
 
-  <!-- Member photo reveal: check img.complete for deferred module script timing -->
+  <!-- Member photo reveal — runs on every navigation via astro:page-load -->
   <script>
-    document.querySelectorAll<HTMLImageElement>('.member-photo').forEach(img => {
-      const name = img.dataset.member;
-      const fallback = document.querySelector<HTMLElement>(`.member-emoji[data-member="${name}"]`);
-      function show() {
-        img.removeAttribute('hidden');
-        fallback?.setAttribute('hidden', '');
-      }
-      if (img.complete && img.naturalWidth > 0) show();
-      else img.addEventListener('load', show);
+    document.addEventListener('astro:page-load', () => {
+      document.querySelectorAll<HTMLImageElement>('.member-photo').forEach(img => {
+        const name = img.dataset.member;
+        const fallback = document.querySelector<HTMLElement>(`.member-emoji[data-member="${name}"]`);
+        function show() {
+          img.removeAttribute('hidden');
+          fallback?.setAttribute('hidden', '');
+        }
+        if (img.complete && img.naturalWidth > 0) show();
+        else img.addEventListener('load', show);
+      });
     });
   </script>
 </section>

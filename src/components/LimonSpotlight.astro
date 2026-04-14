@@ -43,22 +43,22 @@ const facts = [
       </div>
 
       <script>
-        const img = document.getElementById('limonProfileImg');
-        const fallback = document.getElementById('limonFallback');
-        if (img && fallback) {
-          function showPhoto() {
-            img.removeAttribute('hidden');
-            fallback.setAttribute('hidden', '');
+        // astro:page-load fires on every navigation (initial + View Transitions)
+        document.addEventListener('astro:page-load', () => {
+          const img = document.getElementById('limonProfileImg') as HTMLImageElement | null;
+          const fallback = document.getElementById('limonFallback');
+          if (img && fallback) {
+            function showPhoto() {
+              img.removeAttribute('hidden');
+              fallback.setAttribute('hidden', '');
+            }
+            if (img.complete && img.naturalWidth > 0) {
+              showPhoto();
+            } else {
+              img.addEventListener('load', showPhoto);
+            }
           }
-          // Module scripts are deferred — the image may have already loaded by
-          // the time this runs, so check img.complete before adding the listener.
-          if (img.complete && img.naturalWidth > 0) {
-            showPhoto();
-          } else {
-            img.addEventListener('load', showPhoto);
-            // On error keep fallback visible (already the default state)
-          }
-        }
+        });
       </script>
 
       <!-- Text content -->

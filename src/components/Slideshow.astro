@@ -41,32 +41,48 @@
 </style>
 
 <script>
-  // Dynamically created .bristoe-slide / .bristoe-slide-dot styles are in global.css
-  (async function initSlideshow() {
-    const INTERVAL_MS = 6000;
+  // astro:page-load fires on every navigation (initial + View Transitions).
+  // We re-initialize the slideshow from scratch each time and clean up the
+  // previous interval + listeners via AbortController.
+  let slideshowAbort = null;
+  let slideshowTimer = null;
+
+  document.addEventListener('astro:page-load', async () => {
     const track = document.getElementById('slideTrack');
+    if (!track) return; // not on a page with the slideshow
+
+    // Stop any previous slideshow interval and abort old listeners
+    clearInterval(slideshowTimer);
+    slideshowTimer = null;
+    slideshowAbort?.abort();
+    slideshowAbort = new AbortController();
+    const signal = slideshowAbort.signal;
+
+    const INTERVAL_MS = 6000;
     const dotsEl = document.getElementById('slideDots');
     const fallback = document.getElementById('slideFallback');
 
+    // Reset containers for a clean re-init
+    track.innerHTML = '';
+    dotsEl.innerHTML = '';
+    if (fallback) fallback.style.display = '';
+
     let images = [];
     let current = 0;
-    let timer = null;
 
     try {
       const res = await fetch('/uploads/manifest.json', { cache: 'no-cache' });
-      if (!res.ok) return; // no manifest yet — keep gradient
+      if (!res.ok) return;
       const data = await res.json();
       images = (data.images || []).filter(img => img.url || img.filename);
     } catch {
-      return; // network error or no manifest — keep gradient
+      return;
     }
 
-    if (images.length === 0) return; // nothing uploaded yet
+    if (images.length === 0) return;
 
-    // Hide gradient fallback once we have real images
-    fallback.style.display = 'none';
+    if (fallback) fallback.style.display = 'none';
 
-    // Build slide elements
     images.forEach((img, i) => {
       const url = img.url || `/uploads/${img.filename}`;
       const slide = document.createElement('div');
@@ -77,7 +93,6 @@
       track.appendChild(slide);
     });
 
-    // Build dots (only if more than 1 image)
     if (images.length > 1) {
       images.forEach((_, i) => {
         const dot = document.createElement('button');
@@ -104,21 +119,19 @@
     function next() { goTo(current + 1); }
 
     function resetTimer() {
-      clearInterval(timer);
-      timer = setInterval(next, INTERVAL_MS);
+      clearInterval(slideshowTimer);
+      slideshowTimer = setInterval(next, INTERVAL_MS);
     }
 
-    // Pause on hover
     const slideshowEl = document.getElementById('heroSlideshow');
-    slideshowEl.addEventListener('mouseenter', () => clearInterval(timer));
-    slideshowEl.addEventListener('mouseleave', resetTimer);
+    slideshowEl.addEventListener('mouseenter', () => clearInterval(slideshowTimer), { signal });
+    slideshowEl.addEventListener('mouseleave', resetTimer, { signal });
 
-    // Pause when tab is hidden (accessibility + performance)
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) clearInterval(timer);
+      if (document.hidden) clearInterval(slideshowTimer);
       else resetTimer();
-    });
+    }, { signal });
 
     resetTimer();
-  })();
+  });
 </script>

@@ -59,98 +59,112 @@ import Footer from '../components/Footer.astro';
       url?: string;
     }
 
-    let images: GalleryImage[] = [];
-    let currentIdx = 0;
+    // astro:page-load fires on every navigation (initial + View Transitions).
+    // We re-grab all DOM refs fresh and use an AbortController to clean up
+    // listeners when the user navigates away before coming back.
+    let pageAbort: AbortController | null = null;
 
-    const grid     = document.getElementById('galleryGrid')!;
-    const status   = document.getElementById('galleryStatus')!;
-    const lightbox = document.getElementById('galleryLightbox')!;
-    const lbImg    = document.getElementById('lbImg') as HTMLImageElement;
-    const lbClose  = document.getElementById('lbClose')!;
-    const lbPrev   = document.getElementById('lbPrev')!;
-    const lbNext   = document.getElementById('lbNext')!;
+    document.addEventListener('astro:page-load', () => {
+      // Only run on the gallery page
+      const grid = document.getElementById('galleryGrid');
+      if (!grid) return;
 
-    async function loadGallery() {
-      try {
-        const res = await fetch('/uploads/manifest.json', { cache: 'no-cache' });
-        if (!res.ok) throw new Error('no manifest');
-        const data = await res.json();
-        images = (data.images || []).filter((img: GalleryImage) => img.filename);
-      } catch {
-        status.textContent = 'No photos yet — check back soon!';
-        return;
+      // Abort listeners from a previous visit to this page
+      pageAbort?.abort();
+      pageAbort = new AbortController();
+      const signal = pageAbort.signal;
+
+      const status   = document.getElementById('galleryStatus');
+      const lightbox = document.getElementById('galleryLightbox')!;
+      const lbImg    = document.getElementById('lbImg') as HTMLImageElement;
+      const lbClose  = document.getElementById('lbClose')!;
+      const lbPrev   = document.getElementById('lbPrev')!;
+      const lbNext   = document.getElementById('lbNext')!;
+
+      let images: GalleryImage[] = [];
+      let currentIdx = 0;
+
+      function photoUrl(img: GalleryImage) {
+        const url = img.url || `/uploads/${img.filename}`;
+        return url.startsWith('http') ? url : `${MEDIA_BASE}${url}`;
       }
 
-      if (images.length === 0) {
-        status.textContent = 'No photos yet — check back soon!';
-        return;
+      function openLightbox(idx: number) {
+        currentIdx = idx;
+        const img = images[idx];
+        lbImg.src = photoUrl(img);
+        lbImg.alt = img.originalName || img.filename;
+        lightbox.removeAttribute('hidden');
+        lbClose.focus();
+        document.body.style.overflow = 'hidden';
       }
 
-      status.remove();
-      grid.innerHTML = images.map((img, i) => {
-        const url  = img.url || `/uploads/${img.filename}`;
-        const full = url.startsWith('http') ? url : `${MEDIA_BASE}${url}`;
-        const alt  = img.originalName || img.filename;
-        return `
-          <div class="gallery-thumb" role="listitem">
-            <button
-              class="w-full aspect-square overflow-hidden rounded-xl block cursor-zoom-in focus-visible:ring-2 focus-visible:ring-warm-500"
-              data-index="${i}"
-              aria-label="View full size: ${alt.replace(/"/g,'&quot;')}"
-              type="button"
-            >
-              <img
-                src="${full}"
-                alt="${alt.replace(/"/g,'&quot;')}"
-                class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                loading="lazy"
-              />
-            </button>
-          </div>`;
-      }).join('');
-
-      grid.addEventListener('click', (e) => {
-        const btn = (e.target as HTMLElement).closest('[data-index]') as HTMLButtonElement | null;
-        if (btn) openLightbox(parseInt(btn.dataset.index!));
-      });
-    }
-
-    function photoUrl(img: GalleryImage) {
-      const url = img.url || `/uploads/${img.filename}`;
-      return url.startsWith('http') ? url : `${MEDIA_BASE}${url}`;
-    }
-
-    function openLightbox(idx: number) {
-      currentIdx = idx;
-      const img = images[idx];
-      lbImg.src = photoUrl(img);
-      lbImg.alt = img.originalName || img.filename;
-      lightbox.removeAttribute('hidden');
-      lbClose.focus();
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeLightbox() {
-      lightbox.setAttribute('hidden', '');
-      document.body.style.overflow = '';
-    }
-
-    function prevPhoto() { openLightbox((currentIdx - 1 + images.length) % images.length); }
-    function nextPhoto() { openLightbox((currentIdx + 1) % images.length); }
-
-    lbClose.addEventListener('click', closeLightbox);
-    lbPrev.addEventListener('click', prevPhoto);
-    lbNext.addEventListener('click', nextPhoto);
-    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
-
-    document.addEventListener('keydown', (e) => {
-      if (!lightbox.hasAttribute('hidden')) {
-        if (e.key === 'Escape')      closeLightbox();
-        if (e.key === 'ArrowLeft')   prevPhoto();
-        if (e.key === 'ArrowRight')  nextPhoto();
+      function closeLightbox() {
+        lightbox.setAttribute('hidden', '');
+        document.body.style.overflow = '';
       }
+
+      function prevPhoto() { openLightbox((currentIdx - 1 + images.length) % images.length); }
+      function nextPhoto() { openLightbox((currentIdx + 1) % images.length); }
+
+      lbClose.addEventListener('click', closeLightbox, { signal });
+      lbPrev.addEventListener('click', prevPhoto, { signal });
+      lbNext.addEventListener('click', nextPhoto, { signal });
+      lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); }, { signal });
+
+      document.addEventListener('keydown', (e) => {
+        if (!lightbox.hasAttribute('hidden')) {
+          if (e.key === 'Escape')    closeLightbox();
+          if (e.key === 'ArrowLeft') prevPhoto();
+          if (e.key === 'ArrowRight') nextPhoto();
+        }
+      }, { signal });
+
+      async function loadGallery() {
+        try {
+          const res = await fetch('/uploads/manifest.json', { cache: 'no-cache' });
+          if (!res.ok) throw new Error('no manifest');
+          const data = await res.json();
+          images = (data.images || []).filter((img: GalleryImage) => img.filename);
+        } catch {
+          if (status) status.textContent = 'No photos yet — check back soon!';
+          return;
+        }
+
+        if (images.length === 0) {
+          if (status) status.textContent = 'No photos yet — check back soon!';
+          return;
+        }
+
+        status?.remove();
+        grid.innerHTML = images.map((img, i) => {
+          const full = photoUrl(img);
+          const alt  = img.originalName || img.filename;
+          return `
+            <div class="gallery-thumb" role="listitem">
+              <button
+                class="w-full aspect-square overflow-hidden rounded-xl block cursor-zoom-in focus-visible:ring-2 focus-visible:ring-warm-500"
+                data-index="${i}"
+                aria-label="View full size: ${alt.replace(/"/g,'&quot;')}"
+                type="button"
+              >
+                <img
+                  src="${full}"
+                  alt="${alt.replace(/"/g,'&quot;')}"
+                  class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+              </button>
+            </div>`;
+        }).join('');
+
+        grid.addEventListener('click', (e) => {
+          const btn = (e.target as HTMLElement).closest('[data-index]') as HTMLButtonElement | null;
+          if (btn) openLightbox(parseInt(btn.dataset.index!));
+        }, { signal });
+      }
+
+      loadGallery();
     });
-
-    loadGallery();
   </script>
 </BaseLayout>
