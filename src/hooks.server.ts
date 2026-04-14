@@ -2,7 +2,8 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from '$lib/server/db';
 import { bootstrapSettings } from '$lib/server/db/settings';
 import { verifySessionToken } from '$lib/server/auth';
-import { getConfiguredAdminPinHash, getConfiguredSitePasswordHash } from '$lib/server/site-access';
+import { bootstrapAdminPassword, isAdminPasswordConfigured } from '$lib/server/admin-password';
+import { getConfiguredSitePasswordHash } from '$lib/server/site-access';
 import { json, redirect, type Handle } from '@sveltejs/kit';
 
 let migrated = false;
@@ -22,11 +23,33 @@ bootstrapSettings({
   site_name: 'drink-hub'
 });
 
+// Admin password bootstrap — runs once per process. If a temp password was
+// generated, print it prominently so the operator can log in and change it.
+const adminBootstrap = bootstrapAdminPassword();
+if (adminBootstrap.generatedPassword) {
+  console.log('');
+  console.log('==============================================================');
+  console.log('[drink-hub] INITIAL ADMIN PASSWORD: ' + adminBootstrap.generatedPassword);
+  console.log('[drink-hub] Log in at /admin/login and change it immediately.');
+  console.log('==============================================================');
+  console.log('');
+} else if (adminBootstrap.source === 'env') {
+  console.log('[drink-hub] admin password seeded from ADMIN_PASSWORD env var');
+}
+
+if (process.env.ADMIN_PIN || process.env.ADMIN_PIN_HASH) {
+  console.warn(
+    '[drink-hub] ADMIN_PIN / ADMIN_PIN_HASH are deprecated and ignored. ' +
+    'Use ADMIN_PASSWORD (or let the server generate a temp password) and ' +
+    'manage the credential from /admin/settings.'
+  );
+}
+
 function isPublicPath(path: string): boolean {
   return (
     path === '/login' ||
     path === '/api/health' ||
-    path.startsWith('/admin') ||
+    path === '/admin/login' ||
     path.startsWith('/_app/') ||
     path.startsWith('/icons/') ||
     path === '/favicon.png' ||
@@ -59,14 +82,21 @@ const SECURITY_HEADERS: Record<string, string> = {
 export const handle: Handle = async ({ event, resolve }) => {
   const path = event.url.pathname;
   const sitePasswordHash = getConfiguredSitePasswordHash();
-  const adminPinHash = getConfiguredAdminPinHash();
   const siteToken = event.cookies.get('site_session');
   const adminToken = event.cookies.get('admin_session');
 
   event.locals.sitePasswordEnabled = !!sitePasswordHash;
-  event.locals.siteAuthenticated = verifySessionToken(siteToken, sitePasswordHash);
-  event.locals.adminAuthenticated = verifySessionToken(adminToken, adminPinHash);
+  event.locals.siteAuthenticated = event.locals.sitePasswordEnabled
+    ? verifySessionToken(siteToken, 'site')
+    : true;
+  event.locals.adminAuthenticated = isAdminPasswordConfigured()
+    ? verifySessionToken(adminToken, 'admin')
+    : false;
 
+  // House-password gate: everything except the public paths requires site auth
+  // when a site password is configured. /admin/login is exempt so admins can
+  // still reach it when site password is configured but the user hasn't
+  // unlocked yet — but /admin/* itself now requires the house password too.
   if (event.locals.sitePasswordEnabled && !event.locals.siteAuthenticated && !isPublicPath(path)) {
     if (path.startsWith('/api/')) {
       return json({ error: 'Authentication required' }, { status: 401 });
@@ -76,7 +106,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     throw redirect(303, `/login?next=${encodeURIComponent(next)}`);
   }
 
-  if (path.startsWith('/admin') && !path.startsWith('/admin/login')) {
+  if (path.startsWith('/admin') && path !== '/admin/login') {
     if (!event.locals.adminAuthenticated) {
       throw redirect(303, '/admin/login');
     }

@@ -147,23 +147,91 @@
 
   <div class="space-y-3 text-sm text-slate-300">
     <div class="flex items-center justify-between gap-4">
-      <span>Shared site password</span>
+      <span>House password</span>
       <span class={data.sitePasswordConfigured ? 'text-emerald-400' : 'text-amber-400'}>
         {data.sitePasswordConfigured ? 'Configured via environment' : 'Not configured'}
       </span>
     </div>
     <div class="flex items-center justify-between gap-4">
-      <span>Admin PIN</span>
-      <span class={data.adminPinConfigured ? 'text-emerald-400' : 'text-amber-400'}>
-        {data.adminPinConfigured ? 'Configured via environment' : 'Not configured'}
+      <span>Admin password</span>
+      <span class={data.adminPasswordConfigured ? 'text-emerald-400' : 'text-amber-400'}>
+        {data.adminPasswordConfigured ? (data.adminPasswordMustReset ? 'Temporary — must change' : 'Configured') : 'Not configured'}
       </span>
     </div>
   </div>
 
   <p class="text-xs text-slate-500">
-    Security credentials are now env-backed only. Set <code class="text-slate-400">SITE_PASSWORD</code> or
-    <code class="text-slate-400">SITE_PASSWORD_HASH</code>, plus
-    <code class="text-slate-400">ADMIN_PIN</code> or <code class="text-slate-400">ADMIN_PIN_HASH</code>,
-    in the deployment environment. The admin panel no longer writes secrets to the database.
+    The house password is env-backed (<code class="text-slate-400">SITE_PASSWORD</code> /
+    <code class="text-slate-400">SITE_PASSWORD_HASH</code>). The admin password is stored in the
+    database and can be changed below; if lost, re-enter the house password to generate a new
+    temporary admin password.
   </p>
+</div>
+
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4 max-w-lg mt-4">
+  <h2 class="text-base font-semibold">Change admin password</h2>
+
+  {#if data.forceChange || data.adminPasswordMustReset}
+    <div class="px-4 py-3 rounded-lg bg-amber-950/60 border border-amber-800 text-sm text-amber-200">
+      You are using a temporary admin password. Please set a new one.
+    </div>
+  {/if}
+
+  {#if form?.pwChanged}
+    <div class="px-4 py-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-sm text-emerald-300">Password changed. All other admin sessions have been signed out.</div>
+  {/if}
+  {#if form?.pwError}
+    <div class="px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.pwError}</div>
+  {/if}
+
+  <form method="POST" action="?/changeAdminPassword" class="space-y-3">
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="currentPassword">Current password</label>
+      <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500" />
+    </div>
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="newPassword">New password (8–128 chars)</label>
+      <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500" />
+    </div>
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="confirmPassword">Confirm new password</label>
+      <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500" />
+    </div>
+    <button type="submit"
+      class="px-4 py-2 rounded-lg bg-orange-500 text-slate-950 font-semibold text-sm hover:bg-orange-400 transition">
+      Change admin password
+    </button>
+  </form>
+</div>
+
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4 max-w-lg mt-4">
+  <h2 class="text-base font-semibold">Reset admin password</h2>
+  <p class="text-xs text-slate-500">
+    Use this if the current admin password has been lost. Requires the house password. A new
+    temporary password is printed to the server logs; you will be signed out of admin.
+  </p>
+
+  {#if form?.resetTemp}
+    <div class="px-4 py-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-sm text-emerald-300">
+      New temporary admin password generated and printed to server logs. You have been signed out.
+    </div>
+  {/if}
+  {#if form?.resetError}
+    <div class="px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.resetError}</div>
+  {/if}
+
+  <form method="POST" action="?/resetAdminPassword" class="space-y-3">
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="housePassword">House password</label>
+      <input id="housePassword" name="housePassword" type="password" autocomplete="current-password" required
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500" />
+    </div>
+    <button type="submit"
+      class="px-4 py-2 rounded-lg bg-red-700 text-slate-100 text-sm hover:bg-red-600 transition">
+      Reset admin password
+    </button>
+  </form>
 </div>

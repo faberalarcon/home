@@ -1,15 +1,29 @@
 import { getSetting, setSetting } from '$lib/server/db/settings';
 import { fail } from '@sveltejs/kit';
-import { getConfiguredAdminPinHash, getConfiguredSitePasswordHash } from '$lib/server/site-access';
+import {
+  getConfiguredSitePasswordHash,
+  isSecureRequest,
+  verifySitePassword
+} from '$lib/server/site-access';
+import {
+  isAdminPasswordConfigured,
+  isAdminPasswordMustReset,
+  resetAdminPassword,
+  setAdminPassword,
+  verifyAdminPassword
+} from '$lib/server/admin-password';
+import { makeSessionToken } from '$lib/server/auth';
 import type { PageServerLoad, Actions } from './$types';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
   return {
     haBaseUrl: getSetting('ha_base_url') ?? '',
     siteName: getSetting('site_name') ?? 'drink-hub',
     hasToken: !!(getSetting('ha_token') ?? ''),
     sitePasswordConfigured: !!getConfiguredSitePasswordHash(),
-    adminPinConfigured: !!getConfiguredAdminPinHash(),
+    adminPasswordConfigured: isAdminPasswordConfigured(),
+    adminPasswordMustReset: isAdminPasswordMustReset(),
+    forceChange: url.searchParams.get('force_change') === '1',
     ttsEnabled: (getSetting('tts_enabled') ?? 'false') !== 'false' && (getSetting('tts_enabled') ?? '0') !== '0',
     ttsEntityId: getSetting('tts_entity_id') ?? '',
     ttsEngineId: getSetting('tts_engine_id') ?? '',
@@ -64,5 +78,68 @@ export const actions: Actions = {
       const msg = err instanceof Error ? err.message : String(err);
       return fail(502, { testError: `Connection failed: ${msg}` });
     }
+  },
+
+  changeAdminPassword: async ({ request, cookies, url }) => {
+    const fd = await request.formData();
+    const current = (fd.get('currentPassword') as string | null) ?? '';
+    const next = (fd.get('newPassword') as string | null) ?? '';
+    const confirm = (fd.get('confirmPassword') as string | null) ?? '';
+
+    if (!verifyAdminPassword(current)) {
+      return fail(401, { pwError: 'Current password is incorrect.' });
+    }
+    if (next.length < 8 || next.length > 128) {
+      return fail(400, { pwError: 'New password must be 8–128 characters.' });
+    }
+    if (next !== confirm) {
+      return fail(400, { pwError: 'New passwords do not match.' });
+    }
+    if (next === current) {
+      return fail(400, { pwError: 'New password must differ from the current password.' });
+    }
+
+    setAdminPassword(next);
+
+    // setAdminPassword bumped the session epoch, which invalidated every admin
+    // session (including ours). Re-mint a cookie for the calling user.
+    cookies.set('admin_session', makeSessionToken('admin'), {
+      path: '/',
+      httpOnly: true,
+      secure: isSecureRequest(url, request.headers.get('x-forwarded-proto')),
+      maxAge: 24 * 60 * 60,
+      sameSite: 'strict'
+    });
+
+    return { pwChanged: true };
+  },
+
+  resetAdminPassword: async ({ request, cookies }) => {
+    const fd = await request.formData();
+    const housePw = (fd.get('housePassword') as string | null) ?? '';
+
+    if (!getConfiguredSitePasswordHash()) {
+      return fail(400, {
+        resetError:
+          'House password is not configured. Set SITE_PASSWORD to use the reset flow, or restart the server without any admin credential to bootstrap a new temp password.'
+      });
+    }
+
+    if (!verifySitePassword(housePw)) {
+      return fail(401, { resetError: 'House password is incorrect.' });
+    }
+
+    const temp = resetAdminPassword();
+    console.log('');
+    console.log('==============================================================');
+    console.log('[drink-hub] ADMIN PASSWORD RESET. New temporary password: ' + temp);
+    console.log('[drink-hub] Log in at /admin/login and change it immediately.');
+    console.log('==============================================================');
+    console.log('');
+
+    // resetAdminPassword bumped the session epoch too → log this user out.
+    cookies.delete('admin_session', { path: '/' });
+
+    return { resetTemp: temp };
   }
 };

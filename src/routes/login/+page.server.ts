@@ -45,7 +45,7 @@ export const actions: Actions = {
       return fail(401, { error: 'Incorrect password.', next });
     }
 
-    cookies.set('site_session', makeSessionToken(storedHash), {
+    cookies.set('site_session', makeSessionToken('site'), {
       path: '/',
       httpOnly: true,
       secure: isSecureRequest(url, request.headers.get('x-forwarded-proto')),

@@ -1,33 +1,50 @@
-import { createHash, createHmac, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHmac, scryptSync, timingSafeEqual } from 'node:crypto';
+import { getAdminSessionEpoch, getSessionSecret } from './admin-password';
 
-const PIN_SALT = 'drink-hub-pin';
 const SITE_PASSWORD_SALT = 'drink-hub-site-password';
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
-export function hashPin(pin: string): string {
-  return createHash('sha256').update(`${PIN_SALT}:${pin}`).digest('hex');
-}
+export type SessionScope = 'admin' | 'site';
 
 export function hashSitePassword(password: string): string {
   return scryptSync(password, SITE_PASSWORD_SALT, 32).toString('hex');
 }
 
-export function makeSessionToken(pinHash: string): string {
-  const ts = String(Date.now());
-  const hmac = createHmac('sha256', pinHash).update(ts).digest('hex');
-  return `${ts}.${hmac}`;
+function sessionEpochFor(scope: SessionScope): number {
+  return scope === 'admin' ? getAdminSessionEpoch() : 0;
 }
 
-export function verifySessionToken(token: string | undefined, pinHash: string): boolean {
-  if (!token || !pinHash) return false;
-  const dot = token.indexOf('.');
-  if (dot < 1) return false;
-  const tsStr = token.slice(0, dot);
-  const hmac = token.slice(dot + 1);
+/**
+ * Session token format: `<scope>.<epoch>.<ts>.<hmac>`
+ * HMAC key is a server-side session secret (not the credential hash), so
+ * recovering the credential hash does not yield token forgery.
+ * The epoch is bumped on admin password change to invalidate prior sessions.
+ */
+export function makeSessionToken(scope: SessionScope): string {
+  const ts = String(Date.now());
+  const epoch = String(sessionEpochFor(scope));
+  const secret = getSessionSecret();
+  const hmac = createHmac('sha256', secret).update(`${scope}.${epoch}.${ts}`).digest('hex');
+  return `${scope}.${epoch}.${ts}.${hmac}`;
+}
+
+export function verifySessionToken(token: string | undefined, scope: SessionScope): boolean {
+  if (!token) return false;
+  const parts = token.split('.');
+  if (parts.length !== 4) return false;
+  const [scopeStr, epochStr, tsStr, hmac] = parts;
+  if (scopeStr !== scope) return false;
+
+  const epoch = Number(epochStr);
   const ts = Number(tsStr);
-  if (isNaN(ts) || Date.now() - ts > SESSION_TTL_MS) return false;
-  const expected = createHmac('sha256', pinHash).update(tsStr).digest('hex');
+  if (!Number.isFinite(epoch) || !Number.isFinite(ts)) return false;
+  if (epoch !== sessionEpochFor(scope)) return false;
+  if (Date.now() - ts > SESSION_TTL_MS) return false;
+
+  const secret = getSessionSecret();
+  const expected = createHmac('sha256', secret).update(`${scope}.${epochStr}.${tsStr}`).digest('hex');
   const actualBuf = Buffer.from(hmac, 'hex');
   const expectedBuf = Buffer.from(expected, 'hex');
-  return actualBuf.length === expectedBuf.length && timingSafeEqual(actualBuf, expectedBuf);
+  if (actualBuf.length !== expectedBuf.length) return false;
+  return timingSafeEqual(actualBuf, expectedBuf);
 }
