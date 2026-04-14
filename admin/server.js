@@ -6,6 +6,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 const { execFile } = require('child_process');
+const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
@@ -15,6 +16,12 @@ const MANIFEST_PATH = path.join(UPLOADS_DIR, 'manifest.json');
 const SITE_CONFIG_PATH = path.join(UPLOADS_DIR, 'site-config.json');
 const DEPLOY_SCRIPT = process.env.DEPLOY_SCRIPT || '/home/faber/projects/home/deploy/deploy.sh';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const ADMIN_SHARED_SECRET = process.env.ADMIN_SHARED_SECRET || '';
+
+if (IS_PRODUCTION && !ADMIN_SHARED_SECRET) {
+  console.error('[FATAL] ADMIN_SHARED_SECRET is required in production. Refusing to start.');
+  process.exit(1);
+}
 
 // Ensure uploads directory exists
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -56,12 +63,20 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// --- Defense-in-depth: verify requests came through the nginx HTTPS proxy ---
-// nginx always sets X-Forwarded-Proto: https; direct localhost hits will be rejected.
-function requireProxy(req, res, next) {
-  if (IS_PRODUCTION && req.headers['x-forwarded-proto'] !== 'https') {
-    console.warn(`[WARN] Direct access attempt blocked: ${req.method} ${req.path}`);
-    return res.status(403).json({ error: 'Direct access not permitted' });
+// --- Defense-in-depth: shared-secret check between nginx and this app ---
+// nginx injects `X-Admin-Auth: <secret>` from /etc/nginx/admin-secret.conf.
+// In production, requests without a matching secret are rejected — preventing
+// any process that can reach localhost:3001 (or forge X-Forwarded-Proto) from
+// hitting these endpoints. Constant-time compare to avoid timing oracles.
+function requireProxyAuth(req, res, next) {
+  if (!IS_PRODUCTION) return next();
+  const supplied = req.headers['x-admin-auth'] || '';
+  const expected = ADMIN_SHARED_SECRET;
+  const a = Buffer.from(String(supplied));
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    console.warn(`[WARN] Auth-failed admin request blocked: ${req.method} ${req.path}`);
+    return res.status(403).json({ error: 'Forbidden' });
   }
   next();
 }
@@ -119,12 +134,13 @@ function writeManifest(manifest) {
   fs.renameSync(tmp, MANIFEST_PATH);
 }
 
+// Apply shared-secret guard to ALL routes (static UI + API + rebuild).
+// Must come before the static handler so unauthed clients can't even fetch index.html.
+app.use(requireProxyAuth);
+
 // --- Static admin UI ---
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
-
-// Apply proxy guard to all API routes
-app.use('/api', requireProxy);
 
 // --- API: health check ---
 app.get('/api/health', (_req, res) => {

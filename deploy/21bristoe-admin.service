@@ -13,6 +13,10 @@ RestartSec=5
 Environment=NODE_ENV=production
 Environment=PORT=3001
 Environment=UPLOADS_DIR=/var/www/21bristoe-media
+# ADMIN_SHARED_SECRET is loaded from this file (not in git, mode 0600, owned by faber).
+# The same value must appear in /etc/nginx/admin-secret.conf as:
+#   proxy_set_header X-Admin-Auth "<secret>";
+EnvironmentFile=/etc/21bristoe-admin.env
 
 # Logging
 StandardOutput=journal

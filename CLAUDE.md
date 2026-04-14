@@ -89,9 +89,26 @@ Placeholder images are in place (solid color PNGs). Replace with real photos:
 - Uploads saved to: `/var/www/21bristoe-media/` (never wiped by `deploy.sh`)
 - Served at: `https://21bristoe.com/uploads/`
 - Features: drag-and-drop upload, reorder, delete — changes appear on homepage immediately
-- Security (Phase 7): rate limiting (30 uploads/min, 60 API/min), proxy guard (rejects direct
-  localhost hits in production), magic byte validation, global error handler, audit logging to journalctl
+- Security (Phase 7): rate limiting (30 uploads/min, 60 API/min), shared-secret proxy auth
+  (X-Admin-Auth must match ADMIN_SHARED_SECRET — anything that bypasses nginx is rejected,
+  including local processes that try to spoof X-Forwarded-Proto), magic byte validation,
+  global error handler, audit logging to journalctl
 - View audit log: `sudo journalctl -u 21bristoe-admin --since "1 hour ago" | grep AUDIT`
+
+### Provisioning the admin shared secret (one-time, per host)
+```bash
+SECRET=$(openssl rand -hex 32)
+# 1. Express side — env file loaded by the systemd unit
+echo "ADMIN_SHARED_SECRET=$SECRET" | sudo tee /etc/21bristoe-admin.env
+sudo chmod 600 /etc/21bristoe-admin.env
+sudo chown faber:faber /etc/21bristoe-admin.env
+# 2. nginx side — included from admin.21bristoe.com.conf
+printf 'proxy_set_header X-Admin-Auth "%s";\n' "$SECRET" | sudo tee /etc/nginx/admin-secret.conf
+sudo chmod 600 /etc/nginx/admin-secret.conf
+# 3. Reload both
+sudo systemctl restart 21bristoe-admin && sudo nginx -t && sudo systemctl reload nginx
+```
+The admin server refuses to start in production without `ADMIN_SHARED_SECRET`.
 
 ## Build-time content (refreshed nightly)
 The weather widget, sky strip, and seasonal greeting are computed at build time:
