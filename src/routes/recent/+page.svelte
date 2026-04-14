@@ -6,9 +6,15 @@
   type Row = PageData['recent'][number];
 
   // Local reactive copy so we can optimistically remove items
+  // svelte-ignore state_referenced_locally
   let rows = $state<Row[]>(data.recent);
   let undoItem = $state<Row | null>(null);
   let undoTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Re-sync when SvelteKit re-runs load (client-side nav back to this page).
+  $effect(() => {
+    rows = data.recent;
+  });
 
   function timeAgo(d: Date) {
     const s = Math.floor((Date.now() - d.getTime()) / 1000);

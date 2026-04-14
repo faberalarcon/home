@@ -11,7 +11,11 @@
     { value: 'per_profile', label: 'Per profile' }
   ];
 
+  // svelte-ignore state_referenced_locally
   let selectedScope = $state(data.editing?.scope ?? 'all_time');
+  $effect(() => {
+    selectedScope = data.editing?.scope ?? 'all_time';
+  });
 </script>
 
 <div class="flex items-center justify-between mb-6">

@@ -7,11 +7,25 @@
   type OrderEntry = typeof data.recentOrders[number];
 
   let clock = $state('');
+  // svelte-ignore state_referenced_locally
   let recentOrders = $state<OrderEntry[]>(data.recentOrders);
+  // svelte-ignore state_referenced_locally
   let todayTotal = $state(data.todayTotal);
+  // svelte-ignore state_referenced_locally
   let leaderToday = $state(data.leaderToday);
+  // svelte-ignore state_referenced_locally
   let topDrinkToday = $state(data.topDrinkToday);
   let newOrderPulse = $state(false);
+
+  // Keep local state in sync if SvelteKit re-runs load (e.g. client-side nav).
+  // SSE mutations between loads are still preserved — the load fires only when
+  // the route re-enters, at which point a fresh snapshot is the right state.
+  $effect(() => {
+    recentOrders = data.recentOrders;
+    todayTotal = data.todayTotal;
+    leaderToday = data.leaderToday;
+    topDrinkToday = data.topDrinkToday;
+  });
 
   // Burn-in prevention: slowly drift background position
   let bgOffset = $state(0);

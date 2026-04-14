@@ -5,17 +5,36 @@
   let { data }: { data: PageData } = $props();
 
   // Live state — updated by SSE
+  // svelte-ignore state_referenced_locally
   let totalToday = $state(data.totalToday);
+  // svelte-ignore state_referenced_locally
   let totalWeek = $state(data.totalWeek);
+  // svelte-ignore state_referenced_locally
   let totalAllTime = $state(data.totalAllTime);
+  // svelte-ignore state_referenced_locally
   let leaderToday = $state(data.leaderToday);
+  // svelte-ignore state_referenced_locally
   let leaderAllTime = $state(data.leaderAllTime);
+  // svelte-ignore state_referenced_locally
   let topDrinks = $state(data.topDrinks);
 
   let tab = $state<'today' | 'all_time'>('today');
+  // svelte-ignore state_referenced_locally
   let dowCounts = $state(data.dowCounts);
   let milestoneToast = $state<string | null>(null);
   let source: EventSource | null = null;
+
+  // Re-sync when SvelteKit re-runs load. SSE-driven mutations are transient
+  // between loads; on route re-entry the fresh snapshot wins.
+  $effect(() => {
+    totalToday = data.totalToday;
+    totalWeek = data.totalWeek;
+    totalAllTime = data.totalAllTime;
+    leaderToday = data.leaderToday;
+    leaderAllTime = data.leaderAllTime;
+    topDrinks = data.topDrinks;
+    dowCounts = data.dowCounts;
+  });
 
   onMount(() => {
     source = new EventSource('/api/stream');
