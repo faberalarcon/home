@@ -41,9 +41,22 @@ function isValidImageBuffer(buffer) {
 }
 
 // --- Audit logging (captured by journalctl via stdout) ---
+// Strip CR/LF and other control chars from any value that may be attacker-
+// controlled (originalname, header values, filenames in route params/body).
+// Without this, an upload with originalname="a.jpg\n[AUDIT] action=delete ..."
+// would forge fake audit-log entries that look identical to real ones.
+function safe(v, max = 200) {
+  if (v === undefined || v === null) return '';
+  let s = String(v);
+  // Drop ASCII control chars (incl. CR, LF, NUL, ESC) and DEL.
+  s = s.replace(/[\x00-\x1f\x7f]/g, '?');
+  if (s.length > max) s = s.slice(0, max) + '…';
+  return s;
+}
+
 function auditLog(action, details, req) {
-  const ip = req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
-  console.log(`[AUDIT] ${new Date().toISOString()} action=${action} ip=${ip} ${details}`);
+  const ipRaw = req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+  console.log(`[AUDIT] ${new Date().toISOString()} action=${safe(action, 40)} ip=${safe(ipRaw, 64)} ${safe(details, 400)}`);
 }
 
 // --- Rate limiters ---
@@ -290,7 +303,7 @@ app.post('/api/upload', uploadLimiter, upload.array('images', 20), async (req, r
           results.push(entry);
           auditLog('upload', `file=${filename} original=${file.originalname} originalBytes=${originalBytes} savedBytes=${savedBytes}`, req);
         } catch (err) {
-          console.error(`[ERROR] Upload failed for ${file.originalname}:`, err.message);
+          console.error(`[ERROR] Upload failed for ${safe(file.originalname, 80)}:`, err.message);
           results.push({ originalName: file.originalname, error: err.message });
         }
       }
