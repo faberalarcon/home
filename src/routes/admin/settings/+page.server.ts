@@ -13,6 +13,7 @@ import {
   verifyAdminPassword
 } from '$lib/server/admin-password';
 import { makeSessionToken } from '$lib/server/auth';
+import { validateOutboundUrl } from '$lib/server/url-allowlist';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -44,7 +45,13 @@ export const actions: Actions = {
     const ttsService = (fd.get('ttsService') as string | null)?.trim() || 'tts/speak';
     const lightsEntityId = (fd.get('lightsEntityId') as string | null)?.trim() ?? '';
 
-    if (haBaseUrl) setSetting('ha_base_url', haBaseUrl);
+    if (haBaseUrl) {
+      const check = await validateOutboundUrl(haBaseUrl);
+      if (!check.ok) {
+        return fail(400, { error: `Invalid HA base URL: ${check.error}` });
+      }
+      setSetting('ha_base_url', haBaseUrl);
+    }
     if (siteName) setSetting('site_name', siteName);
     if (haToken) setSetting('ha_token', haToken);
     setSetting('tts_enabled', ttsEnabled);
@@ -58,15 +65,35 @@ export const actions: Actions = {
 
   test: async ({ request }) => {
     const fd = await request.formData();
-    const url = (fd.get('haBaseUrl') as string | null)?.trim() ?? getSetting('ha_base_url') ?? '';
-    const token = (fd.get('haToken') as string | null)?.trim() || (getSetting('ha_token') ?? '');
+    const formUrl = (fd.get('haBaseUrl') as string | null)?.trim() ?? '';
+    const formToken = (fd.get('haToken') as string | null)?.trim() ?? '';
+    const storedUrl = getSetting('ha_base_url') ?? '';
+    const storedToken = getSetting('ha_token') ?? '';
 
-    if (!url || !token) {
-      return fail(400, { testError: 'URL and token are required to test the connection.' });
+    const targetUrl = formUrl || storedUrl;
+    // Only reuse the stored token when the target URL matches what was already
+    // saved. Otherwise the caller must supply a token for the new host — this
+    // kills the "point base_url at attacker.tld, reuse stored bearer" attack.
+    const usingStoredUrl = !formUrl || formUrl === storedUrl;
+    const token = formToken || (usingStoredUrl ? storedToken : '');
+
+    if (!targetUrl || !token) {
+      return fail(400, {
+        testError: formUrl && !formToken && !usingStoredUrl
+          ? 'Enter the HA token again when testing a different base URL.'
+          : 'URL and token are required to test the connection.'
+      });
     }
 
+    const check = await validateOutboundUrl(targetUrl);
+    if (!check.ok || !check.url) {
+      return fail(400, { testError: `Invalid HA base URL: ${check.error}` });
+    }
+
+    const cleanOrigin = `${check.url.origin}${check.url.pathname.replace(/\/$/, '')}`;
+
     try {
-      const res = await fetch(`${url.replace(/\/$/, '')}/api/`, {
+      const res = await fetch(`${cleanOrigin}/api/`, {
         headers: { Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(5000)
       });

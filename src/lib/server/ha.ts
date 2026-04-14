@@ -1,22 +1,35 @@
 import { db } from './db/index';
 import { haEventsLog } from './db/schema';
 import { getSetting, setSetting } from './db/settings';
+import { validateOutboundUrl } from './url-allowlist';
 
 const TIMEOUT_MS = 3000;
+
+async function resolveHaTarget(path: string): Promise<{ url: string; token: string } | { error: string }> {
+  const baseUrl = getSetting('ha_base_url') ?? '';
+  const token = getSetting('ha_token') ?? '';
+  if (!token) return { error: 'no token configured' };
+  if (!baseUrl) return { error: 'no base URL configured' };
+
+  const check = await validateOutboundUrl(baseUrl);
+  if (!check.ok || !check.url) {
+    return { error: check.error ?? 'invalid HA base URL' };
+  }
+
+  const clean = `${check.url.origin}${check.url.pathname.replace(/\/$/, '')}`;
+  return { url: `${clean}${path}`, token };
+}
 
 export async function callService(
   domain: string,
   service: string,
   data: Record<string, unknown>
 ): Promise<{ success: boolean; error?: string }> {
-  const baseUrl = getSetting('ha_base_url') ?? '';
-  const token = getSetting('ha_token') ?? '';
-
-  if (!token || !baseUrl) {
-    return { success: false, error: 'HA not configured' };
-  }
-
-  const url = `${baseUrl.replace(/\/$/, '')}/api/services/${encodeURIComponent(domain)}/${encodeURIComponent(service)}`;
+  const resolved = await resolveHaTarget(
+    `/api/services/${encodeURIComponent(domain)}/${encodeURIComponent(service)}`
+  );
+  if ('error' in resolved) return { success: false, error: resolved.error };
+  const { url, token } = resolved;
 
   try {
     const controller = new AbortController();
@@ -41,15 +54,15 @@ export async function getLightState(entityId: string): Promise<{
   rgb?: [number, number, number];
   colorTemp?: number;
 } | null> {
-  const baseUrl = getSetting('ha_base_url') ?? '';
-  const token = getSetting('ha_token') ?? '';
-  if (!token || !baseUrl) return null;
+  const resolved = await resolveHaTarget(`/api/states/${encodeURIComponent(entityId)}`);
+  if ('error' in resolved) return null;
+  const { url, token } = resolved;
 
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     const res = await fetch(
-      `${baseUrl.replace(/\/$/, '')}/api/states/${encodeURIComponent(entityId)}`,
+      url,
       { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
     );
     clearTimeout(timer);
@@ -73,8 +86,6 @@ export async function fireEvent(
   eventType: string,
   payload: Record<string, unknown>
 ): Promise<{ success: boolean; error?: string }> {
-  const baseUrl = getSetting('ha_base_url') ?? '';
-  const token = getSetting('ha_token') ?? '';
   const payloadJson = JSON.stringify(payload);
 
   const logAndReturn = (success: boolean, errorMsg: string) => {
@@ -84,10 +95,9 @@ export async function fireEvent(
     return { success, error: errorMsg };
   };
 
-  if (!token) return logAndReturn(false, 'no token configured');
-  if (!baseUrl) return logAndReturn(false, 'no base URL configured');
-
-  const url = `${baseUrl.replace(/\/$/, '')}/api/events/${encodeURIComponent(eventType)}`;
+  const resolved = await resolveHaTarget(`/api/events/${encodeURIComponent(eventType)}`);
+  if ('error' in resolved) return logAndReturn(false, resolved.error);
+  const { url, token } = resolved;
 
   let success = false;
   let errorMsg: string | undefined;
