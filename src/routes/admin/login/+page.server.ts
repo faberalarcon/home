@@ -6,7 +6,12 @@ import {
   verifyAdminPassword
 } from '$lib/server/admin-password';
 import { isSecureRequest } from '$lib/server/site-access';
-import { checkRateLimit } from '$lib/server/ratelimit';
+import {
+  checkAdminLoginGlobal,
+  checkRateLimit,
+  clearAdminLoginFailures,
+  recordAdminLoginFailure
+} from '$lib/server/ratelimit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -29,6 +34,12 @@ export const actions: Actions = {
       return fail(400, { error: 'Password must be 8–128 characters.' });
     }
 
+    const globalCheck = checkAdminLoginGlobal();
+    if (!globalCheck.allowed) {
+      console.warn(`[auth] admin-login in global backoff; retryAfter=${globalCheck.retryAfter}s`);
+      return fail(429, { error: 'Too many failed admin logins. Try again later.' });
+    }
+
     const rateCheck = checkRateLimit('admin-login', ip);
     if (!rateCheck.allowed) {
       console.warn(`[auth] admin-login rate-limited ip=${ip} at=${new Date().toISOString()}`);
@@ -36,9 +47,12 @@ export const actions: Actions = {
     }
 
     if (!verifyAdminPassword(password)) {
+      recordAdminLoginFailure();
       console.warn(`[auth] admin-login failed ip=${ip} at=${new Date().toISOString()}`);
       return fail(401, { error: 'Incorrect password.' });
     }
+
+    clearAdminLoginFailures();
 
     cookies.set('admin_session', makeSessionToken('admin'), {
       path: '/',
