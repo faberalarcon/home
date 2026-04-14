@@ -1,9 +1,10 @@
 ---
 // Visitor Guide — practical info for guests.
 // Uses native <details>/<summary> for zero-JS collapsible panels (fully accessible, CSP-clean).
-// Edit the `tips` array below to keep the content current.
+// Tips are admin-managed via site-config.json; defaults are used when no config is present.
+import fs from 'node:fs';
 
-const tips = [
+const defaultTips = [
   {
     icon: '🚗',
     title: 'Parking',
@@ -25,10 +26,19 @@ const tips = [
     body: 'Ask us for the guest network name and password when you arrive.',
   },
 ];
+
+let tips = defaultTips;
+try {
+  const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
+  const cfg = JSON.parse(raw);
+  if (Array.isArray(cfg.visitorTips) && cfg.visitorTips.length > 0) {
+    tips = cfg.visitorTips;
+  }
+} catch { /* no config yet — use defaults */ }
 ---
 
 <section class="py-16 px-6 bg-warm-100" aria-labelledby="visitor-heading">
-  <div class="max-w-5xl mx-auto">
+  <div class="max-w-5xl mx-auto reveal">
     <div class="text-center mb-10">
       <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-2">For Visitors</p>
       <h2

@@ -1,0 +1,156 @@
+---
+// B1: Photo Gallery — displays all admin-uploaded photos in a grid with lightbox.
+// Photos are fetched from /uploads/manifest.json at runtime (like the slideshow),
+// so they stay current without a rebuild after each upload.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout
+  title="Gallery"
+  description="A photo gallery from 21 Bristoe — Meades Crossing, Taneytown, Maryland."
+>
+  <Header />
+  <main id="main-content" class="min-h-screen bg-warm-50 py-16 px-6">
+    <div class="max-w-5xl mx-auto reveal">
+      <!-- Header -->
+      <div class="text-center mb-12">
+        <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-3">21 Bristoe</p>
+        <h1 class="text-4xl md:text-5xl font-bold text-warm-800 font-display mb-4">Gallery</h1>
+        <p class="text-gray-500 text-lg">Photos from around the house and neighborhood.</p>
+      </div>
+
+      <!-- Loading state -->
+      <p id="galleryStatus" class="text-center text-warm-500 text-sm py-12">Loading photos…</p>
+
+      <!-- Photo grid (populated by JS) -->
+      <div
+        id="galleryGrid"
+        class="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4"
+        role="list"
+        aria-label="Photo gallery"
+      ></div>
+
+      <!-- Back link -->
+      <div class="text-center mt-12">
+        <a href="/" class="text-warm-600 hover:text-warm-800 transition-colors text-sm font-medium">
+          ← Back to 21 Bristoe
+        </a>
+      </div>
+    </div>
+  </main>
+  <Footer />
+
+  <!-- Lightbox overlay (hidden until a photo is clicked) -->
+  <div id="galleryLightbox" class="gallery-lightbox" hidden aria-modal="true" role="dialog" aria-label="Photo viewer">
+    <button id="lbClose"  class="gallery-lb-close" aria-label="Close">✕</button>
+    <button id="lbPrev"   class="gallery-lb-prev"  aria-label="Previous photo">‹</button>
+    <button id="lbNext"   class="gallery-lb-next"  aria-label="Next photo">›</button>
+    <img id="lbImg" src="" alt="" />
+  </div>
+
+  <script>
+    const MEDIA_BASE = 'https://21bristoe.com';
+
+    interface GalleryImage {
+      filename: string;
+      originalName?: string;
+      url?: string;
+    }
+
+    let images: GalleryImage[] = [];
+    let currentIdx = 0;
+
+    const grid     = document.getElementById('galleryGrid')!;
+    const status   = document.getElementById('galleryStatus')!;
+    const lightbox = document.getElementById('galleryLightbox')!;
+    const lbImg    = document.getElementById('lbImg') as HTMLImageElement;
+    const lbClose  = document.getElementById('lbClose')!;
+    const lbPrev   = document.getElementById('lbPrev')!;
+    const lbNext   = document.getElementById('lbNext')!;
+
+    async function loadGallery() {
+      try {
+        const res = await fetch('/uploads/manifest.json', { cache: 'no-cache' });
+        if (!res.ok) throw new Error('no manifest');
+        const data = await res.json();
+        images = (data.images || []).filter((img: GalleryImage) => img.filename);
+      } catch {
+        status.textContent = 'No photos yet — check back soon!';
+        return;
+      }
+
+      if (images.length === 0) {
+        status.textContent = 'No photos yet — check back soon!';
+        return;
+      }
+
+      status.remove();
+      grid.innerHTML = images.map((img, i) => {
+        const url  = img.url || `/uploads/${img.filename}`;
+        const full = url.startsWith('http') ? url : `${MEDIA_BASE}${url}`;
+        const alt  = img.originalName || img.filename;
+        return `
+          <div class="gallery-thumb" role="listitem">
+            <button
+              class="w-full aspect-square overflow-hidden rounded-xl block cursor-zoom-in focus-visible:ring-2 focus-visible:ring-warm-500"
+              data-index="${i}"
+              aria-label="View full size: ${alt.replace(/"/g,'&quot;')}"
+              type="button"
+            >
+              <img
+                src="${full}"
+                alt="${alt.replace(/"/g,'&quot;')}"
+                class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
+            </button>
+          </div>`;
+      }).join('');
+
+      grid.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest('[data-index]') as HTMLButtonElement | null;
+        if (btn) openLightbox(parseInt(btn.dataset.index!));
+      });
+    }
+
+    function photoUrl(img: GalleryImage) {
+      const url = img.url || `/uploads/${img.filename}`;
+      return url.startsWith('http') ? url : `${MEDIA_BASE}${url}`;
+    }
+
+    function openLightbox(idx: number) {
+      currentIdx = idx;
+      const img = images[idx];
+      lbImg.src = photoUrl(img);
+      lbImg.alt = img.originalName || img.filename;
+      lightbox.removeAttribute('hidden');
+      lbClose.focus();
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      lightbox.setAttribute('hidden', '');
+      document.body.style.overflow = '';
+    }
+
+    function prevPhoto() { openLightbox((currentIdx - 1 + images.length) % images.length); }
+    function nextPhoto() { openLightbox((currentIdx + 1) % images.length); }
+
+    lbClose.addEventListener('click', closeLightbox);
+    lbPrev.addEventListener('click', prevPhoto);
+    lbNext.addEventListener('click', nextPhoto);
+    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+
+    document.addEventListener('keydown', (e) => {
+      if (!lightbox.hasAttribute('hidden')) {
+        if (e.key === 'Escape')      closeLightbox();
+        if (e.key === 'ArrowLeft')   prevPhoto();
+        if (e.key === 'ArrowRight')  nextPhoto();
+      }
+    });
+
+    loadGallery();
+  </script>
+</BaseLayout>

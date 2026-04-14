@@ -10,11 +10,22 @@
 
 <header>
   <div>
-    <h1>21 Bristoe — Image Admin</h1>
-    <p>Upload &amp; manage slideshow photos</p>
+    <h1>21 Bristoe — Admin</h1>
+    <p>Manage photos, content, and site settings</p>
   </div>
-  <a href="https://21bristoe.com" class="home-link" target="_blank" rel="noopener noreferrer">View site →</a>
+  <div class="header-actions">
+    <button id="rebuildBtn" class="btn-rebuild" title="Rebuild and deploy the site">⟳ Rebuild Site</button>
+    <a href="https://21bristoe.com" class="home-link" target="_blank" rel="noopener noreferrer">View site →</a>
+  </div>
 </header>
+
+<!-- Stats strip (D1) -->
+<div class="stats-strip" id="statsStrip">
+  <div class="stat-card"><span class="stat-value" id="statPhotos">—</span><span class="stat-label">Photos</span></div>
+  <div class="stat-card"><span class="stat-value" id="statDisk">—</span><span class="stat-label">Disk used</span></div>
+  <div class="stat-card"><span class="stat-value" id="statUpload">—</span><span class="stat-label">Last upload</span></div>
+  <div class="stat-card"><span class="stat-value" id="statUptime">—</span><span class="stat-label">Uptime</span></div>
+</div>
 
 <div class="container">
 
@@ -39,17 +50,51 @@
 
   <hr class="section-divider" />
 
+  <!-- Site Content Editor (A4 + A5) -->
+  <div class="section-header">
+    <h2>Site Content</h2>
+    <span class="hint">Changes take effect after rebuilding the site</span>
+  </div>
+
+  <!-- Household member cards (A4) -->
+  <div class="content-card">
+    <h3 class="content-card-title">Household Members</h3>
+    <p class="content-card-desc">Edit each member's role, bio, and profile photo. Requires a rebuild to appear on the site.</p>
+    <div id="memberEditor"></div>
+  </div>
+
+  <!-- Visitor guide tips (A5) -->
+  <div class="content-card">
+    <h3 class="content-card-title">Visitor Guide Tips</h3>
+    <p class="content-card-desc">Edit the tips shown in the "Coming Over?" section. Use emoji for the icon field.</p>
+    <div id="tipEditor"></div>
+    <button class="btn-add-tip" id="addTipBtn">+ Add tip</button>
+    <div class="content-actions">
+      <button class="btn-save-content" id="saveContentBtn">Save content changes</button>
+    </div>
+  </div>
+
+  <hr class="section-divider" />
+
   <!-- Slideshow info -->
   <div class="slide-info">
     <strong>How it works:</strong> Photos appear in the slideshow on <a href="https://21bristoe.com" target="_blank" rel="noopener noreferrer">21bristoe.com</a> immediately after uploading — no rebuild needed.
     Drag cards to reorder. The slideshow plays in the order shown here.
+    Star (⭐) a photo to use it as the social media preview (Open Graph) image.
+  </div>
+
+  <!-- Batch controls (D2) -->
+  <div class="batch-bar" id="batchBar" hidden>
+    <span id="batchCount">0 selected</span>
+    <button class="btn-batch-delete" id="batchDeleteBtn">Delete selected</button>
+    <button class="btn-batch-cancel" id="batchCancelBtn">Cancel</button>
   </div>
 
   <!-- Image grid -->
   <div class="section-header">
     <h2>Slideshow Photos</h2>
     <span class="count" id="countBadge">0</span>
-    <span class="hint">Drag to reorder</span>
+    <span class="hint">Drag to reorder · Shift-click to multi-select</span>
   </div>
 
   <div class="image-grid" id="imageGrid"></div>

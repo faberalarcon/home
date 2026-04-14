@@ -74,12 +74,127 @@ body {
   border-radius: 2px;
 }
 
-/* Display font utility — replaces inline style="font-family: var(--font-display);" across components */
+/* Display font utility */
 .font-display {
   font-family: var(--font-display);
 }
 
-/* Slideshow slide elements (created dynamically by JS, must be global) */
+/* ============================================================
+   C2: Scroll progress bar — pure CSS, no JS
+   Uses animation-timeline: scroll() (modern browsers).
+   Graceful fallback: invisible on unsupported browsers.
+   ============================================================ */
+@keyframes scroll-progress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: var(--color-warm-500);
+  z-index: 9999;
+  pointer-events: none;
+  animation: scroll-progress linear both;
+  animation-timeline: scroll(root block);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-progress { display: none; }
+}
+
+/* ============================================================
+   C4: Scroll-triggered micro-animations
+   Uses animation-timeline: view() (modern browsers).
+   Graceful fallback: no animation (elements visible immediately).
+   ============================================================ */
+@keyframes reveal-up {
+  from { opacity: 0; translate: 0 28px; }
+  to   { opacity: 1; translate: 0 0;    }
+}
+
+.reveal {
+  animation: reveal-up linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 28%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { animation: none; }
+}
+
+/* ============================================================
+   C3: Dark mode — system-preference-aware, no JS required.
+   Remaps the warm/sage CSS variables so all Tailwind utilities
+   (which generate var(--color-*) references) adapt automatically.
+   Exceptions: hero and footer already have dark backgrounds —
+   their light text colours are preserved with explicit overrides.
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    /* Surface backgrounds: invert the warm scale */
+    --color-warm-50:  #1c1710;
+    --color-warm-100: #231d13;
+    --color-warm-200: #2e2618;
+    --color-warm-300: #3d3320;
+    --color-warm-400: #6b5a2a;
+    /* warm-500 (#b8860b amber accent) — keep as highlight */
+    --color-warm-600: #9a7020;
+    --color-warm-700: #b89040;
+    /* Heading text: was dark brown, becomes warm gold */
+    --color-warm-800: #ddc070;
+    /* Footer bg: near black */
+    --color-warm-900: #0e0c08;
+
+    /* Sage surface backgrounds */
+    --color-sage-50:  #101510;
+    --color-sage-100: #161e16;
+    --color-sage-200: #1e2c1e;
+    --color-sage-300: #2a3d2a;
+    /* sage-500+ keep as accent */
+
+    /* Tailwind's built-in gray scale (used in paragraph text) */
+    --color-gray-600: #a08060;
+    --color-gray-500: #907050;
+    --color-gray-400: #806040;
+  }
+
+  body { color: #c8a870; }
+
+  /* bg-white uses --color-white which also affects text-white buttons.
+     Override the background for white-surface sections directly. */
+  .bg-white { background-color: #171210; }
+
+  /* Preserve light text in sections that already have dark backgrounds */
+  /* Hero: slideshow/gradient is dark — keep warm text light */
+  [aria-label="Welcome hero"] .text-warm-50  { color: #fdf8f0; }
+  [aria-label="Welcome hero"] .text-warm-100 { color: #f5ead6; }
+  [aria-label="Welcome hero"] .text-warm-200 { color: #e8d5b0; }
+  [aria-label="Welcome hero"] .text-warm-300 { color: #d4b882; }
+  [aria-label="Welcome hero"] .text-warm-400 { color: #c9a04a; }
+  /* Footer: dark bg, keep light text */
+  footer .text-warm-100 { color: #f5ead6; }
+  footer .text-warm-200 { color: #e8d5b0; }
+  footer .text-warm-300 { color: #d4b882; }
+  footer .text-warm-400 { color: #c9a04a; }
+  footer .text-warm-500 { color: #b8860b; }
+  /* SkyStrip: bg-warm-900 (dark), keep its light text */
+  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-200 { color: #e8d5b0; }
+  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-300 { color: #d4b882; }
+  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-600 { color: #a07820; }
+  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-700 { color: #504030; }
+  /* Header sticky nav: bg-warm-50/95 → now dark, text needs adjustment */
+  header .text-warm-700 { color: #d4b882; }
+}
+
+/* ============================================================
+   Slideshow slide elements (created dynamically by JS, must be global)
+   ============================================================ */
 .bristoe-slide {
   position: absolute;
   inset: 0;
@@ -127,7 +242,126 @@ body {
   .bristoe-slide-dot { transition: none; }
 }
 
-/* Hero texture overlay — cross-hatch SVG pattern (used in Hero.astro) */
+/* Hero texture overlay */
 .hero-texture {
   background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C%2Fg%3E%3C%2Fsvg%3E");
 }
+
+/* C5: Keyboard shortcut overlay */
+.shortcut-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shortcut-overlay[hidden] { display: none; }
+
+.shortcut-panel {
+  background: var(--color-warm-50);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 360px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+.shortcut-panel h2 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-warm-800);
+  margin-bottom: 1.25rem;
+}
+.shortcut-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.shortcut-row kbd {
+  display: inline-block;
+  background: var(--color-warm-200);
+  color: var(--color-warm-800);
+  border: 1px solid var(--color-warm-300);
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  min-width: 2rem;
+  text-align: center;
+}
+.shortcut-row span {
+  font-size: 0.875rem;
+  color: var(--color-warm-700);
+}
+.shortcut-close {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--color-warm-500);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+.shortcut-close:hover { background: var(--color-warm-600); }
+
+/* Gallery lightbox styles (used in gallery.astro script) */
+.gallery-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gallery-lightbox[hidden] { display: none; }
+.gallery-lightbox img {
+  max-width: min(90vw, 1200px);
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+.gallery-lb-close {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.5rem;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 10001;
+}
+.gallery-lb-close:hover { background: rgba(255,255,255,0.25); }
+.gallery-lb-prev,
+.gallery-lb-next {
+  position: fixed;
+  top: 50%;
+  translate: 0 -50%;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 10001;
+}
+.gallery-lb-prev { left: 1rem; }
+.gallery-lb-next { right: 1rem; }
+.gallery-lb-prev:hover,
+.gallery-lb-next:hover { background: rgba(255,255,255,0.25); }

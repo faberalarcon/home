@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+import fs from 'node:fs';
 
 interface Props {
   title: string;
@@ -11,12 +13,21 @@ interface Props {
 const {
   title,
   description = 'Home of Faber, Kasey, and Limón the golden retriever — Meades Crossing, Taneytown, Maryland.',
-  ogImage = '/og-image.png',
+  ogImage: ogImageProp = '/og-image.png',
   canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString(),
 } = Astro.props;
 
 const siteName = '21 Bristoe';
 const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
+
+// B4: Read admin-selected OG image from manifest (build-time)
+let ogImage = ogImageProp;
+try {
+  const manifest = JSON.parse(fs.readFileSync('/var/www/21bristoe-media/manifest.json', 'utf8'));
+  if (manifest.ogImageFile) {
+    ogImage = `/uploads/${manifest.ogImageFile}`;
+  }
+} catch { /* no manifest yet — use default */ }
 ---
 
 <!doctype html>
@@ -48,6 +59,9 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#b8860b" />
+
+    <!-- C1: View Transitions — smooth crossfades between pages -->
+    <ClientRouter />
 
     <!-- Structured data -->
     <script type="application/ld+json">
@@ -84,7 +98,15 @@ const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
     </script>
   </head>
   <body>
+    <!-- C2: Scroll progress bar (pure CSS, animation-timeline: scroll) -->
+    <div class="scroll-progress" aria-hidden="true"></div>
+
     <a href="#main-content" class="skip-to-content">Skip to main content</a>
     <slot />
+
+    <!-- C5: Keyboard shortcuts (compiled to external file by Vite) -->
+    <script>
+      import '../scripts/shortcuts.ts';
+    </script>
   </body>
 </html>

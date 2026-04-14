@@ -5,12 +5,15 @@ const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
+const { execFile } = require('child_process');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const UPLOADS_DIR = process.env.UPLOADS_DIR || '/var/www/21bristoe-media';
 const MANIFEST_PATH = path.join(UPLOADS_DIR, 'manifest.json');
+const SITE_CONFIG_PATH = path.join(UPLOADS_DIR, 'site-config.json');
+const DEPLOY_SCRIPT = process.env.DEPLOY_SCRIPT || '/home/faber/projects/home/deploy/deploy.sh';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Ensure uploads directory exists
@@ -175,15 +178,19 @@ app.post('/api/upload', uploadLimiter, upload.array('images', 20), async (req, r
             .jpeg({ quality: 85, progressive: true })
             .toFile(destPath);
 
+          const originalBytes = file.buffer.length;
+          const savedBytes = fs.statSync(destPath).size;
           const entry = {
             filename,
             originalName: file.originalname,
             uploaded: new Date().toISOString(),
             url: `/uploads/${filename}`,
+            originalBytes,
+            savedBytes,
           };
           manifest.images.unshift(entry); // newest first
           results.push(entry);
-          auditLog('upload', `file=${filename} original=${file.originalname}`, req);
+          auditLog('upload', `file=${filename} original=${file.originalname} originalBytes=${originalBytes} savedBytes=${savedBytes}`, req);
         } catch (err) {
           console.error(`[ERROR] Upload failed for ${file.originalname}:`, err.message);
           results.push({ originalName: file.originalname, error: err.message });
@@ -290,6 +297,198 @@ app.put('/api/images/reorder', apiLimiter, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// --- API: stats (D1) ---
+app.get('/api/stats', apiLimiter, (_req, res) => {
+  const manifest = readManifest();
+  let totalBytes = 0;
+  let lastUpload = null;
+  for (const img of manifest.images) {
+    const fp = path.join(UPLOADS_DIR, img.filename);
+    try { totalBytes += fs.statSync(fp).size; } catch { /* file missing */ }
+    if (!lastUpload || img.uploaded > lastUpload) lastUpload = img.uploaded;
+  }
+  res.json({
+    photoCount: manifest.images.length,
+    totalBytes,
+    lastUpload,
+    uptime: Math.round(process.uptime()),
+  });
+});
+
+// --- API: site config (A4 / A5) ---
+app.get('/api/site-config', apiLimiter, (_req, res) => {
+  try {
+    const raw = fs.readFileSync(SITE_CONFIG_PATH, 'utf8');
+    res.json(JSON.parse(raw));
+  } catch {
+    res.json({});
+  }
+});
+
+app.put('/api/site-config', apiLimiter, async (req, res, next) => {
+  try {
+    const cfg = req.body;
+    if (typeof cfg !== 'object' || cfg === null || Array.isArray(cfg)) {
+      return res.status(400).json({ error: 'Body must be a JSON object' });
+    }
+    // Atomic write
+    const tmp = SITE_CONFIG_PATH + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2));
+    fs.renameSync(tmp, SITE_CONFIG_PATH);
+    auditLog('site_config_update', `keys=${Object.keys(cfg).join(',')}`, req);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- API: member photo upload (A4) ---
+const MEMBER_NAMES = ['faber', 'kasey', 'limon'];
+
+app.post('/api/member-photo/:member', uploadLimiter, upload.single('image'), async (req, res, next) => {
+  const member = req.params.member.toLowerCase();
+  if (!MEMBER_NAMES.includes(member)) return res.status(400).json({ error: 'Unknown member' });
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+  try {
+    if (!isValidImageBuffer(req.file.buffer)) {
+      auditLog('member_photo_rejected', `member=${member} reason=invalid_signature`, req);
+      return res.status(400).json({ error: 'Invalid image file (signature check failed)' });
+    }
+
+    const filename = `member-${member}.jpg`;
+    const destPath = path.join(UPLOADS_DIR, filename);
+    await sharp(req.file.buffer)
+      .rotate()
+      .resize({ width: 400, height: 400, fit: 'cover' })
+      .jpeg({ quality: 85, progressive: true })
+      .toFile(destPath);
+
+    // Update site-config.json with the photoFile for this member
+    let cfg = {};
+    try { cfg = JSON.parse(fs.readFileSync(SITE_CONFIG_PATH, 'utf8')); } catch { /* new file */ }
+    if (!Array.isArray(cfg.members)) {
+      cfg.members = MEMBER_NAMES.map(n => ({ name: n.charAt(0).toUpperCase() + n.slice(1) }));
+    }
+    const idx = cfg.members.findIndex(m => m.name && m.name.toLowerCase() === member);
+    if (idx >= 0) cfg.members[idx].photoFile = filename;
+    else cfg.members.push({ name: member, photoFile: filename });
+    const tmp = SITE_CONFIG_PATH + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2));
+    fs.renameSync(tmp, SITE_CONFIG_PATH);
+
+    auditLog('member_photo_upload', `member=${member} file=${filename}`, req);
+    res.json({ ok: true, url: `/uploads/${filename}` });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/member-photo/:member', apiLimiter, (req, res) => {
+  const member = req.params.member.toLowerCase();
+  if (!MEMBER_NAMES.includes(member)) return res.status(400).json({ error: 'Unknown member' });
+
+  const filename = `member-${member}.jpg`;
+  const filePath = path.join(UPLOADS_DIR, filename);
+  let fileRemoved = false;
+  try { fs.unlinkSync(filePath); fileRemoved = true; } catch { /* ignore */ }
+
+  // Clear photoFile in site-config
+  try {
+    let cfg = JSON.parse(fs.readFileSync(SITE_CONFIG_PATH, 'utf8'));
+    if (Array.isArray(cfg.members)) {
+      const idx = cfg.members.findIndex(m => m.name && m.name.toLowerCase() === member);
+      if (idx >= 0) delete cfg.members[idx].photoFile;
+      const tmp = SITE_CONFIG_PATH + '.tmp';
+      fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2));
+      fs.renameSync(tmp, SITE_CONFIG_PATH);
+    }
+  } catch { /* config not found */ }
+
+  auditLog('member_photo_delete', `member=${member} fileRemoved=${fileRemoved}`, req);
+  res.json({ ok: true, fileRemoved });
+});
+
+// --- API: set OG image (B4) ---
+app.post('/api/images/:filename/og', apiLimiter, async (req, res, next) => {
+  const filename = path.basename(req.params.filename);
+  try {
+    await withManifestLock(async () => {
+      const manifest = readManifest();
+      const exists = manifest.images.some(img => img.filename === filename);
+      if (!exists) return res.status(404).json({ error: 'Image not found in manifest' });
+      manifest.ogImageFile = filename;
+      writeManifest(manifest);
+      auditLog('set_og_image', `file=${filename}`, req);
+      res.json({ ok: true, ogImageFile: filename });
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- API: clear OG image (B4) ---
+app.delete('/api/og-image', apiLimiter, async (req, res, next) => {
+  try {
+    await withManifestLock(async () => {
+      const manifest = readManifest();
+      delete manifest.ogImageFile;
+      writeManifest(manifest);
+      auditLog('clear_og_image', '', req);
+      res.json({ ok: true });
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- API: batch delete (D2) ---
+app.delete('/api/images', apiLimiter, async (req, res, next) => {
+  const { filenames } = req.body;
+  if (!Array.isArray(filenames) || filenames.length === 0) {
+    return res.status(400).json({ error: 'filenames must be a non-empty array' });
+  }
+
+  try {
+    await withManifestLock(async () => {
+      const manifest = readManifest();
+      const safeNames = filenames.map(f => path.basename(String(f)));
+      manifest.images = manifest.images.filter(img => !safeNames.includes(img.filename));
+      writeManifest(manifest);
+
+      let removed = 0;
+      for (const fn of safeNames) {
+        try { fs.unlinkSync(path.join(UPLOADS_DIR, fn)); removed++; } catch { /* ignore */ }
+      }
+      auditLog('batch_delete', `count=${safeNames.length} removed=${removed}`, req);
+      res.json({ ok: true, deleted: safeNames.length, filesRemoved: removed, total: manifest.images.length });
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- API: trigger site rebuild (D1 rebuild button) ---
+let rebuildInProgress = false;
+app.post('/api/rebuild', apiLimiter, (req, res) => {
+  if (rebuildInProgress) {
+    return res.status(409).json({ error: 'A rebuild is already in progress' });
+  }
+  rebuildInProgress = true;
+  auditLog('rebuild_triggered', '', req);
+  res.json({ ok: true, message: 'Rebuild started — the site will update in about 60 seconds.' });
+
+  execFile(DEPLOY_SCRIPT, { timeout: 120000 }, (err, stdout, stderr) => {
+    rebuildInProgress = false;
+    if (err) {
+      console.error('[ERROR] Rebuild failed:', err.message, stderr);
+    } else {
+      console.log('[INFO] Rebuild completed successfully.');
+      auditLog('rebuild_complete', `stdout_lines=${stdout.split('\n').length}`, req);
+    }
+  });
 });
 
 // --- Global error handler (4-param signature required by Express) ---
