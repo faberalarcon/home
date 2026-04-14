@@ -102,14 +102,20 @@ See [backup-restore.md](./backup-restore.md).
 4. All existing `site_session` cookies are invalidated immediately because they are HMAC'd against the old hash.
 5. Distribute the new password to household members.
 
-### Rotating the admin PIN
+### Rotating the admin password
 
-1. Generate a new PIN hash:
-   ```bash
-   node -e "const {createHash}=require('crypto'); console.log(createHash('sha256').update('drink-hub-pin:NEWPIN').digest('hex'))"
-   ```
-2. Set `ADMIN_PIN_HASH=<hash>` (or `ADMIN_PIN=NEWPIN`) and restart.
-3. All `admin_session` cookies are invalidated immediately.
+The admin credential now lives in the database, not `.env`. Two ways to rotate:
+
+- **From the admin panel:** log in at `/admin/login`, then **Settings → Change admin password**. This bumps the admin session epoch, so every other admin session is signed out immediately.
+- **If you've lost the admin password:** on the same page, use **Reset admin password**. It requires re-entering the *house* password, generates a random 16-character temp, prints it to the server logs (`docker compose logs drink-hub`), and signs you out. Log back in with the temp and change it.
+
+If you've lost *both* the admin password and the house password, delete the admin credential rows from the database and restart so the bootstrap generates a new temporary password:
+
+```bash
+docker compose exec drink-hub sh -c "sqlite3 /app/data/drink-hub.db \"DELETE FROM settings WHERE key IN ('admin_password_hash','admin_password_salt','admin_password_must_reset','admin_session_epoch');\""
+docker compose restart drink-hub
+docker compose logs drink-hub | grep 'INITIAL ADMIN PASSWORD'
+```
 
 ### Reviewing auth and rate-limit logs
 

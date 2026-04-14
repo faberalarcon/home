@@ -65,7 +65,7 @@ Home Assistant already runs on the Pi as a Docker container, so drink-hub runs a
 
 ```bash
 cp .env.example .env
-# set SITE_PASSWORD_HASH / ADMIN_PIN_HASH and CSRF_TRUSTED_ORIGINS
+# set SITE_PASSWORD_HASH and CSRF_TRUSTED_ORIGINS
 docker compose up -d --build
 ```
 
@@ -73,7 +73,30 @@ Then on any device on the LAN, browse to `http://<pi-ip>:5173`.
 
 The `./data` directory is mounted as a volume so the SQLite database and uploaded images persist across rebuilds.
 
-To require a shared password before anyone can use the site, set either `SITE_PASSWORD` or `SITE_PASSWORD_HASH`. To enable admin access, set either `ADMIN_PIN` or `ADMIN_PIN_HASH`. Prefer the hashed variants in `.env`; if both plaintext and hash are set for the same secret, the hash wins.
+### House password (shared)
+
+Set either `SITE_PASSWORD` or `SITE_PASSWORD_HASH` to gate the entire site behind a single shared password. Prefer the hashed variant in `.env`.
+
+### Admin password (secondary)
+
+Admin access now uses a real password managed inside the database, separate from the shared house password. On first boot — if no admin credential is configured — the server generates a random 16-character temporary admin password and prints it prominently to stdout:
+
+```
+==============================================================
+[drink-hub] INITIAL ADMIN PASSWORD: xxxxxxxxxxxxxxxx
+[drink-hub] Log in at /admin/login and change it immediately.
+==============================================================
+```
+
+Log in at `/admin/login`, go to **Settings → Change admin password**, and set something you'll remember. If you lose the admin password, the **Reset admin password** action on the same page will generate a new temporary one — it requires re-entering the house password and prints the new temp to the server logs.
+
+To seed the admin password from the environment instead (e.g. for provisioning), set `ADMIN_PASSWORD=...` before first boot. The legacy `ADMIN_PIN` / `ADMIN_PIN_HASH` variables are deprecated and now ignored with a warning — 4-digit PINs are no longer supported.
+
+For session signing, `SESSION_SECRET` may be set (≥32 chars); otherwise a random secret is auto-generated into the settings table on first boot and reused across restarts.
+
+### Outbound-request safety
+
+The admin settings page accepts a Home Assistant base URL that the server uses to send bearer-authenticated requests. Incoming URLs are validated and loopback/metadata targets (127/8, ::1, 169.254/16) are always refused. Private LAN ranges are allowed by default (the typical Home Assistant case); set `HA_STRICT_PUBLIC=1` on cloud deployments to also refuse private IPs.
 
 Set `CSRF_TRUSTED_ORIGINS` to the public HTTPS origin served by nginx, for example `https://drinks.example.com`. This is used at build time so cross-site form posts are blocked while same-origin requests still work behind the reverse proxy.
 

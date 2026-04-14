@@ -29,8 +29,9 @@ services:
       - XFF_DEPTH=1
       - SITE_PASSWORD=${SITE_PASSWORD:-}
       - SITE_PASSWORD_HASH=${SITE_PASSWORD_HASH:-}
-      - ADMIN_PIN=${ADMIN_PIN:-}
-      - ADMIN_PIN_HASH=${ADMIN_PIN_HASH:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      - HA_STRICT_PUBLIC=${HA_STRICT_PUBLIC:-}
       - TZ=${TZ:-America/New_York}
     extra_hosts:
       - "ai.local:host-gateway"
