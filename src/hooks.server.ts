@@ -49,6 +49,7 @@ function isPublicPath(path: string): boolean {
   return (
     path === '/login' ||
     path === '/api/health' ||
+    path === '/api/stats' ||
     path === '/admin/login' ||
     path.startsWith('/_app/') ||
     path.startsWith('/icons/') ||
