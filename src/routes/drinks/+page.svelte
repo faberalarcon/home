@@ -59,7 +59,7 @@
     <!-- Totals -->
     <section>
       <SectionHeader title="Order Totals" icon="🍻" />
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="All Time" value={s.totals.allTime.toLocaleString()} icon="📊" accent />
         <StatCard label="Today" value={s.totals.today} icon="📅" />
         <StatCard label="This Week" value={s.totals.thisWeek} icon="📆" />
@@ -161,7 +161,7 @@
     <!-- Fun Stats -->
     <section>
       <SectionHeader title="Fun Facts" icon="🎉" />
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {#if s.funStats.busiestDay}
           <StatCard label="Busiest Day Ever" value="{s.funStats.busiestDay.count} orders" icon="🔥" sublabel={formatDate(s.funStats.busiestDay.date)} />
         {/if}

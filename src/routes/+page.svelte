@@ -63,7 +63,7 @@
         Home Assistant unavailable — some data may be missing
       </div>
     {/if}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
       <StatCard
         label="Indoor"
         value={data.ha.indoor ? `${Math.round(data.ha.indoor.temp)}` : '--'}
@@ -96,7 +96,7 @@
   {#if data.weather}
     <section>
       <SectionHeader title="Taneytown Weather" icon="🌤️" />
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
           <div class="flex items-center gap-4">
             <span class="text-5xl">{data.weather.icon}</span>
@@ -129,7 +129,7 @@
       </div>
 
       {#if data.yearStats}
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
           <StatCard label="Rainy days this year" value={data.yearStats.rainyDaysThisYear} icon="🌧️" />
           <StatCard label="Sunny days this year" value={data.yearStats.sunnyDaysThisYear} icon="☀️" />
           {#if data.yearStats.hottestDay}
@@ -153,7 +153,7 @@
       {/each}
       <StatusBadge label="Xbox" active={data.ha.xbox.on} activeText={data.ha.xbox.nowPlaying ?? 'On'} />
     </div>
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {#if data.ha.xbox.gamerscore != null}
         <StatCard label="Gamerscore" value={data.ha.xbox.gamerscore.toLocaleString()} icon="🎮" unit="pts" />
       {/if}
@@ -166,7 +166,7 @@
   {#if data.yearStats}
     <section>
       <SectionHeader title="Taneytown, MD — {new Date().getFullYear()} So Far" icon="📍" />
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Rainy days this year"
           value={data.yearStats.rainyDaysThisYear}
@@ -222,7 +222,7 @@
       {/if}
       (totally accurate, definitely not made up)
     </p>
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {#each data.limonStats as stat}
         <div class="group relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
           <div class="flex items-start justify-between gap-3">

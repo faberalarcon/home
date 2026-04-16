@@ -46,7 +46,7 @@
   <!-- Current Readings -->
   <section>
     <SectionHeader title="Current Readings" icon="📡" />
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard
         label="Indoor Temp"
         value={data.ha.indoor ? `${Math.round(parseFloat(data.ha.indoor.state))}` : '--'}
@@ -120,7 +120,7 @@
       />
     </div>
     {#if data.ha.gamerscore}
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard label="Gamerscore" value={parseInt(data.ha.gamerscore.state).toLocaleString()} unit="pts" icon="🎮" />
       </div>
     {/if}
