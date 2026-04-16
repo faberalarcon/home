@@ -89,8 +89,8 @@ function renderGrid() {
     <div class="image-card${selectedFiles.has(img.filename) ? ' selected' : ''}" draggable="true" data-filename="${img.filename}" data-index="${i}">
       <div class="image-card-img-wrap">
         <img src="${MEDIA_BASE}/uploads/${img.filename}" alt="${escHtml(img.originalName || img.filename)}" loading="lazy" />
-        <button class="btn-og-star${ogFile === img.filename ? ' active' : ''}" data-og-filename="${img.filename}" title="${ogFile === img.filename ? 'OG image (click to clear)' : 'Set as OG / social preview image'}" aria-label="Set as Open Graph image">⭐</button>
         <div class="card-select-overlay" data-select-filename="${img.filename}"></div>
+        <button class="btn-og-star${ogFile === img.filename ? ' active' : ''}" data-og-filename="${img.filename}" title="${ogFile === img.filename ? 'OG image (click to clear)' : 'Set as OG / social preview image'}" aria-label="Set as Open Graph image">⭐</button>
       </div>
       <div class="image-card-body">
         <span class="drag-handle" title="Drag to reorder" aria-hidden="true">⠿</span>
@@ -100,8 +100,11 @@ function renderGrid() {
     </div>
   `).join('');
 
-  // Event delegation: delete, OG star, batch select
-  grid.addEventListener('click', e => {
+  // Event delegation: delete, OG star, batch select.
+  // Why not { once: true }: the listener must survive multiple clicks, since
+  // toggleOgImage/toggleSelect don't re-render the grid. grid.innerHTML = ...
+  // above already wipes previous listeners on children, so we're not leaking.
+  grid.onclick = e => {
     const delBtn = e.target.closest('.btn-delete');
     if (delBtn) { deleteImage(delBtn.dataset.deleteFilename); return; }
 
@@ -110,7 +113,7 @@ function renderGrid() {
 
     const overlay = e.target.closest('.card-select-overlay');
     if (overlay) { toggleSelect(overlay.dataset.selectFilename, e.shiftKey); return; }
-  }, { once: true });
+  };
 
   // Drag-to-reorder
   grid.querySelectorAll('.image-card').forEach(card => {
