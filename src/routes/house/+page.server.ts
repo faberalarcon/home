@@ -5,14 +5,22 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async () => {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+
+  // HA returns [] when start precedes its stored data — fall back to shorter window
+  async function getTVHistory(entityId: string): Promise<{ state: string; last_changed: string }[]> {
+    const long = await getHistory(entityId, thirtyDaysAgo).catch(() => []);
+    if (long.length > 0) return long;
+    return getHistory(entityId, tenDaysAgo).catch(() => []);
+  }
 
   const [haStates, indoorHistory, outdoorHistory, bedroomTVHistory, livingTVHistory, forecast] =
     await Promise.all([
       getStates(Object.values(ENTITIES)).catch(() => new Map()),
       getHistory(ENTITIES.indoorTemp, sevenDaysAgo).catch(() => []),
       getHistory(ENTITIES.outdoorTemp, sevenDaysAgo).catch(() => []),
-      getHistory(ENTITIES.bedroomTV, thirtyDaysAgo).catch(() => []),
-      getHistory(ENTITIES.livingRoomTV, thirtyDaysAgo).catch(() => []),
+      getTVHistory(ENTITIES.bedroomTV),
+      getTVHistory(ENTITIES.livingRoomTV),
       getDailyForecast().catch(() => [])
     ]);
 
