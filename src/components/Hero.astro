@@ -37,10 +37,13 @@ import Slideshow from './Slideshow.astro';
       Meades Crossing · Taneytown, Maryland
     </p>
 
-    <!-- Scroll hint -->
-    <div class="mt-16 flex justify-center" aria-hidden="true">
-      <div class="w-px h-12 bg-warm-400 opacity-60 animate-pulse"></div>
-    </div>
+    <!-- Scroll cue -->
+    <a href="#neighborhood" class="scroll-cue mt-16 inline-flex flex-col items-center gap-2 text-warm-200 hover:text-warm-50 transition-colors drop-shadow" aria-label="Scroll to neighborhood">
+      <span class="text-xs uppercase tracking-widest">Explore</span>
+      <svg class="w-5 h-5 scroll-cue-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </a>
   </div>
 </section>
 
@@ -48,5 +51,18 @@ import Slideshow from './Slideshow.astro';
   /* Scoped to Hero — avoids inline style= attribute on h1 */
   .hero-title {
     font-family: var(--font-display);
+  }
+
+  @keyframes scroll-bob {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50%      { transform: translateY(6px); opacity: 1; }
+  }
+
+  .scroll-cue-chevron {
+    animation: scroll-bob 1.8s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-cue-chevron { animation: none; opacity: 0.8; }
   }
 </style>
