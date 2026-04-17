@@ -7,6 +7,20 @@
 
   let { data } = $props();
 
+  const rangeOptions = [
+    { value: '1d', label: '1d' },
+    { value: '7d', label: '7d' },
+    { value: '30d', label: '30d' },
+    { value: '90d', label: '90d' }
+  ];
+
+  const rangeLabels: Record<string, string> = {
+    '1d': 'last 24 hours (hourly)',
+    '7d': 'last 7 days',
+    '30d': 'last 30 days',
+    '90d': 'last 90 days'
+  };
+
   function formatSpeed(kibps: number): string {
     if (kibps >= 1024) return `${(kibps / 1024).toFixed(1)} MiB/s`;
     return `${Math.round(kibps)} KiB/s`;
@@ -16,6 +30,12 @@
     try {
       return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     } catch { return dateStr; }
+  }
+
+  function coverageNote(daysAvailable: number | null, requested: number): string {
+    if (daysAvailable === null) return 'no data';
+    if (daysAvailable + 1 >= requested) return `${requested} of ${requested} days`;
+    return `${daysAvailable + 1} of ${requested} days (HA retention limit)`;
   }
 
   const alarmLabels: Record<string, string> = {
@@ -34,7 +54,7 @@
     <h1 class="text-4xl sm:text-5xl font-bold tracking-tight">
       <span class="text-accent">House</span> Status
     </h1>
-    <p class="mt-2 text-slate-500 dark:text-slate-400">Live sensors and 7-day history</p>
+    <p class="mt-2 text-slate-500 dark:text-slate-400">Live sensors and rolling history</p>
   </div>
 
   {#if !data.ha.available}
@@ -89,6 +109,7 @@
               data={data.charts.indoorTemp.map(p => p.value)}
               label="Indoor °F"
               color="#7dd3fc"
+              unit="°"
             />
           </div>
         {/if}
@@ -100,6 +121,7 @@
               data={data.charts.outdoorTemp.map(p => p.value)}
               label="Outdoor °F"
               color="#38bdf8"
+              unit="°"
             />
           </div>
         {/if}
@@ -125,31 +147,55 @@
       </div>
     {/if}
 
-    <!-- TV hours per day charts -->
-    {#if data.charts.bedroomTVHours.length > 0 || data.charts.livingTVHours.length > 0}
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {#if data.charts.bedroomTVHours.length > 0}
-          <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">Bedroom TV on-time (hrs/day) — 30 days</p>
-            <BarChart
-              labels={data.charts.bedroomTVHours.map(d => formatDate(d.date))}
-              data={data.charts.bedroomTVHours.map(d => d.hours)}
-              label="Hours"
-            />
-          </div>
-        {/if}
-        {#if data.charts.livingTVHours.length > 0}
-          <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">Living Room TV on-time (hrs/day) — 30 days</p>
-            <BarChart
-              labels={data.charts.livingTVHours.map(d => formatDate(d.date))}
-              data={data.charts.livingTVHours.map(d => d.hours)}
-              label="Hours"
-            />
-          </div>
-        {/if}
+    <!-- TV on-time — rolling window, switchable range -->
+    <div class="mt-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <p class="text-sm font-medium text-slate-600 dark:text-slate-300">
+          TV on-time — <span class="text-slate-500 dark:text-slate-400">{rangeLabels[data.range]}</span>
+        </p>
+        <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1" role="group" aria-label="Time range">
+          {#each rangeOptions as opt}
+            <a
+              href="?range={opt.value}"
+              data-sveltekit-noscroll
+              aria-current={data.range === opt.value ? 'page' : undefined}
+              class="px-3 py-1 text-xs font-medium rounded-md transition-colors {data.range === opt.value
+                ? 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}"
+            >
+              {opt.label}
+            </a>
+          {/each}
+        </div>
       </div>
-    {/if}
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+          <div class="flex items-baseline justify-between mb-3">
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Bedroom TV (hrs)</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500">{coverageNote(data.tvCoverage.bedroomDays, data.tvCoverage.requestedDays)}</p>
+          </div>
+          <BarChart
+            labels={data.charts.bedroomTVHours.map(d => d.time)}
+            data={data.charts.bedroomTVHours.map(d => d.hours)}
+            label="Hours"
+            unit="h"
+          />
+        </div>
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+          <div class="flex items-baseline justify-between mb-3">
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Living Room TV (hrs)</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500">{coverageNote(data.tvCoverage.livingDays, data.tvCoverage.requestedDays)}</p>
+          </div>
+          <BarChart
+            labels={data.charts.livingTVHours.map(d => d.time)}
+            data={data.charts.livingTVHours.map(d => d.hours)}
+            label="Hours"
+            unit="h"
+          />
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- 7-Day Forecast -->

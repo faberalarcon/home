@@ -9,13 +9,15 @@
     data,
     colors = [],
     horizontal = false,
-    label = 'Count'
+    label = 'Count',
+    unit = ''
   }: {
     labels: string[];
     data: number[];
     colors?: string[];
     horizontal?: boolean;
     label?: string;
+    unit?: string;
   } = $props();
 
   let canvas: HTMLCanvasElement;
@@ -57,8 +59,29 @@
           }
         },
         scales: {
-          x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 } } },
-          y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 } } }
+          x: {
+            grid: { color: gridColor },
+            ticks: {
+              color: textColor,
+              font: { size: 11 },
+              callback: function (val) {
+                if (horizontal && unit) return `${val}${unit}`;
+                // x axis on vertical bars shows category labels — let Chart.js default handle them
+                return (this as { getLabelForValue: (v: number) => string }).getLabelForValue(val as number);
+              }
+            }
+          },
+          y: {
+            grid: { color: gridColor },
+            ticks: {
+              color: textColor,
+              font: { size: 11 },
+              callback: function (val) {
+                if (!horizontal && unit) return `${val}${unit}`;
+                return (this as { getLabelForValue: (v: number) => string }).getLabelForValue(val as number);
+              }
+            }
+          }
         }
       }
     });

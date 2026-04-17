@@ -9,13 +9,15 @@
     data,
     label = 'Value',
     color = '#7dd3fc',
-    fill = true
+    fill = true,
+    unit = ''
   }: {
     labels: string[];
     data: number[];
     label?: string;
     color?: string;
     fill?: boolean;
+    unit?: string;
   } = $props();
 
   let canvas: HTMLCanvasElement;
@@ -64,7 +66,11 @@
           },
           y: {
             grid: { color: gridColor },
-            ticks: { color: textColor, font: { size: 11 } },
+            ticks: {
+              color: textColor,
+              font: { size: 11 },
+              callback: (val) => (unit ? `${val}${unit}` : String(val))
+            },
             beginAtZero: true
           }
         }
