@@ -2,35 +2,35 @@
 // Header component — minimal site nav
 ---
 
-<header class="w-full py-4 px-6 bg-gradient-to-b from-warm-50/85 to-warm-50/70 backdrop-blur-md border-b border-warm-200/60 sticky top-0 z-50 shadow-[0_1px_0_rgba(184,134,11,0.08)]">
-  <nav class="max-w-5xl mx-auto flex items-center justify-between" aria-label="Main navigation">
+<header class="w-full py-3 sm:py-4 px-4 sm:px-6 bg-gradient-to-b from-warm-50/85 to-warm-50/70 backdrop-blur-md border-b border-warm-200/60 sticky top-0 z-50 shadow-[0_1px_0_rgba(184,134,11,0.08)]">
+  <nav class="max-w-5xl mx-auto flex items-center justify-between gap-3" aria-label="Main navigation">
     <a
       href="/"
-      class="flex items-center gap-2 text-warm-700 hover:text-warm-500 transition-colors focus-visible:outline-warm-500"
+      class="flex items-center gap-2 text-warm-700 hover:text-warm-500 transition-colors focus-visible:outline-warm-500 flex-shrink-0"
       aria-label="21 Bristoe — home"
     >
       <!-- House icon -->
       <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M12 2L2 10.5h2V21h6v-6h4v6h6V10.5h2L12 2z"/>
       </svg>
-      <span class="font-bold text-lg tracking-tight font-display">21 Bristoe</span>
+      <span class="font-bold text-base sm:text-lg tracking-tight font-display">21 Bristoe</span>
     </a>
 
-    <!-- Navigation links -->
-    <ul class="flex items-center gap-4 md:gap-6 text-sm font-medium list-none" role="list">
-      <li>
+    <!-- Navigation links — section anchors hidden on mobile to keep CTAs in viewport -->
+    <ul class="flex items-center gap-2 sm:gap-4 md:gap-6 text-sm font-medium list-none" role="list">
+      <li class="hidden md:block">
         <a href="/#neighborhood" class="text-warm-700 hover:text-warm-500 transition-colors">Neighborhood</a>
       </li>
-      <li>
+      <li class="hidden md:block">
         <a href="/#limon" class="text-warm-700 hover:text-warm-500 transition-colors">Limón</a>
       </li>
-      <li>
+      <li class="hidden sm:block">
         <a href="/gallery" class="text-warm-700 hover:text-warm-500 transition-colors">Gallery</a>
       </li>
       <li>
         <a
           href="https://stats.21bristoe.com"
-          class="px-3 py-1.5 bg-sage-500 text-white rounded-md text-sm font-medium hover:bg-sage-600 transition-colors"
+          class="px-2.5 sm:px-3 py-1.5 bg-sage-500 text-white rounded-md text-xs sm:text-sm font-medium hover:bg-sage-600 transition-colors whitespace-nowrap"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -40,11 +40,12 @@
       <li>
         <a
           href="https://drink-hub.21bristoe.com"
-          class="px-3 py-1.5 bg-warm-500 text-white rounded-md text-sm font-medium hover:bg-warm-600 transition-colors"
+          class="px-2.5 sm:px-3 py-1.5 bg-warm-500 text-white rounded-md text-xs sm:text-sm font-medium hover:bg-warm-600 transition-colors whitespace-nowrap"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Drink Hub
+          <span class="sm:hidden">Drinks</span>
+          <span class="hidden sm:inline">Drink Hub</span>
         </a>
       </li>
     </ul>
