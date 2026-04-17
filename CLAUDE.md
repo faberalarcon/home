@@ -1,5 +1,20 @@
 # 21bristoe.com — Family Homepage
 
+## Change workflow (always)
+
+Every code change in this repo follows this cycle — no exceptions:
+
+1. **Smoke test locally**: `npm run dev` (or `npm run build && npx astro preview`), curl the affected pages, grep for markers of the change.
+2. **Rebuild**: `npm run build` — must succeed before any commit.
+3. **Redeploy**: `./deploy/deploy.sh` — runs the 31-check validation suite as a gate.
+4. **Commit**: stage only files you touched; use a conventional, human-style message (see existing `git log --oneline`).
+5. **Push**: `git push origin main`.
+
+If any step fails, fix the root cause and restart the cycle. Do not skip steps or batch changes across cycles.
+
+---
+
+
 ## What this is
 Static homepage for the household at 21 Bristoe Station Rd, Meades Crossing, Taneytown MD.
 Built with Astro 6 + Tailwind CSS 4, deployed as static HTML via nginx on a Raspberry Pi.
