@@ -1,0 +1,14 @@
+[Unit]
+Description=21 Bristoe nginx visitor counter (parse logs, update visitors.json)
+After=network.target
+
+[Service]
+Type=oneshot
+User=faber
+Group=faber
+ExecStart=/usr/bin/node /home/faber/projects/home/deploy/visitor-counter/parse-visitors.mjs
+Nice=15
+# nginx logs are readable by the adm group; ensure faber is in adm (see README below).
+
+[Install]
+WantedBy=multi-user.target

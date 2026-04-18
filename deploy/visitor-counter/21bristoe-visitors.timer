@@ -1,0 +1,12 @@
+[Unit]
+Description=Run 21 Bristoe visitor counter hourly
+Requires=21bristoe-visitors.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+Persistent=true
+Unit=21bristoe-visitors.service
+
+[Install]
+WantedBy=timers.target
