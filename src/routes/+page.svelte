@@ -55,6 +55,21 @@
     <p class="mt-2 text-slate-500 dark:text-slate-400">Taneytown, MD &middot; Live household dashboard</p>
   </div>
 
+  <!-- Site Traffic -->
+  {#if data.visitors}
+    <section>
+      <SectionHeader title="Site Traffic" icon="👋" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Unique visitors"
+          value={data.visitors.count.toLocaleString()}
+          icon="👀"
+          sublabel="21bristoe.com + stats"
+        />
+      </div>
+    </section>
+  {/if}
+
   <!-- House Status -->
   <section>
     <SectionHeader title="House Status" icon="🏠" />
@@ -208,21 +223,6 @@
             icon="🌡️"
           />
         {/if}
-      </div>
-    </section>
-  {/if}
-
-  <!-- Site Traffic -->
-  {#if data.visitors}
-    <section>
-      <SectionHeader title="Site Traffic" icon="👋" />
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Unique visitors"
-          value={data.visitors.count.toLocaleString()}
-          icon="👀"
-          sublabel="21bristoe.com + stats"
-        />
       </div>
     </section>
   {/if}
