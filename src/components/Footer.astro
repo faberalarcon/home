@@ -1,5 +1,17 @@
 ---
+import fs from 'node:fs';
+
 const year = new Date().getFullYear();
+
+let visitorCount: number | null = null;
+try {
+  const raw = fs.readFileSync('/var/lib/bristoe-stats/visitors.json', 'utf8');
+  const data = JSON.parse(raw);
+  if (typeof data.count === 'number') visitorCount = data.count;
+  else if (Array.isArray(data.uniqueHashes)) visitorCount = data.uniqueHashes.length;
+} catch {
+  visitorCount = null;
+}
 ---
 
 <footer class="w-full bg-warm-900 text-warm-100 py-12 px-6 mt-auto">
@@ -33,6 +45,16 @@ const year = new Date().getFullYear();
         </ul>
       </nav>
     </div>
+
+    {visitorCount !== null && (
+      <div class="mt-8 pt-6 border-t border-warm-800 text-center">
+        <p class="text-warm-300 text-sm">
+          <span aria-hidden="true">👋</span>
+          <span class="tabular-nums font-semibold text-warm-100">{visitorCount.toLocaleString()}</span>
+          <span class="text-warm-400">unique visitors so far</span>
+        </p>
+      </div>
+    )}
 
     <!-- Bottom bar -->
     <div class="mt-8 pt-6 border-t border-warm-800 text-warm-500 text-xs flex flex-col sm:flex-row justify-between gap-2">
