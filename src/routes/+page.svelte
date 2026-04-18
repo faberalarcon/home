@@ -212,6 +212,21 @@
     </section>
   {/if}
 
+  <!-- Site Traffic -->
+  {#if data.visitors}
+    <section>
+      <SectionHeader title="Site Traffic" icon="👋" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Unique visitors"
+          value={data.visitors.count.toLocaleString()}
+          icon="👀"
+          sublabel="21bristoe.com + stats"
+        />
+      </div>
+    </section>
+  {/if}
+
   <!-- Limón -->
   <section>
     <SectionHeader title="Limón Report" icon="🐕" />

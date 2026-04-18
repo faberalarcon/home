@@ -1,15 +1,17 @@
 import { getStates, ENTITIES } from '$lib/server/home-assistant';
 import { getCurrentWeather, getDailyForecast, getYearStats, weatherCodeToDescription } from '$lib/server/weather';
 import { generateLimonStats } from '$lib/server/limon';
+import { getUniqueVisitorCount } from '$lib/server/visitors';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
   // Fetch all data sources in parallel, gracefully handling failures
-  const [haStates, currentWeather, forecast, yearStats] = await Promise.all([
+  const [haStates, currentWeather, forecast, yearStats, visitors] = await Promise.all([
     getStates(Object.values(ENTITIES)).catch(() => new Map()),
     getCurrentWeather().catch(() => null),
     getDailyForecast().catch(() => []),
-    getYearStats().catch(() => null)
+    getYearStats().catch(() => null),
+    getUniqueVisitorCount().catch(() => null)
   ]);
 
   // Parse HA data
@@ -82,6 +84,7 @@ export const load: PageServerLoad = async () => {
       : null,
     forecast,
     yearStats,
-    limonStats
+    limonStats,
+    visitors
   };
 };
