@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 /* =============================================================
-   Residence Dossier — canonical tokens
-   Shared source-of-truth. Duplicated verbatim to:
-     stats/src/app.css · drink-hub/src/app.css · home/admin/public/admin.css
+   21 Bristoe — canonical design tokens
+   Amber/cream/sage palette. Duplicated verbatim to:
+     stats/src/app.css · drink-hub/src/app.css
    ============================================================= */
 
 /* --- Self-hosted fonts (variable woff2) --- */
@@ -44,31 +44,31 @@
 }
 
 @theme {
-  /* Paper (surfaces) */
-  --color-paper-50:  #fbf7ec;
-  --color-paper-100: #f5efdf;
-  --color-paper-200: #e9e0c8;
-  --color-paper-300: #d6c9a5;
+  /* Paper (surfaces) — warm cream */
+  --color-paper-50:  #fdf8f0;
+  --color-paper-100: #f5ead6;
+  --color-paper-200: #ede2c8;
+  --color-paper-300: #e8d5b0;
 
-  /* Ink (text) */
-  --color-ink-900: #1a1612;
-  --color-ink-700: #3a342b;
+  /* Ink (text) — warm dark brown */
+  --color-ink-900: #2d2318;
+  --color-ink-700: #3d3020;
   --color-ink-500: #6b6355;
-  --color-ink-300: #9c9383;
+  --color-ink-300: #a09280;
 
-  /* Blood (primary accent) */
-  --color-blood-300: #a85050;
-  --color-blood-500: #7a1f1f;
-  --color-blood-600: #5c1515;
+  /* Amber (primary accent) */
+  --color-blood-300: #c9962d;
+  --color-blood-500: #b8860b;
+  --color-blood-600: #7a5707;
 
-  /* Olive (secondary accent) */
-  --color-olive-300: #7d8f6b;
-  --color-olive-500: #4a5d3a;
-  --color-olive-700: #344126;
+  /* Sage (secondary accent) */
+  --color-olive-300: #8aad8a;
+  --color-olive-500: #6b8e6b;
+  --color-olive-700: #4a6b4a;
 
-  /* Leaf (gold-leaf highlight, sparing use) */
-  --color-leaf-300: #d4b060;
-  --color-leaf-500: #b8860b;
+  /* Leaf (warm gold) */
+  --color-leaf-300: #e6c97a;
+  --color-leaf-500: #c49a2e;
 
   /* Typography */
   --font-display: 'Fraunces', 'Georgia', 'Times New Roman', serif;
@@ -84,52 +84,56 @@
 /* --- Semantic variables (non-tailwind) --- */
 :root {
   color-scheme: light;
-  --color-success-bg:   #e3e8d8;
-  --color-success-text: #344126;
+  --color-success-bg:   #dce8dc;
+  --color-success-text: #3f5a3f;
   --color-warning-bg:   #f5e6c0;
   --color-warning-text: #6a4a10;
-  --color-danger-bg:    #f2ddd8;
-  --color-danger-text:  #5c1515;
+  --color-danger-bg:    #fce5dd;
+  --color-danger-text:  #8b2020;
+
+  /* Border radius */
+  --radius:    0.75rem;
+  --radius-sm: 0.375rem;
 
   /* Page rhythm */
   --rule: 1px solid var(--color-paper-300);
-  --rule-ink: 1px solid var(--color-ink-900);
+  --rule-ink: 1px solid var(--color-ink-700);
 }
 
 /* --- Dark mode: evening reading --- */
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --color-paper-50:  #14110d;
-    --color-paper-100: #1c1813;
-    --color-paper-200: #28221a;
-    --color-paper-300: #3a3124;
+    --color-paper-50:  #1e1610;
+    --color-paper-100: #271e14;
+    --color-paper-200: #352819;
+    --color-paper-300: #4a3820;
 
-    --color-ink-900: #f0e7d3;
-    --color-ink-700: #d4c8af;
-    --color-ink-500: #9a8f78;
-    --color-ink-300: #6b6253;
+    --color-ink-900: #f0e0c0;
+    --color-ink-700: #d4c0a0;
+    --color-ink-500: #9a8a70;
+    --color-ink-300: #6b5a45;
 
-    --color-blood-500: #c4605e;
-    --color-blood-300: #d48583;
-    --color-blood-600: #a84a48;
+    --color-blood-500: #d4a030;
+    --color-blood-300: #e8bc55;
+    --color-blood-600: #9a7015;
 
-    --color-olive-500: #9db582;
-    --color-olive-700: #b9ce9f;
-    --color-olive-300: #7d9465;
+    --color-olive-500: #8aad8a;
+    --color-olive-700: #a8c8a8;
+    --color-olive-300: #6b8e6b;
 
     --color-leaf-500: #d4b060;
-    --color-leaf-300: #e6c985;
+    --color-leaf-300: #e8c880;
 
-    --color-success-bg:   #1f2a18;
-    --color-success-text: #b9ce9f;
-    --color-warning-bg:   #2a2312;
-    --color-warning-text: #d4b060;
-    --color-danger-bg:    #2a1a18;
-    --color-danger-text:  #d48583;
+    --color-success-bg:   #1a2a18;
+    --color-success-text: #a8c8a8;
+    --color-warning-bg:   #2a2010;
+    --color-warning-text: #d4a030;
+    --color-danger-bg:    #2a1010;
+    --color-danger-text:  #d48080;
 
     --rule: 1px solid var(--color-paper-300);
-    --rule-ink: 1px solid var(--color-ink-900);
+    --rule-ink: 1px solid var(--color-ink-700);
   }
 }
 
@@ -146,15 +150,6 @@ body {
   font-feature-settings: 'ss01', 'cv11';
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /* Paper grain: ultra-subtle SVG noise, CSP-safe inline data URI */
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  background-repeat: repeat;
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 0.94  0 0 0 0 0.82  0 0 0 0.03 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  }
 }
 
 /* Display & headings */
@@ -235,13 +230,10 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
 
 /* Masthead — top band across every page */
 .dossier-masthead {
-  border-bottom: var(--rule-ink);
-  background: var(--color-paper-50);
+  background: var(--color-blood-600);
   position: sticky;
   top: 0;
   z-index: 50;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 .dossier-masthead__inner {
   max-width: var(--measure-full);
@@ -256,14 +248,14 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   font-family: var(--font-display);
   font-weight: 500;
   font-size: 1.5rem;
-  color: var(--color-ink-900);
+  color: white;
   letter-spacing: -0.01em;
   font-variation-settings: 'opsz' 48, 'SOFT' 30;
   text-decoration: none;
 }
 .dossier-masthead__wordmark em {
   font-style: italic;
-  color: var(--color-blood-500);
+  color: var(--color-leaf-300);
   font-weight: 400;
 }
 .dossier-masthead__volume {
@@ -271,7 +263,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   font-size: 0.6875rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-ink-500);
+  color: rgba(255, 255, 255, 0.6);
   white-space: nowrap;
 }
 .dossier-masthead__nav {
@@ -285,21 +277,23 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-ink-700);
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   padding-bottom: 2px;
   border-bottom: 1px solid transparent;
+  transition: color 0.15s, border-bottom-color 0.15s;
 }
 .dossier-masthead__nav a:hover,
-.dossier-masthead__nav a[aria-current="page"] {
-  color: var(--color-ink-900);
-  border-bottom-color: var(--color-blood-500);
+.dossier-masthead__nav a[aria-current="page"],
+.dossier-masthead__nav a.is-current {
+  color: white;
+  border-bottom-color: rgba(255, 255, 255, 0.55);
 }
 .dossier-masthead__nav .nav-numeral {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 400;
-  color: var(--color-blood-500);
+  color: var(--color-leaf-300);
   margin-right: 0.35em;
   letter-spacing: 0;
   text-transform: none;
@@ -411,6 +405,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   border: var(--rule);
   padding: 1rem;
   background: var(--color-paper-100);
+  border-radius: var(--radius-sm);
 }
 .dossier-figure__body {
   position: relative;
@@ -551,7 +546,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   text-decoration: none;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
 }
 .dossier-button:hover,
 .dossier-button:focus-visible {
@@ -585,6 +580,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   border: 1px solid var(--color-paper-300);
   color: var(--color-ink-500);
   background: transparent;
+  border-radius: var(--radius-sm);
 }
 .dossier-tag--accent { border-color: var(--color-blood-500); color: var(--color-blood-500); }
 .dossier-tag--olive  { border-color: var(--color-olive-500); color: var(--color-olive-500); }
@@ -636,7 +632,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   color: var(--color-ink-500);
 }
 
-/* Input: hairline ledger style */
+/* Input */
 .dossier-input,
 .dossier-textarea,
 .dossier-select {
@@ -644,18 +640,17 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   font-family: var(--font-body);
   font-size: 1rem;
   color: var(--color-ink-900);
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid var(--color-paper-300);
-  padding: 0.5rem 0;
-  border-radius: 0;
+  background: var(--color-paper-50);
+  border: 1px solid var(--color-paper-300);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
   transition: border-color 0.2s;
 }
 .dossier-input:focus,
 .dossier-textarea:focus,
 .dossier-select:focus {
   outline: none;
-  border-bottom-color: var(--color-blood-500);
+  border-color: var(--color-blood-500);
 }
 .dossier-label {
   display: block;
@@ -690,7 +685,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
 .dossier-status--active { color: var(--color-olive-500); }
 .dossier-status--active::before { animation: dossier-pulse 2.2s ease-in-out infinite; }
 .dossier-status--idle   { color: var(--color-ink-500); }
-.dossier-status--alert  { color: var(--color-blood-500); }
+.dossier-status--alert  { color: var(--color-danger-text); }
 
 @keyframes dossier-pulse {
   0%, 100% { box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 25%, transparent); }
@@ -761,7 +756,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   background: transparent;
   cursor: pointer;
   padding: 0;
-  border-radius: 0;
+  border-radius: 50%;
   transition: background 0.3s, transform 0.3s;
 }
 .bristoe-slide-dot.active {
@@ -789,11 +784,11 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
 .shortcut-overlay[hidden] { display: none; }
 .shortcut-panel {
   background: var(--color-paper-50);
-  border: 1px solid var(--color-ink-900);
+  border: 1px solid var(--color-paper-300);
   padding: 1.75rem;
   max-width: 380px;
   width: 90%;
-  border-radius: 0;
+  border-radius: var(--radius);
 }
 .shortcut-panel h2 {
   font-family: var(--font-display);
