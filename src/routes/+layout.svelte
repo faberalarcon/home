@@ -6,9 +6,9 @@
 
   const navLinks = [
     { href: '/',        numeral: 'I',   label: 'Overview' },
-    { href: '/house',   numeral: 'II',  label: 'The House' },
-    { href: '/drinks',  numeral: 'III', label: 'The Taps' },
-    { href: '/backups', numeral: 'IV',  label: 'The Archive' }
+    { href: '/house',   numeral: 'II',  label: 'House' },
+    { href: '/drinks',  numeral: 'III', label: 'Drinks' },
+    { href: '/backups', numeral: 'IV',  label: 'Backups' }
   ];
 
   const now = new Date();
@@ -22,14 +22,13 @@
     <a class="dossier-masthead__wordmark" href="https://21bristoe.com">
       21&middot;Bristoe <em>Stats</em>
     </a>
-    <span class="dossier-masthead__volume">Vol. II &middot; The Instruments</span>
     <nav class="dossier-masthead__nav" aria-label="Sections">
       {#each navLinks as link}
         <a
           href={link.href}
           aria-current={$page.url.pathname === link.href ? 'page' : undefined}
         >
-          <span class="nav-numeral">§{link.numeral}</span>{link.label}
+          {link.label}
         </a>
       {/each}
     </nav>
@@ -45,13 +44,13 @@
     <div class="instruments-colophon__mark" aria-hidden="true">
       <span class="instruments-colophon__mark-word">21&middot;Bristoe</span>
       <span class="instruments-colophon__mark-line"></span>
-      <span class="instruments-colophon__mark-sub">§ II &middot; The Instruments</span>
+      <span class="instruments-colophon__mark-sub">21 Bristoe Stats</span>
     </div>
     <div class="instruments-colophon__foot">
       <p>&copy; {buildYear} &middot; 21 Bristoe Station Rd, Taneytown, Md.</p>
       <div class="instruments-colophon__links">
-        <a href="https://21bristoe.com">§ I Residence</a>
-        <a href="https://drink-hub.21bristoe.com">§ III Lounge</a>
+        <a href="https://21bristoe.com">21bristoe.com</a>
+        <a href="https://drink-hub.21bristoe.com">Drink Hub</a>
       </div>
     </div>
   </div>

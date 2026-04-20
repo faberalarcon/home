@@ -44,17 +44,17 @@
 </script>
 
 <svelte:head>
-  <title>The House Plant — § II.II · 21 Bristoe</title>
+  <title>House — 21 Bristoe Stats</title>
   <meta name="description" content="House sensors and rolling history" />
 </svelte:head>
 
 <article class="house">
   <header class="house__head reveal">
-    <p class="dossier-kicker">§ II.II &middot; The House Plant</p>
+    <p class="dossier-kicker">House Status</p>
     <h1 class="house__title">Sensors, history,<br/><em>and a little weather.</em></h1>
     <p class="house__lede">
-      Live readings from Home Assistant and rolling seven-day history, figured
-      as plate-ruled charts. Toggle the range below the entertainment panel.
+      Live readings from Home Assistant and rolling seven-day history.
+      Toggle the range below the entertainment panel.
     </p>
     <hr class="dossier-rule dossier-rule--ornate" />
   </header>

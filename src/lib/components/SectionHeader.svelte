@@ -12,7 +12,7 @@
 
 <div class="dossier-folio">
   {#if numeral}
-    <span class="dossier-folio__numeral">§ {numeral}</span>
+    <span class="dossier-folio__numeral">{numeral}</span>
   {/if}
   <span class="dossier-folio__title">{title}</span>
   {#if meta}

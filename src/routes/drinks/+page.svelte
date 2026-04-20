@@ -31,17 +31,17 @@
 </script>
 
 <svelte:head>
-  <title>The Tap Log — § II.III · 21 Bristoe</title>
-  <meta name="description" content="Drink Hub ledger — § II.III of the Residence Dossier" />
+  <title>Drinks — 21 Bristoe Stats</title>
+  <meta name="description" content="Drink Hub order log and leaderboard for 21 Bristoe" />
 </svelte:head>
 
 <article class="drinks">
   <header class="drinks__head reveal">
-    <p class="dossier-kicker">§ II.III &middot; The Tap Log</p>
+    <p class="dossier-kicker">Drink Log</p>
     <h1 class="drinks__title">Pours, tallies,<br/><em>and a leaderboard.</em></h1>
     <p class="drinks__lede">
-      Cross-referenced with &sect; III &middot; The Lounge. Every order appears
-      here within seconds &mdash; filterable by person, drink, category, and date.
+      Every order from Drink Hub appears here within seconds &mdash;
+      filterable by person, drink, category, and date.
     </p>
     <hr class="dossier-rule dossier-rule--ornate" />
   </header>

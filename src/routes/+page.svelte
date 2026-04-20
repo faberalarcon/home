@@ -35,14 +35,14 @@
 </script>
 
 <svelte:head>
-  <title>§ II · The Instruments — 21 Bristoe</title>
-  <meta name="description" content="Instrument readings from 21 Bristoe — § II of the Residence Dossier" />
+  <title>Overview — 21 Bristoe Stats</title>
+  <meta name="description" content="Live household readings from 21 Bristoe Station Rd, Taneytown MD" />
 </svelte:head>
 
 <article class="overview">
   <header class="overview__head reveal">
-    <p class="dossier-kicker">§ II &middot; The Instruments</p>
-    <h1 class="overview__title">A live reading<br/>of the residence.</h1>
+    <p class="dossier-kicker">21 Bristoe Stats</p>
+    <h1 class="overview__title">Live household<br/>readings.</h1>
     <p class="overview__lede">
       Current sensors, weather, entertainment, and the occasional fact about Limón &mdash;
       refreshed on every page load.
@@ -177,7 +177,7 @@
   </section>
 
   <section class="overview__section reveal">
-    <SectionHeader numeral="II.05" title="On the Dog" meta={`Today ${data.ha.outdoor ? Math.round(data.ha.outdoor.temp) + '°F' : ''} outside`} />
+    <SectionHeader numeral="II.05" title="Limón" meta={`Today ${data.ha.outdoor ? Math.round(data.ha.outdoor.temp) + '°F' : ''} outside`} />
     <p class="overview__caption">Daily readings from our resident expert, Limón — purely apocryphal.</p>
     <div class="stat-grid">
       {#each data.limonStats as stat}

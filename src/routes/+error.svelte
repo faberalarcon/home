@@ -3,18 +3,18 @@
 </script>
 
 <svelte:head>
-  <title>Erratum — § II · 21 Bristoe Stats</title>
+  <title>Error — 21 Bristoe Stats</title>
 </svelte:head>
 
 <article class="errata">
-  <p class="dossier-kicker">An Erratum</p>
+  <p class="dossier-kicker">Error</p>
   <p class="errata__numeral">{$page.status}</p>
   <hr class="dossier-rule" />
   <h1 class="errata__head">
-    {$page.status === 404 ? 'This reading is absent from the volume.' : 'An instrument has failed.'}
+    {$page.status === 404 ? 'Page not found.' : 'Something went wrong.'}
   </h1>
   <p class="errata__body">{$page.error?.message ?? 'An unexpected error occurred.'}</p>
-  <a href="/" class="dossier-button dossier-button--accent">Return to § II · Overview</a>
+  <a href="/" class="dossier-button dossier-button--accent">Return to Overview</a>
 </article>
 
 <style>

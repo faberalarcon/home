@@ -46,13 +46,13 @@
 </script>
 
 <svelte:head>
-  <title>The Archive State — § II.IV · 21 Bristoe</title>
+  <title>Backups — 21 Bristoe Stats</title>
   <meta name="description" content="Pi backup tiers, history, and retention" />
 </svelte:head>
 
 <article class="archive">
   <header class="archive__head reveal">
-    <p class="dossier-kicker">§ II.IV &middot; The Archive State</p>
+    <p class="dossier-kicker">Backups</p>
     <h1 class="archive__title">Tiered snapshots,<br/><em>held in reserve.</em></h1>
     <p class="archive__lede">
       Rsync snapshots of <code class="archive__code">/home/faber</code> to the USB drive,
