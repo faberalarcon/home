@@ -1,5 +1,17 @@
 # Claude Code instructions for this repo
 
+## Change workflow (always)
+
+Every code change in this repo follows this cycle — no exceptions:
+
+1. **Smoke test locally**: `npm run dev` (or `npm run build && npm start`), exercise the affected pages, grep for markers of the change.
+2. **Rebuild**: `npm run build` — must succeed before any commit.
+3. **Redeploy**: `docker compose up -d --build` — rebuilds the container image and restarts the service.
+4. **Commit**: stage only files you touched; use a conventional, human-style message (see existing `git log --oneline`).
+5. **Push**: `git push origin main`.
+
+If any step fails, fix the root cause and restart the cycle. Do not skip steps or batch changes across cycles.
+
 ## Commit attribution
 
 **Do not add any Claude / AI attribution to commits in this repository.**

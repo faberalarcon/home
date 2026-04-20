@@ -51,11 +51,10 @@
   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm mb-4 focus:outline-none focus:border-slate-600"
 />
 
-<!-- Drink list table -->
-<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-8">
-  <!-- overflow-x-auto lets the table scroll on narrow screens without clipping the actions column -->
+<!-- Drink list table (desktop) -->
+<div class="hidden md:block bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-8">
   <div class="overflow-x-auto">
-    <table class="w-full text-sm min-w-[36rem]">
+    <table class="w-full text-sm">
       <thead>
         <tr class="border-b border-slate-800 text-slate-400 text-left">
           <th class="px-4 py-3 font-medium">Name</th>
@@ -109,6 +108,49 @@
       </tbody>
     </table>
   </div>
+</div>
+
+<!-- Mobile card list -->
+<div class="md:hidden flex flex-col gap-3 mb-8">
+  {#each visibleDrinks as d (d.id)}
+    <div class="bg-slate-900 border rounded-xl p-4 {data.editing?.id === d.id ? 'border-orange-700/60 bg-slate-800/40' : !d.active ? 'opacity-60 border-slate-800' : 'border-slate-800'}">
+      <div class="flex items-start gap-3 mb-3">
+        {#if d.imageUrl}
+          <img src={d.imageUrl.replace('.webp', '-thumb.webp')} alt="" class="w-12 h-12 rounded object-cover shrink-0" />
+        {:else}
+          <div class="w-12 h-12 rounded bg-slate-800 flex items-center justify-center text-xl shrink-0">🍽️</div>
+        {/if}
+        <div class="min-w-0 flex-1">
+          <div class="font-medium truncate">{d.name}</div>
+          <div class="text-xs text-slate-400">{d.category}{d.active ? '' : ' · hidden'}</div>
+        </div>
+      </div>
+      {#if d.haTriggerEvent}
+        <div class="text-xs text-slate-500 font-mono mb-3 break-all">{d.haTriggerEvent}</div>
+      {/if}
+      <div class="flex flex-wrap gap-2">
+        <a
+          href="/admin/drinks?edit={d.id}{data.showInactive ? '&inactive=1' : ''}"
+          class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700"
+        >Edit</a>
+        <form method="POST" action="?/toggleActive" class="contents">
+          <input type="hidden" name="id" value={d.id} />
+          <button type="submit" class="text-sm px-3 py-2 rounded-lg bg-slate-800 {d.active ? 'text-amber-400' : 'text-emerald-400'} hover:bg-slate-700">
+            {d.active ? 'Hide' : 'Show'}
+          </button>
+        </form>
+        <form method="POST" action="?/delete" class="contents" onsubmit={(e) => { if (!confirm(`Delete ${d.name}? This cannot be undone.`)) e.preventDefault(); }}>
+          <input type="hidden" name="id" value={d.id} />
+          <button type="submit" class="text-sm px-3 py-2 rounded-lg bg-red-950/60 border border-red-800 text-red-300 hover:bg-red-900/60">Delete</button>
+        </form>
+      </div>
+    </div>
+  {/each}
+  {#if data.drinks.length === 0}
+    <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-8 text-center text-slate-500">
+      {data.showInactive ? 'No items.' : 'No active items.'}
+    </div>
+  {/if}
 </div>
 
 <!-- Create / Edit form -->

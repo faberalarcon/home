@@ -37,7 +37,8 @@
   </div>
 {/if}
 
-<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto mb-8">
+<!-- Desktop table -->
+<div class="hidden md:block bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto mb-8">
   <table class="min-w-full text-sm whitespace-nowrap">
     <thead>
       <tr class="border-b border-slate-800 text-slate-400 text-left">
@@ -75,6 +76,38 @@
       {/if}
     </tbody>
   </table>
+</div>
+
+<!-- Mobile card list -->
+<div class="md:hidden flex flex-col gap-3 mb-8">
+  {#each data.milestones as m (m.id)}
+    <div class="bg-slate-900 border rounded-xl p-4 {data.editing?.id === m.id ? 'border-orange-700/60 bg-slate-800/40' : 'border-slate-800'}">
+      <div class="flex items-start justify-between gap-3 mb-2">
+        <div class="min-w-0">
+          <div class="font-medium truncate">{m.name}</div>
+          <div class="text-xs text-slate-400">Threshold {m.threshold} · {m.scope}</div>
+        </div>
+        <span class="text-xs {m.enabled ? 'text-emerald-400' : 'text-slate-500'} whitespace-nowrap">
+          {m.enabled ? '✓ enabled' : 'disabled'}
+        </span>
+      </div>
+      <div class="text-xs text-slate-500 font-mono mb-3 break-all">{m.haTriggerEvent}</div>
+      <div class="flex flex-wrap gap-2">
+        <form method="POST" action="?/testTts" class="contents">
+          <input type="hidden" name="id" value={m.id} />
+          <button type="submit" class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-sky-400 hover:bg-slate-700">Test TTS</button>
+        </form>
+        <a href="/admin/milestones?edit={m.id}" class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700">Edit</a>
+        <form method="POST" action="?/delete" class="contents" onsubmit={(e) => { if (!confirm(`Delete ${m.name}?`)) e.preventDefault(); }}>
+          <input type="hidden" name="id" value={m.id} />
+          <button type="submit" class="text-sm px-3 py-2 rounded-lg bg-red-950/60 border border-red-800 text-red-300 hover:bg-red-900/60">Delete</button>
+        </form>
+      </div>
+    </div>
+  {/each}
+  {#if data.milestones.length === 0}
+    <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-8 text-center text-slate-500">No milestones yet.</div>
+  {/if}
 </div>
 
 <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">

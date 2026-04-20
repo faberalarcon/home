@@ -27,7 +27,8 @@
   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm mb-4 focus:outline-none focus:border-slate-600"
 />
 
-<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-8">
+<!-- Desktop table -->
+<div class="hidden md:block bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mb-8">
   <table class="w-full text-sm">
     <thead>
       <tr class="border-b border-slate-800 text-slate-400 text-left">
@@ -73,6 +74,41 @@
       {/if}
     </tbody>
   </table>
+</div>
+
+<!-- Mobile card list -->
+<div class="md:hidden flex flex-col gap-3 mb-8">
+  {#each visibleProfiles as p (p.id)}
+    <div class="bg-slate-900 border rounded-xl p-4 {data.editing?.id === p.id ? 'border-orange-700/60 bg-slate-800/40' : !p.active ? 'opacity-60 border-slate-800' : 'border-slate-800'}">
+      <div class="flex items-center gap-3 mb-3">
+        {#if p.avatarUrl}
+          <img src={p.avatarUrl.replace('.webp', '-thumb.webp')} alt="" class="w-10 h-10 rounded-full object-cover shrink-0" />
+        {:else}
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-slate-950 shrink-0" style="background-color:{p.color}">
+            {p.name[0]}
+          </div>
+        {/if}
+        <div class="min-w-0 flex-1">
+          <div class="font-medium truncate">{p.name}</div>
+          <div class="text-xs text-slate-400 flex items-center gap-1.5">
+            <span class="inline-block w-3 h-3 rounded" style="background-color:{p.color}"></span>
+            <span class="font-mono">{p.color}</span>
+            {#if !p.active}<span>· inactive</span>{/if}
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="/admin/profiles?edit={p.id}" class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700">Edit</a>
+        <form method="POST" action="?/delete" class="contents" onsubmit={(e) => { if (!confirm(`Delete ${p.name}?`)) e.preventDefault(); }}>
+          <input type="hidden" name="id" value={p.id} />
+          <button type="submit" class="text-sm px-3 py-2 rounded-lg bg-red-950/60 border border-red-800 text-red-300 hover:bg-red-900/60">Delete</button>
+        </form>
+      </div>
+    </div>
+  {/each}
+  {#if visibleProfiles.length === 0}
+    <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-8 text-center text-slate-500">No profiles yet.</div>
+  {/if}
 </div>
 
 <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
