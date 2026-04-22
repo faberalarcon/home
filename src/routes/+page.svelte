@@ -14,24 +14,11 @@
     }
   }
 
-  function formatSpeed(kibps: number): string {
-    if (kibps >= 1024) return `${(kibps / 1024).toFixed(1)} MiB/s`;
-    return `${Math.round(kibps)} KiB/s`;
-  }
-
   function formatDate(dateStr: string): string {
     try {
       return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     } catch { return dateStr; }
   }
-
-  const alarmLabels: Record<string, string> = {
-    armed_away: 'Armed Away',
-    armed_home: 'Armed Home',
-    armed_night: 'Armed Night',
-    disarmed: 'Disarmed',
-    triggered: 'TRIGGERED'
-  };
 </script>
 
 <svelte:head>
@@ -63,39 +50,6 @@
       </div>
     </section>
   {/if}
-
-  <section class="overview__section reveal">
-    <SectionHeader numeral="II.02" title="The House" meta="sensors.fig" />
-    {#if !data.ha.available}
-      <p class="overview__note">
-        <span class="dossier-status dossier-status--alert">Home Assistant offline</span>
-        &mdash; some readings may be missing.
-      </p>
-    {/if}
-    <div class="stat-grid">
-      <StatCard
-        label="Indoor"
-        value={data.ha.indoor ? `${Math.round(data.ha.indoor.temp)}` : '—'}
-        unit="°F"
-        sublabel={data.ha.humidity != null ? `${data.ha.humidity}% humidity` : ''}
-      />
-      <StatCard
-        label="Outdoor"
-        value={data.ha.outdoor ? `${Math.round(data.ha.outdoor.temp)}` : '—'}
-        unit="°F"
-        sublabel={data.ha.hvacMode ? `HVAC ${data.ha.hvacMode}` : ''}
-      />
-      <StatCard
-        label="Security"
-        value={data.ha.alarm ? alarmLabels[data.ha.alarm] ?? data.ha.alarm : '—'}
-      />
-      <StatCard
-        label="Network"
-        value={data.ha.network ? formatSpeed(data.ha.network.down) : '—'}
-        sublabel={data.ha.network ? `↑ ${formatSpeed(data.ha.network.up)}` : ''}
-      />
-    </div>
-  </section>
 
   {#if data.weather}
     <section class="overview__section reveal">
@@ -206,12 +160,6 @@
     max-width: 56ch;
   }
   .overview__section { margin: 3rem 0; }
-  .overview__note {
-    margin: 0 0 1rem;
-    font-family: var(--font-body);
-    font-size: 0.875rem;
-    color: var(--color-ink-500);
-  }
   .overview__caption {
     font-family: var(--font-display);
     font-style: italic;

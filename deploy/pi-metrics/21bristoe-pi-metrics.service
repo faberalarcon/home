@@ -1,0 +1,14 @@
+[Unit]
+Description=Collect Pi host metrics for 21bristoe-stats
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/node /usr/local/lib/21bristoe-pi-metrics/collect-pi-metrics.mjs
+Nice=10
+IOSchedulingClass=idle
+ProtectSystem=strict
+ReadWritePaths=/var/lib/bristoe-stats
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true

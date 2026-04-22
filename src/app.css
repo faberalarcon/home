@@ -250,19 +250,48 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   gap: 1.5rem;
   justify-content: space-between;
 }
-.dossier-masthead__wordmark {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 1.4rem;
-  color: var(--color-ink-900);
-  letter-spacing: -0.01em;
-  font-variation-settings: 'opsz' 48, 'SOFT' 0;
-  text-decoration: none;
+.dossier-masthead__brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+  flex-wrap: nowrap;
 }
-.dossier-masthead__wordmark em {
-  font-style: italic;
-  color: var(--color-blood-500);
+.dossier-masthead__home {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-500);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s, border-bottom-color 0.15s;
+  white-space: nowrap;
+}
+.dossier-masthead__home:hover {
+  color: var(--color-ink-900);
+  border-bottom-color: var(--color-ink-300);
+}
+.dossier-masthead__arrow {
+  font-size: 0.875rem;
+  letter-spacing: 0;
+}
+.dossier-masthead__sep {
+  color: var(--color-ink-300);
+  font-family: var(--font-body);
   font-weight: 400;
+}
+.dossier-masthead__page {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1rem, 2.4vw + 0.5rem, 1.4rem);
+  color: var(--color-blood-500);
+  font-variation-settings: 'opsz' 48, 'SOFT' 0;
+  font-weight: 400;
+  white-space: nowrap;
 }
 .dossier-masthead__volume {
   font-family: var(--font-mono);
@@ -311,7 +340,8 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
     row-gap: 0.4rem;
     padding: 0.65rem 1rem;
   }
-  .dossier-masthead__wordmark { flex: 1 1 auto; }
+  .dossier-masthead__brand { flex: 1 1 auto; min-width: 0; }
+  .dossier-masthead__home { font-size: 0.75rem; }
   .dossier-masthead__volume { display: none; }
   .dossier-masthead__nav {
     flex: 0 0 100%;

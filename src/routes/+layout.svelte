@@ -8,7 +8,8 @@
     { href: '/',        numeral: 'I',   label: 'Overview' },
     { href: '/house',   numeral: 'II',  label: 'House' },
     { href: '/drinks',  numeral: 'III', label: 'Drinks' },
-    { href: '/backups', numeral: 'IV',  label: 'Backups' }
+    { href: '/backups', numeral: 'IV',  label: 'Backups' },
+    { href: '/pi',      numeral: 'V',   label: 'Pi' }
   ];
 
   const now = new Date();
@@ -19,9 +20,14 @@
 
 <header class="dossier-masthead">
   <div class="dossier-masthead__inner">
-    <a class="dossier-masthead__wordmark" href="https://21bristoe.com">
-      21&middot;Bristoe <em>Stats</em>
-    </a>
+    <div class="dossier-masthead__brand">
+      <a class="dossier-masthead__home" href="https://21bristoe.com">
+        <span class="dossier-masthead__arrow" aria-hidden="true">&larr;</span>
+        <span class="dossier-masthead__home-domain">21bristoe.com</span>
+      </a>
+      <span class="dossier-masthead__sep" aria-hidden="true">&middot;</span>
+      <span class="dossier-masthead__page">Stats</span>
+    </div>
     <nav class="dossier-masthead__nav" aria-label="Sections">
       {#each navLinks as link}
         <a

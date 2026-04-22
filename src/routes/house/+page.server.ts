@@ -199,7 +199,7 @@ export const load: PageServerLoad = async ({ url }) => {
     return Math.max(0, Math.round((todayMidnight - earliestDay) / 86400000));
   }
 
-  const indoorBuckets = bucketHourly(indoorHistory, 56);
+  const indoorBuckets = bucketHourly(indoorHistory, 168);
   const bedroomTVBuckets = tvOnHoursPerBucket(bedroomTVHistory);
   const livingTVBuckets = tvOnHoursPerBucket(livingTVHistory);
 

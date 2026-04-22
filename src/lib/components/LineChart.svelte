@@ -10,7 +10,8 @@
     label = 'Value',
     color,
     fill = false,
-    unit = ''
+    unit = '',
+    beginAtZero = false
   }: {
     labels: string[];
     data: number[];
@@ -18,6 +19,7 @@
     color?: string;
     fill?: boolean;
     unit?: string;
+    beginAtZero?: boolean;
   } = $props();
 
   let canvas: HTMLCanvasElement;
@@ -93,7 +95,7 @@
               font: { family: fontMono, size: 10 },
               callback: (val) => (unit ? `${val}${unit}` : String(val))
             },
-            beginAtZero: true
+            beginAtZero
           }
         }
       }
