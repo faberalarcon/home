@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* =============================================================
-   21 Bristoe — canonical design tokens  (Clean Slate theme)
-   White + warm sand + terracotta. Duplicated verbatim to:
+   21 Bristoe — canonical design tokens
+   Amber/cream/sage palette. Duplicated verbatim to:
      stats/src/app.css · drink-hub/src/app.css
    ============================================================= */
 
@@ -44,31 +44,31 @@
 }
 
 @theme {
-  /* Paper (surfaces) — clean white + warm sand */
-  --color-paper-50:  #ffffff;
-  --color-paper-100: #f7f2eb;
-  --color-paper-200: #ede6db;
-  --color-paper-300: #d9ccbc;
+  /* Paper (surfaces) — warm cream */
+  --color-paper-50:  #fdf8f0;
+  --color-paper-100: #f5ead6;
+  --color-paper-200: #ede2c8;
+  --color-paper-300: #e8d5b0;
 
-  /* Ink (text) — near-black */
-  --color-ink-900: #1e1e1e;
-  --color-ink-700: #3a3530;
-  --color-ink-500: #7a6f65;
-  --color-ink-300: #b0a898;
+  /* Ink (text) — warm dark brown */
+  --color-ink-900: #2d2318;
+  --color-ink-700: #3d3020;
+  --color-ink-500: #6b6355;
+  --color-ink-300: #a09280;
 
-  /* Terracotta (primary accent) */
-  --color-blood-300: #e08060;
-  --color-blood-500: #c4603c;
-  --color-blood-600: #a04a2a;
+  /* Amber (primary accent) */
+  --color-blood-300: #c9962d;
+  --color-blood-500: #b8860b;
+  --color-blood-600: #7a5707;
 
   /* Sage (secondary accent) */
-  --color-olive-300: #8aad80;
-  --color-olive-500: #6b8c5a;
-  --color-olive-700: #4a6040;
+  --color-olive-300: #8aad8a;
+  --color-olive-500: #6b8e6b;
+  --color-olive-700: #4a6b4a;
 
-  /* Leaf (gold) */
-  --color-leaf-300: #d4b060;
-  --color-leaf-500: #b8940a;
+  /* Leaf (warm gold) */
+  --color-leaf-300: #e6c97a;
+  --color-leaf-500: #c49a2e;
 
   /* Typography */
   --font-display: 'Fraunces', 'Georgia', 'Times New Roman', serif;
@@ -100,37 +100,37 @@
   --rule-ink: 1px solid var(--color-ink-700);
 }
 
-/* --- Dark mode --- */
+/* --- Dark mode: evening reading --- */
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --color-paper-50:  #141410;
-    --color-paper-100: #1e1c18;
-    --color-paper-200: #2a2820;
-    --color-paper-300: #3d3a30;
+    --color-paper-50:  #1e1610;
+    --color-paper-100: #271e14;
+    --color-paper-200: #352819;
+    --color-paper-300: #4a3820;
 
-    --color-ink-900: #f0ebe0;
-    --color-ink-700: #d8d0c0;
-    --color-ink-500: #9a9080;
-    --color-ink-300: #6b6355;
+    --color-ink-900: #f0e0c0;
+    --color-ink-700: #d4c0a0;
+    --color-ink-500: #9a8a70;
+    --color-ink-300: #6b5a45;
 
-    --color-blood-500: #d87050;
-    --color-blood-300: #e89070;
-    --color-blood-600: #b85030;
+    --color-blood-500: #d4a030;
+    --color-blood-300: #e8bc55;
+    --color-blood-600: #9a7015;
 
-    --color-olive-500: #8aad80;
-    --color-olive-700: #a8c8a0;
-    --color-olive-300: #6b8c5a;
+    --color-olive-500: #8aad8a;
+    --color-olive-700: #a8c8a8;
+    --color-olive-300: #6b8e6b;
 
     --color-leaf-500: #d4b060;
     --color-leaf-300: #e8c880;
 
-    --color-success-bg:   #182218;
-    --color-success-text: #a8c8a0;
-    --color-warning-bg:   #261e08;
-    --color-warning-text: #d4b060;
-    --color-danger-bg:    #261010;
-    --color-danger-text:  #d48070;
+    --color-success-bg:   #1a2a18;
+    --color-success-text: #a8c8a8;
+    --color-warning-bg:   #2a2010;
+    --color-warning-text: #d4a030;
+    --color-danger-bg:    #2a1010;
+    --color-danger-text:  #d48080;
 
     --rule: 1px solid var(--color-paper-300);
     --rule-ink: 1px solid var(--color-ink-700);
@@ -138,10 +138,7 @@
 }
 
 /* --- Base --- */
-html {
-  scroll-behavior: smooth;
-  overflow-x: hidden;
-}
+html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }
@@ -153,8 +150,6 @@ body {
   font-feature-settings: 'ss01', 'cv11';
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
-  max-width: 100%;
 }
 
 /* Display & headings */
@@ -162,26 +157,26 @@ h1, h2, h3, h4 {
   font-family: var(--font-display);
   color: var(--color-ink-900);
   font-weight: 500;
-  letter-spacing: -0.015em;
-  line-height: 1.1;
-  font-variation-settings: 'opsz' 72, 'SOFT' 0;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  font-variation-settings: 'opsz' 72, 'SOFT' 30;
 }
 h1 {
   font-size: clamp(2.75rem, 6vw + 1rem, 5.75rem);
   letter-spacing: -0.025em;
-  font-variation-settings: 'opsz' 144, 'SOFT' 0;
+  font-variation-settings: 'opsz' 144, 'SOFT' 50;
 }
 h2 {
   font-size: clamp(2rem, 3.5vw + 0.5rem, 3.25rem);
-  font-variation-settings: 'opsz' 96, 'SOFT' 0;
+  font-variation-settings: 'opsz' 96, 'SOFT' 40;
 }
 h3 {
   font-size: clamp(1.35rem, 1.5vw + 0.6rem, 1.875rem);
-  font-variation-settings: 'opsz' 48, 'SOFT' 0;
+  font-variation-settings: 'opsz' 48, 'SOFT' 30;
 }
 h4 {
   font-size: 1.125rem;
-  font-variation-settings: 'opsz' 24, 'SOFT' 0;
+  font-variation-settings: 'opsz' 24, 'SOFT' 20;
 }
 
 p { line-height: 1.65; }
@@ -235,8 +230,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
 
 /* Masthead — top band across every page */
 .dossier-masthead {
-  background: var(--color-paper-50);
-  border-bottom: 3px solid var(--color-blood-500);
+  background: var(--color-blood-600);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -246,79 +240,68 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   margin: 0 auto;
   padding: 0.875rem 1.5rem;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 1.5rem;
   justify-content: space-between;
 }
 .dossier-masthead__wordmark {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1.4rem;
-  color: var(--color-ink-900);
+  font-size: 1.5rem;
+  color: white;
   letter-spacing: -0.01em;
-  font-variation-settings: 'opsz' 48, 'SOFT' 0;
+  font-variation-settings: 'opsz' 48, 'SOFT' 30;
   text-decoration: none;
 }
 .dossier-masthead__wordmark em {
   font-style: italic;
-  color: var(--color-blood-500);
+  color: var(--color-leaf-300);
   font-weight: 400;
 }
 .dossier-masthead__volume {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-ink-300);
+  color: rgba(255, 255, 255, 0.6);
   white-space: nowrap;
 }
 .dossier-masthead__nav {
   display: flex;
   gap: 1.25rem;
-  align-items: center;
+  align-items: baseline;
 }
 .dossier-masthead__nav a {
   font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-ink-500);
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   padding-bottom: 2px;
-  border-bottom: 2px solid transparent;
+  border-bottom: 1px solid transparent;
   transition: color 0.15s, border-bottom-color 0.15s;
 }
 .dossier-masthead__nav a:hover,
 .dossier-masthead__nav a[aria-current="page"],
 .dossier-masthead__nav a.is-current {
-  color: var(--color-blood-500);
-  border-bottom-color: var(--color-blood-500);
+  color: white;
+  border-bottom-color: rgba(255, 255, 255, 0.55);
 }
 .dossier-masthead__nav .nav-numeral {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 400;
-  color: var(--color-blood-300);
-  margin-right: 0.3em;
+  color: var(--color-leaf-300);
+  margin-right: 0.35em;
   letter-spacing: 0;
   text-transform: none;
-  font-variation-settings: 'SOFT' 0;
 }
 @media (max-width: 640px) {
-  .dossier-masthead__inner {
-    flex-wrap: wrap;
-    row-gap: 0.4rem;
-    padding: 0.65rem 1rem;
-  }
-  .dossier-masthead__wordmark { flex: 1 1 auto; }
   .dossier-masthead__volume { display: none; }
-  .dossier-masthead__nav {
-    flex: 0 0 100%;
-    gap: 0.65rem;
-    flex-wrap: wrap;
-  }
-  .dossier-masthead__nav a { font-size: 0.68rem; letter-spacing: 0.08em; }
+  .dossier-masthead__nav { gap: 0.9rem; }
+  .dossier-masthead__nav a { font-size: 0.68rem; letter-spacing: 0.1em; }
 }
 
 /* Folio — section numeral + title on each section */
