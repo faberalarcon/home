@@ -71,7 +71,10 @@
   const maxDrinkCount = $derived(topDrinks[0]?.c ?? 1);
 </script>
 
-<h1 class="text-2xl font-semibold mb-6">Stats</h1>
+<header class="stats-head">
+  <p class="dossier-kicker">Drink Hub</p>
+  <h1>Stats</h1>
+</header>
 
 <!-- Count strip -->
 <div class="grid grid-cols-3 gap-3 mb-8">
@@ -80,9 +83,9 @@
     { label: 'This week', value: totalWeek },
     { label: 'All time', value: totalAllTime }
   ] as s}
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
-      <div class="text-3xl font-bold tabular-nums">{s.value}</div>
-      <div class="text-xs text-slate-400 mt-1">{s.label}</div>
+    <div class="drink-stat">
+      <div class="drink-stat__value">{s.value}</div>
+      <div class="drink-stat__label">{s.label}</div>
     </div>
   {/each}
 </div>
@@ -90,15 +93,15 @@
 <!-- Leaderboard -->
 <div class="mb-8">
   <div class="flex items-center justify-between mb-3">
-    <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400">Leaderboard</h2>
-    <div class="flex gap-1 text-xs">
+    <h2 class="section-label">Leaderboard</h2>
+    <div class="segmented">
       <button
         onclick={() => (tab = 'today')}
-        class="px-3 py-1 rounded-full transition {tab === 'today' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'}"
+        class:active={tab === 'today'}
       >Today</button>
       <button
         onclick={() => (tab = 'all_time')}
-        class="px-3 py-1 rounded-full transition {tab === 'all_time' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'}"
+        class:active={tab === 'all_time'}
       >All time</button>
     </div>
   </div>
@@ -108,7 +111,7 @@
   {:else}
     <div class="space-y-2">
       {#each leaderboard as p, i (p.id)}
-        <div class="flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
+        <div class="leader-row">
           <div class="text-slate-500 text-sm w-5 text-center">{i + 1}</div>
           <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-slate-950"
             style="background-color:{p.color}">
@@ -134,8 +137,8 @@
 <!-- Top drinks bar chart -->
 {#if topDrinks.length > 0}
   <div class="mb-6">
-    <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-3">Top items (all time)</h2>
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+    <h2 class="section-label mb-3">Top items (all time)</h2>
+    <div class="metric-panel space-y-3">
       {#each topDrinks as d (d.id)}
         {@const pct = Math.round((d.c / maxDrinkCount) * 100)}
         <div>
@@ -143,8 +146,8 @@
             <span class="font-medium">{d.name}</span>
             <span class="text-slate-400 tabular-nums">{d.c}</span>
           </div>
-          <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-            <div class="h-2 rounded-full bg-orange-500 transition-all duration-500" style="width:{pct}%"></div>
+          <div class="metric-track">
+            <div class="metric-bar" style="width:{pct}%"></div>
           </div>
         </div>
       {/each}
@@ -156,15 +159,15 @@
 {#if dowCounts.some((d) => d.count > 0)}
   {@const maxDow = Math.max(...dowCounts.map((d) => d.count), 1)}
   <div class="mb-8">
-    <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-3">Orders by day of week</h2>
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+    <h2 class="section-label mb-3">Orders by day of week</h2>
+    <div class="metric-panel">
       <div class="flex items-end justify-between gap-1 h-24">
         {#each dowCounts as d}
           {@const pct = d.count / maxDow}
           <div class="flex-1 flex flex-col items-center gap-1">
             <div class="text-xs text-slate-400 tabular-nums">{d.count > 0 ? d.count : ''}</div>
             <div
-              class="w-full rounded-t bg-orange-500/80 transition-all duration-500 min-h-[2px]"
+              class="dow-bar"
               style="height:{Math.max(pct * 72, d.count > 0 ? 4 : 2)}px"
             ></div>
             <div class="text-xs text-slate-500">{d.label}</div>
@@ -177,7 +180,106 @@
 
 <!-- Milestone toast -->
 {#if milestoneToast}
-  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-orange-500 text-slate-950 font-semibold px-5 py-3 rounded-full shadow-xl text-sm z-50">
+  <div class="milestone-toast">
     {milestoneToast}
   </div>
 {/if}
+
+<style>
+  .stats-head {
+    margin-bottom: 1.5rem;
+  }
+  .stats-head h1 {
+    font-size: clamp(2.25rem, 10vw, 4rem);
+  }
+  .drink-stat {
+    border-top: 2px solid var(--color-blood-500);
+    background: transparent;
+    padding: 0.85rem 0 0;
+    text-align: left;
+  }
+  .drink-stat__value {
+    color: var(--color-ink-900);
+    font-family: var(--font-mono);
+    font-size: clamp(2rem, 9vw, 3rem);
+    font-weight: 650;
+    line-height: 1;
+  }
+  .drink-stat__label,
+  .section-label {
+    color: var(--color-ink-500);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .segmented {
+    display: inline-flex;
+    border: 1px solid var(--color-paper-300);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .segmented button {
+    padding: 0.35rem 0.7rem;
+    background: transparent;
+    color: var(--color-ink-500);
+    font-size: 0.75rem;
+  }
+  .segmented button.active {
+    background: var(--color-ink-900);
+    color: var(--color-paper-50);
+  }
+  .leader-row,
+  .metric-panel {
+    border: 1px solid var(--color-paper-300);
+    border-radius: var(--radius);
+    background: var(--color-paper-100);
+  }
+  .leader-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+  .metric-panel {
+    padding: 1rem;
+  }
+  .metric-track {
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--color-paper-200);
+    overflow: hidden;
+  }
+  .metric-bar,
+  .dow-bar {
+    background: var(--color-blood-500);
+    transition: width 0.5s ease, height 0.5s ease;
+  }
+  .metric-bar {
+    height: 0.5rem;
+    border-radius: 999px;
+  }
+  .dow-bar {
+    width: 100%;
+    border-radius: 0.35rem 0.35rem 0 0;
+    min-height: 2px;
+  }
+  .milestone-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    border-radius: var(--radius);
+    background: var(--color-blood-500);
+    color: var(--color-paper-50);
+    padding: 0.75rem 1.1rem;
+    font-weight: 750;
+    font-size: 0.875rem;
+    box-shadow: 0 16px 42px color-mix(in oklab, var(--color-blood-600) 28%, transparent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .metric-bar,
+    .dow-bar { transition: none; }
+  }
+</style>

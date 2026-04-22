@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* =============================================================
-   21 Bristoe — canonical design tokens  (Clean Slate theme)
-   White + warm sand + terracotta. Duplicated verbatim to:
+   21 Bristoe — canonical design tokens
+   Amber/cream/sage palette. Duplicated verbatim to:
      stats/src/app.css · drink-hub/src/app.css
    ============================================================= */
 
@@ -44,31 +44,31 @@
 }
 
 @theme {
-  /* Paper (surfaces) — clean white + warm sand */
-  --color-paper-50:  #ffffff;
-  --color-paper-100: #f7f2eb;
-  --color-paper-200: #ede6db;
-  --color-paper-300: #d9ccbc;
+  /* Paper (surfaces) — warm cream */
+  --color-paper-50:  #fdf8f0;
+  --color-paper-100: #f5ead6;
+  --color-paper-200: #ede2c8;
+  --color-paper-300: #e8d5b0;
 
-  /* Ink (text) — near-black */
-  --color-ink-900: #1e1e1e;
-  --color-ink-700: #3a3530;
-  --color-ink-500: #7a6f65;
-  --color-ink-300: #b0a898;
+  /* Ink (text) — warm dark brown */
+  --color-ink-900: #2d2318;
+  --color-ink-700: #3d3020;
+  --color-ink-500: #6b6355;
+  --color-ink-300: #a09280;
 
-  /* Terracotta (primary accent) */
-  --color-blood-300: #e08060;
-  --color-blood-500: #c4603c;
-  --color-blood-600: #a04a2a;
+  /* Amber (primary accent) */
+  --color-blood-300: #c9962d;
+  --color-blood-500: #b8860b;
+  --color-blood-600: #9a6f09;
 
   /* Sage (secondary accent) */
-  --color-olive-300: #8aad80;
-  --color-olive-500: #6b8c5a;
-  --color-olive-700: #4a6040;
+  --color-olive-300: #90b490;
+  --color-olive-500: #6b8e6b;
+  --color-olive-700: #3f5a3f;
 
-  /* Leaf (gold) */
-  --color-leaf-300: #d4b060;
-  --color-leaf-500: #b8940a;
+  /* Leaf (warm gold) */
+  --color-leaf-300: #e6c97a;
+  --color-leaf-500: #c49a2e;
 
   /* Typography */
   --font-display: 'Fraunces', 'Georgia', 'Times New Roman', serif;
@@ -100,37 +100,37 @@
   --rule-ink: 1px solid var(--color-ink-700);
 }
 
-/* --- Dark mode --- */
+/* --- Dark mode: evening reading --- */
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --color-paper-50:  #141410;
-    --color-paper-100: #1e1c18;
-    --color-paper-200: #2a2820;
-    --color-paper-300: #3d3a30;
+    --color-paper-50:  #1e1610;
+    --color-paper-100: #271e14;
+    --color-paper-200: #352819;
+    --color-paper-300: #4a3820;
 
-    --color-ink-900: #f0ebe0;
-    --color-ink-700: #d8d0c0;
-    --color-ink-500: #9a9080;
-    --color-ink-300: #6b6355;
+    --color-ink-900: #f0e0c0;
+    --color-ink-700: #d4c0a0;
+    --color-ink-500: #9a8a70;
+    --color-ink-300: #6b5a45;
 
-    --color-blood-500: #d87050;
-    --color-blood-300: #e89070;
-    --color-blood-600: #b85030;
+    --color-blood-500: #d4a030;
+    --color-blood-300: #e8bc55;
+    --color-blood-600: #9a7015;
 
-    --color-olive-500: #8aad80;
-    --color-olive-700: #a8c8a0;
-    --color-olive-300: #6b8c5a;
+    --color-olive-500: #8aad8a;
+    --color-olive-700: #a8c8a8;
+    --color-olive-300: #6b8e6b;
 
     --color-leaf-500: #d4b060;
     --color-leaf-300: #e8c880;
 
     --color-success-bg:   #182218;
     --color-success-text: #a8c8a0;
-    --color-warning-bg:   #261e08;
-    --color-warning-text: #d4b060;
-    --color-danger-bg:    #261010;
-    --color-danger-text:  #d48070;
+    --color-warning-bg:   #2a2010;
+    --color-warning-text: #d4a030;
+    --color-danger-bg:    #2a1010;
+    --color-danger-text:  #d48080;
 
     --rule: 1px solid var(--color-paper-300);
     --rule-ink: 1px solid var(--color-ink-700);
@@ -162,26 +162,26 @@ h1, h2, h3, h4 {
   font-family: var(--font-display);
   color: var(--color-ink-900);
   font-weight: 500;
-  letter-spacing: -0.015em;
-  line-height: 1.1;
-  font-variation-settings: 'opsz' 72, 'SOFT' 0;
+  letter-spacing: 0;
+  line-height: 1.08;
+  font-variation-settings: 'opsz' 72, 'SOFT' 30;
 }
 h1 {
   font-size: clamp(2.75rem, 6vw + 1rem, 5.75rem);
-  letter-spacing: -0.025em;
-  font-variation-settings: 'opsz' 144, 'SOFT' 0;
+  letter-spacing: 0;
+  font-variation-settings: 'opsz' 144, 'SOFT' 50;
 }
 h2 {
   font-size: clamp(2rem, 3.5vw + 0.5rem, 3.25rem);
-  font-variation-settings: 'opsz' 96, 'SOFT' 0;
+  font-variation-settings: 'opsz' 96, 'SOFT' 40;
 }
 h3 {
   font-size: clamp(1.35rem, 1.5vw + 0.6rem, 1.875rem);
-  font-variation-settings: 'opsz' 48, 'SOFT' 0;
+  font-variation-settings: 'opsz' 48, 'SOFT' 30;
 }
 h4 {
   font-size: 1.125rem;
-  font-variation-settings: 'opsz' 24, 'SOFT' 0;
+  font-variation-settings: 'opsz' 24, 'SOFT' 20;
 }
 
 p { line-height: 1.65; }
@@ -908,3 +908,35 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
 .gallery-lb-next { right: 1rem; }
 .gallery-lb-prev:hover,
 .gallery-lb-next:hover { background: rgba(251,247,236,0.15); }
+
+/* Transitional compatibility for older Tailwind utility screens. */
+.bg-slate-950 { background-color: var(--color-paper-50) !important; }
+.bg-slate-900 { background-color: var(--color-paper-100) !important; }
+.bg-slate-900\/80 { background-color: color-mix(in oklab, var(--color-paper-100) 88%, transparent) !important; }
+.bg-slate-800 { background-color: var(--color-paper-200) !important; }
+.bg-slate-800\/50,
+.bg-slate-800\/60 { background-color: color-mix(in oklab, var(--color-paper-200) 70%, transparent) !important; }
+.bg-slate-700 { background-color: var(--color-ink-900) !important; }
+.bg-orange-500 { background-color: var(--color-blood-500) !important; }
+.bg-orange-400 { background-color: var(--color-blood-300) !important; }
+.bg-orange-500\/80 { background-color: color-mix(in oklab, var(--color-blood-500) 82%, transparent) !important; }
+.text-slate-100,
+.text-slate-200,
+.text-white { color: var(--color-ink-900) !important; }
+.text-slate-300 { color: var(--color-ink-700) !important; }
+.text-slate-400,
+.text-slate-500,
+.text-slate-600 { color: var(--color-ink-500) !important; }
+.text-slate-950 { color: var(--color-paper-50) !important; }
+.border-slate-800,
+.border-slate-700 { border-color: var(--color-paper-300) !important; }
+.hover\:bg-slate-700:hover,
+.hover\:bg-slate-800:hover,
+.hover\:bg-slate-800\/50:hover,
+.hover\:bg-slate-800\/60:hover { background-color: var(--color-paper-200) !important; }
+.hover\:bg-orange-400:hover { background-color: var(--color-blood-600) !important; }
+.hover\:text-slate-200:hover,
+.hover\:text-slate-300:hover,
+.hover\:text-white:hover { color: var(--color-ink-900) !important; }
+.focus\:border-slate-500:focus,
+.focus\:border-slate-600:focus { border-color: var(--color-blood-500) !important; }

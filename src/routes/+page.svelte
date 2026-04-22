@@ -35,14 +35,17 @@
   }
 </script>
 
-<h1 class="text-2xl font-semibold mb-1">Who's ordering?</h1>
-<p class="text-slate-400 mb-6 text-sm">Tap your name to start.</p>
+<header class="mb-6">
+  <p class="dossier-kicker">Drink Hub</p>
+  <h1 class="text-4xl mb-2">Who's ordering?</h1>
+  <p class="text-sm" style="color: var(--color-ink-500)">Tap your name to start.</p>
+</header>
 
 <div class="grid grid-cols-2 gap-3">
   {#each data.profiles as p (p.id)}
     <div
-      class="rounded-2xl shadow-lg shadow-black/30 overflow-hidden"
-      style="background-color: {p.color}20; border: 1px solid {p.color}60"
+      class="profile-tile overflow-hidden"
+      style="--profile-color: {p.color}"
     >
       <!-- Profile pick area -->
       <button
@@ -53,12 +56,12 @@
           <img
             src={p.avatarUrl.replace('.webp', '-thumb.webp')}
             alt={p.name}
-            class="w-12 h-12 rounded-full mb-2 object-cover"
+            class="profile-avatar mb-2 object-cover"
           />
         {:else}
           <div
-            class="w-12 h-12 rounded-full mb-2 flex items-center justify-center text-xl font-bold"
-            style="background-color: {p.color}; color: #0f172a"
+            class="profile-avatar mb-2 flex items-center justify-center text-xl font-bold"
+            style="background-color: {p.color}; color: var(--color-paper-50)"
           >
             {p.name[0]}
           </div>
@@ -67,7 +70,7 @@
         <div class="text-base font-medium">{p.name}</div>
 
         {#if p.lastDrinkName}
-          <div class="text-xs text-slate-400 mt-0.5 truncate">
+          <div class="text-xs mt-0.5 truncate" style="color: var(--color-ink-500)">
             Last: {p.lastDrinkName} · {timeAgo(p.lastOrderedAt)}
           </div>
         {/if}
@@ -86,3 +89,26 @@
     </div>
   {/each}
 </div>
+
+<style>
+  .profile-tile {
+    border-radius: var(--radius);
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--profile-color) 20%, var(--color-paper-50)), var(--color-paper-100));
+    border: 1px solid color-mix(in oklab, var(--profile-color) 50%, var(--color-paper-300));
+    transition: transform 0.16s ease, border-color 0.16s ease;
+  }
+  .profile-tile:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--profile-color) 80%, var(--color-blood-500));
+  }
+  .profile-avatar {
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-sm);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .profile-tile { transition: none; }
+    .profile-tile:hover { transform: none; }
+  }
+</style>
