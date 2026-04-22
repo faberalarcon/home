@@ -97,7 +97,7 @@
     line-height: 1.05;
     color: var(--color-ink-900);
     margin: 0;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     word-break: break-word;
   }
   .stat--accent .stat__value { color: var(--color-blood-500); }

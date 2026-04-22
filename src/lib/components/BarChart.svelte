@@ -80,6 +80,9 @@
             ticks: {
               color: inkMuted,
               font: { family: fontMono, size: 10 },
+              autoSkip: true,
+              maxRotation: horizontal ? 0 : 0,
+              maxTicksLimit: horizontal ? 5 : 7,
               callback: function (val) {
                 if (horizontal && unit) return `${val}${unit}`;
                 return (this as { getLabelForValue: (v: number) => string }).getLabelForValue(val as number);
@@ -92,6 +95,8 @@
             ticks: {
               color: inkMuted,
               font: { family: fontMono, size: 10 },
+              autoSkip: true,
+              maxTicksLimit: horizontal ? 8 : 5,
               callback: function (val) {
                 if (!horizontal && unit) return `${val}${unit}`;
                 return (this as { getLabelForValue: (v: number) => string }).getLabelForValue(val as number);
@@ -115,6 +120,18 @@
   });
 </script>
 
-<div class="relative w-full" style="height: 280px">
+<div class="chart-box">
   <canvas bind:this={canvas}></canvas>
 </div>
+
+<style>
+  .chart-box {
+    position: relative;
+    width: 100%;
+    height: clamp(220px, 38vw, 300px);
+    min-width: 0;
+  }
+  @media (max-width: 520px) {
+    .chart-box { height: 220px; }
+  }
+</style>

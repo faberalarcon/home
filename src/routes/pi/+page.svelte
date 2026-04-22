@@ -41,23 +41,21 @@
 
 <article class="pi">
   <header class="pi__head reveal">
-    <p class="dossier-kicker">Host Telemetry</p>
-    <h1 class="pi__title">The Pi, <em>itself.</em></h1>
+    <p class="dashboard-kicker">Host telemetry</p>
+    <h1 class="pi__title">Pi health</h1>
     <p class="pi__lede">
-      CPU, temperature, memory, and network — sampled every five minutes by the machine
-      running this site, Home Assistant, and the admin panel.
+      CPU, temperature, memory, and network sampled every five minutes.
     </p>
-    <hr class="dossier-rule dossier-rule--ornate" />
   </header>
 
   {#if !data.pi.available}
     <p class="pi__note">
-      <span class="dossier-status dossier-status--alert">No data</span>
+      <span class="dashboard-status dashboard-status--alert">No data</span>
       &mdash; the collector hasn&rsquo;t written a sample yet. First tick takes up to 5 minutes.
     </p>
   {:else}
     <section class="pi__section reveal">
-      <SectionHeader numeral="V.01" title="Current Readings" meta="host.log" />
+      <SectionHeader title="Current readings" meta="Latest sample" />
       <div class="stat-grid">
         <StatCard
           label="CPU"
@@ -107,11 +105,11 @@
 
     {#if data.pi.history.length > 0}
       <section class="pi__section reveal">
-        <SectionHeader numeral="V.02" title="Over Time" meta={rangeLabels[data.pi.range]} />
+        <SectionHeader title="History" meta={rangeLabels[data.pi.range]} />
         <div class="figure-grid">
-          <figure class="dossier-figure">
-            <p class="dossier-kicker">Figure I &middot; CPU (%)</p>
-            <div class="dossier-figure__body">
+          <figure class="chart-panel">
+            <figcaption>CPU</figcaption>
+            <div class="chart-panel__body">
               <LineChart
                 labels={data.pi.history.map(p => p.time)}
                 data={data.pi.history.map(p => p.cpuPct)}
@@ -120,9 +118,9 @@
               />
             </div>
           </figure>
-          <figure class="dossier-figure">
-            <p class="dossier-kicker">Figure II &middot; Temperature (°C)</p>
-            <div class="dossier-figure__body">
+          <figure class="chart-panel">
+            <figcaption>Temperature</figcaption>
+            <div class="chart-panel__body">
               <LineChart
                 labels={data.pi.history.map(p => p.time)}
                 data={data.pi.history.map(p => p.tempC)}
@@ -131,9 +129,9 @@
               />
             </div>
           </figure>
-          <figure class="dossier-figure">
-            <p class="dossier-kicker">Figure III &middot; Memory (%)</p>
-            <div class="dossier-figure__body">
+          <figure class="chart-panel">
+            <figcaption>Memory</figcaption>
+            <div class="chart-panel__body">
               <LineChart
                 labels={data.pi.history.map(p => p.time)}
                 data={data.pi.history.map(p => p.memPct)}
@@ -142,9 +140,9 @@
               />
             </div>
           </figure>
-          <figure class="dossier-figure">
-            <p class="dossier-kicker">Figure IV &middot; Network ↓ (MiB/s)</p>
-            <div class="dossier-figure__body">
+          <figure class="chart-panel">
+            <figcaption>Network download</figcaption>
+            <div class="chart-panel__body">
               <LineChart
                 labels={data.pi.history.map(p => p.time)}
                 data={data.pi.history.map(p => p.netDownMBps)}
@@ -168,11 +166,6 @@
     margin: 0.75rem 0 1rem;
     color: var(--color-ink-900);
     font-variation-settings: 'opsz' 144, 'SOFT' 30;
-  }
-  .pi__title em {
-    font-style: italic;
-    color: var(--color-blood-500);
-    font-variation-settings: 'opsz' 144, 'SOFT' 100;
   }
   .pi__lede {
     font-family: var(--font-body);
@@ -203,7 +196,7 @@
   }
   .figure-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
     gap: 1.5rem;
     margin-top: 1rem;
   }

@@ -50,24 +50,22 @@
 
 <article class="house">
   <header class="house__head reveal">
-    <p class="dossier-kicker">House Status</p>
-    <h1 class="house__title">Sensors, history,<br/><em>and a little weather.</em></h1>
+    <p class="dashboard-kicker">House</p>
+    <h1 class="house__title">Sensors and history</h1>
     <p class="house__lede">
-      Live readings from Home Assistant and rolling seven-day history.
-      Toggle the range below the entertainment panel.
+      Current Home Assistant readings with temperature, entertainment, and forecast trends.
     </p>
-    <hr class="dossier-rule dossier-rule--ornate" />
   </header>
 
   {#if !data.ha.available}
     <p class="house__note">
-      <span class="dossier-status dossier-status--alert">Home Assistant offline</span>
+      <span class="dashboard-status dashboard-status--alert">Home Assistant offline</span>
       &mdash; showing last known data where possible.
     </p>
   {/if}
 
   <section class="house__section reveal">
-    <SectionHeader numeral="II.II.01" title="Current Readings" meta="instruments.log" />
+    <SectionHeader title="Current Readings" meta="Live" />
     <div class="stat-grid">
       <StatCard
         label="Indoor temp"
@@ -96,12 +94,12 @@
 
   {#if data.charts.indoorTemp.length > 0 || data.charts.outdoorTemp.length > 0}
     <section class="house__section reveal">
-      <SectionHeader numeral="II.II.02" title="Temperature" meta="7-day history" />
+      <SectionHeader title="Temperature" meta="7-day history" />
       <div class="figure-grid">
         {#if data.charts.indoorTemp.length > 0}
-          <figure class="dossier-figure">
-            <p class="dossier-kicker">Figure I &middot; Indoor (°F)</p>
-            <div class="dossier-figure__body">
+          <figure class="chart-panel">
+            <figcaption>Indoor temperature</figcaption>
+            <div class="chart-panel__body">
               <LineChart
                 labels={data.charts.indoorTemp.map(p => p.time)}
                 data={data.charts.indoorTemp.map(p => p.value)}
@@ -112,9 +110,9 @@
           </figure>
         {/if}
         {#if data.charts.outdoorTemp.length > 0}
-          <figure class="dossier-figure">
-            <p class="dossier-kicker">Figure II &middot; Outdoor (°F)</p>
-            <div class="dossier-figure__body">
+          <figure class="chart-panel">
+            <figcaption>Outdoor temperature</figcaption>
+            <div class="chart-panel__body">
               <LineChart
                 labels={data.charts.outdoorTemp.map(p => p.time)}
                 data={data.charts.outdoorTemp.map(p => p.value)}
@@ -129,7 +127,7 @@
   {/if}
 
   <section class="house__section reveal">
-    <SectionHeader numeral="II.II.03" title="Entertainment" meta="status + on-time" />
+    <SectionHeader title="Entertainment" meta="Live + history" />
     <div class="badges">
       <StatusBadge label="Living Room TV" active={data.ha.livingTV?.state === 'on' || data.ha.livingTV?.state === 'playing'} />
       <StatusBadge label="Bedroom TV" active={data.ha.bedroomTV?.state === 'on' || data.ha.bedroomTV?.state === 'playing'} />
@@ -163,10 +161,10 @@
     </div>
 
     <div class="figure-grid">
-      <figure class="dossier-figure">
-        <p class="dossier-kicker">Figure III &middot; Bedroom TV (hrs)</p>
+      <figure class="chart-panel">
+        <figcaption>Bedroom TV on-time</figcaption>
         <p class="house__coverage">{coverageNote(data.tvCoverage.bedroomDays, data.tvCoverage.requestedDays)}</p>
-        <div class="dossier-figure__body">
+        <div class="chart-panel__body">
           <BarChart
             labels={data.charts.bedroomTVHours.map(d => d.time)}
             data={data.charts.bedroomTVHours.map(d => d.hours)}
@@ -175,10 +173,10 @@
           />
         </div>
       </figure>
-      <figure class="dossier-figure">
-        <p class="dossier-kicker">Figure IV &middot; Living Room TV (hrs)</p>
+      <figure class="chart-panel">
+        <figcaption>Living Room TV on-time</figcaption>
         <p class="house__coverage">{coverageNote(data.tvCoverage.livingDays, data.tvCoverage.requestedDays)}</p>
-        <div class="dossier-figure__body">
+        <div class="chart-panel__body">
           <BarChart
             labels={data.charts.livingTVHours.map(d => d.time)}
             data={data.charts.livingTVHours.map(d => d.hours)}
@@ -192,8 +190,8 @@
 
   {#if data.forecast.length > 0}
     <section class="house__section reveal">
-      <SectionHeader numeral="II.II.04" title="The Forecast" meta="7 days, Taneytown" />
-      <div class="dossier-figure">
+      <SectionHeader title="The Forecast" meta="7 days, Taneytown" />
+      <div class="chart-panel">
         <div class="forecast">
           {#each data.forecast as day}
             <div class="forecast__day">
@@ -222,11 +220,6 @@
     color: var(--color-ink-900);
     font-variation-settings: 'opsz' 144, 'SOFT' 30;
   }
-  .house__title em {
-    font-style: italic;
-    color: var(--color-blood-500);
-    font-variation-settings: 'opsz' 144, 'SOFT' 100;
-  }
   .house__lede {
     font-family: var(--font-body);
     font-size: 1.0625rem;
@@ -254,7 +247,7 @@
   }
   .figure-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
     gap: 1.5rem;
     margin-top: 1rem;
   }
@@ -323,7 +316,7 @@
 
   .forecast {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(4.25rem, 1fr));
     gap: 0;
     padding-top: 0.5rem;
   }

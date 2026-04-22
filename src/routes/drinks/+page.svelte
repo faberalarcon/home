@@ -37,13 +37,11 @@
 
 <article class="drinks">
   <header class="drinks__head reveal">
-    <p class="dossier-kicker">Drink Log</p>
-    <h1 class="drinks__title">Pours, tallies,<br/><em>and a leaderboard.</em></h1>
+    <p class="dashboard-kicker">Drinks</p>
+    <h1 class="drinks__title">Orders and trends</h1>
     <p class="drinks__lede">
-      Every order from Drink Hub appears here within seconds &mdash;
-      filterable by person, drink, category, and date.
+      Drink Hub order totals, leaders, and activity patterns.
     </p>
-    <hr class="dossier-rule dossier-rule--ornate" />
   </header>
 
   {#if s}
@@ -52,12 +50,12 @@
 
   {#if !s}
     <p class="drinks__missing">
-      <span class="dossier-status dossier-status--alert">Drink Hub offline</span>
+      <span class="dashboard-status dashboard-status--alert">Drink Hub offline</span>
       &mdash; could not reach the lounge API.
     </p>
   {:else}
     <section class="drinks__section reveal">
-      <SectionHeader numeral="II.III.01" title="Order Totals" meta="ledger.sum" />
+      <SectionHeader title="Order totals" />
       <div class="stat-grid">
         <StatCard label="All time" value={s.totals.allTime.toLocaleString()} accent />
         <StatCard label="Today" value={s.totals.today} />
@@ -67,7 +65,7 @@
     </section>
 
     <section class="drinks__section reveal">
-      <SectionHeader numeral="II.III.02" title="Leaderboard" meta={leaderLabels[leaderView]} />
+      <SectionHeader title="Leaderboard" meta={leaderLabels[leaderView]} />
       <div class="tab-row">
         {#each (['allTime', 'thisWeek', 'today'] as const) as view}
           <button
@@ -81,7 +79,7 @@
     </section>
 
     <section class="drinks__section reveal">
-      <SectionHeader numeral="II.III.03" title="Top Drinks" meta={topLabels[topDrinksView]} />
+      <SectionHeader title="Top items" meta={topLabels[topDrinksView]} />
       <div class="tab-row">
         {#each (['allTime', 'thisWeek'] as const) as view}
           <button
@@ -91,9 +89,9 @@
           >{topLabels[view]}</button>
         {/each}
       </div>
-      <figure class="dossier-figure">
-        <p class="dossier-kicker">Figure V &middot; Ranked by order count</p>
-        <div class="dossier-figure__body">
+      <figure class="chart-panel">
+        <figcaption>Ranked by order count</figcaption>
+        <div class="chart-panel__body">
           {#key topDrinksView}
             <BarChart
               labels={s.topDrinks[topDrinksView].map(d => d.name)}
@@ -108,9 +106,9 @@
 
     <section class="drinks__section reveal">
       <div class="figure-grid">
-        <figure class="dossier-figure">
-          <p class="dossier-kicker">Figure VI &middot; Orders by day of week</p>
-          <div class="dossier-figure__body">
+        <figure class="chart-panel">
+          <figcaption>Orders by day of week</figcaption>
+          <div class="chart-panel__body">
             <BarChart
               labels={s.dowHistogram.map(d => d.day)}
               data={s.dowHistogram.map(d => d.count)}
@@ -118,9 +116,9 @@
             />
           </div>
         </figure>
-        <figure class="dossier-figure">
-          <p class="dossier-kicker">Figure VII &middot; Orders by hour</p>
-          <div class="dossier-figure__body">
+        <figure class="chart-panel">
+          <figcaption>Orders by hour</figcaption>
+          <div class="chart-panel__body">
             <BarChart
               labels={s.hourHistogram.map(h => h.hour.toString().padStart(2, '0'))}
               data={s.hourHistogram.map(h => h.count)}
@@ -133,10 +131,10 @@
 
     {#if s.dailyTimeline.length > 0}
       <section class="drinks__section reveal">
-        <SectionHeader numeral="II.III.04" title="Orders Over Time" meta="90-day timeline" />
-        <figure class="dossier-figure">
-          <p class="dossier-kicker">Figure VIII &middot; Daily orders</p>
-          <div class="dossier-figure__body">
+        <SectionHeader title="Orders over time" meta="90-day timeline" />
+        <figure class="chart-panel">
+          <figcaption>Daily orders</figcaption>
+          <div class="chart-panel__body">
             <LineChart
               labels={s.dailyTimeline.map(d => formatDate(d.date))}
               data={s.dailyTimeline.map(d => d.count)}
@@ -148,7 +146,7 @@
     {/if}
 
     <section class="drinks__section reveal">
-      <SectionHeader numeral="II.III.05" title="Fun Facts" meta="marginalia" />
+      <SectionHeader title="Additional metrics" />
       <div class="stat-grid">
         {#if s.funStats.busiestDay}
           <StatCard
@@ -200,11 +198,6 @@
     color: var(--color-ink-900);
     font-variation-settings: 'opsz' 144, 'SOFT' 30;
   }
-  .drinks__title em {
-    font-style: italic;
-    color: var(--color-blood-500);
-    font-variation-settings: 'opsz' 144, 'SOFT' 100;
-  }
   .drinks__lede {
     font-family: var(--font-body);
     font-size: 1.0625rem;
@@ -227,7 +220,7 @@
   }
   .figure-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
     gap: 1.5rem;
   }
   @media (max-width: 900px) { .figure-grid { grid-template-columns: 1fr; } }

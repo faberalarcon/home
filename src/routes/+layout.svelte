@@ -5,11 +5,11 @@
   let { children } = $props();
 
   const navLinks = [
-    { href: '/',        numeral: 'I',   label: 'Overview' },
-    { href: '/house',   numeral: 'II',  label: 'House' },
-    { href: '/drinks',  numeral: 'III', label: 'Drinks' },
-    { href: '/backups', numeral: 'IV',  label: 'Backups' },
-    { href: '/pi',      numeral: 'V',   label: 'Pi' }
+    { href: '/',        label: 'Overview' },
+    { href: '/house',   label: 'House' },
+    { href: '/drinks',  label: 'Drinks' },
+    { href: '/backups', label: 'Backups' },
+    { href: '/pi',      label: 'Pi' }
   ];
 
   const now = new Date();
@@ -18,12 +18,12 @@
 
 <a href="#main-content" class="skip-to-content">Skip to content</a>
 
-<header class="dossier-masthead">
-  <div class="dossier-masthead__inner">
-    <a class="dossier-masthead__wordmark" href="https://21bristoe.com">
-      21&middot;Bristoe <em>Stats</em>
+<header class="app-header">
+  <div class="app-header__inner">
+    <a class="app-header__brand" href="https://21bristoe.com">
+      21 Bristoe <em>Stats</em>
     </a>
-    <nav class="dossier-masthead__nav" aria-label="Sections">
+    <nav class="app-header__nav" aria-label="Stats sections">
       {#each navLinks as link}
         <a
           href={link.href}
@@ -36,20 +36,20 @@
   </div>
 </header>
 
-<main id="main-content" class="instruments-main">
+<main id="main-content" class="app-main">
   {@render children()}
 </main>
 
-<footer class="instruments-colophon">
-  <div class="instruments-colophon__inner">
-    <div class="instruments-colophon__mark" aria-hidden="true">
-      <span class="instruments-colophon__mark-word">21&middot;Bristoe</span>
-      <span class="instruments-colophon__mark-line"></span>
-      <span class="instruments-colophon__mark-sub">21 Bristoe Stats</span>
+<footer class="app-footer">
+  <div class="app-footer__inner">
+    <div class="app-footer__mark" aria-hidden="true">
+      <span class="app-footer__mark-word">21 Bristoe</span>
+      <span class="app-footer__mark-line"></span>
+      <span class="app-footer__mark-sub">Stats</span>
     </div>
-    <div class="instruments-colophon__foot">
+    <div class="app-footer__foot">
       <p>&copy; {buildYear} &middot; 21 Bristoe Station Rd, Taneytown, Md.</p>
-      <div class="instruments-colophon__links">
+      <div class="app-footer__links">
         <a href="https://21bristoe.com">21bristoe.com</a>
         <a href="https://drink-hub.21bristoe.com">Drink Hub</a>
       </div>
@@ -58,40 +58,42 @@
 </footer>
 
 <style>
-  .instruments-main {
+  .app-main {
     max-width: var(--measure-full);
     margin: 0 auto;
-    padding: 3rem 1.5rem 4rem;
+    padding: 1.5rem clamp(0.875rem, 2vw, 1.5rem) 3rem;
+    width: 100%;
+    min-width: 0;
   }
   @media (max-width: 640px) {
-    .instruments-main { padding: 2rem 1rem 3rem; }
+    .app-main { padding: 1rem 0.875rem 2.5rem; }
   }
 
-  .instruments-colophon {
+  .app-footer {
     margin-top: 4rem;
     background: var(--color-ink-900);
     color: var(--color-paper-100);
     padding: 3rem 1.5rem 2rem;
   }
-  .instruments-colophon__inner { max-width: var(--measure-full); margin: 0 auto; }
-  .instruments-colophon__mark {
+  .app-footer__inner { max-width: var(--measure-full); margin: 0 auto; }
+  .app-footer__mark {
     display: flex;
     align-items: center;
     gap: 1rem;
     margin-bottom: 2rem;
   }
-  .instruments-colophon__mark-word {
+  .app-footer__mark-word {
     font-family: var(--font-display);
     font-size: 1.25rem;
     color: var(--color-paper-50);
     font-variation-settings: 'opsz' 36, 'SOFT' 30;
   }
-  .instruments-colophon__mark-line {
+  .app-footer__mark-line {
     flex: 1;
     height: 1px;
     background: rgba(245, 239, 223, 0.15);
   }
-  .instruments-colophon__mark-sub {
+  .app-footer__mark-sub {
     font-family: var(--font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.18em;
@@ -99,7 +101,7 @@
     color: var(--color-paper-100);
     opacity: 0.6;
   }
-  .instruments-colophon__foot {
+  .app-footer__foot {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -110,16 +112,16 @@
     color: var(--color-paper-100);
     opacity: 0.7;
   }
-  .instruments-colophon__links {
+  .app-footer__links {
     display: flex;
     gap: 1.5rem;
   }
-  .instruments-colophon__links a {
+  .app-footer__links a {
     color: var(--color-leaf-300);
     text-decoration: none;
     border-bottom: 1px solid transparent;
     padding-bottom: 1px;
     transition: border-color 0.2s;
   }
-  .instruments-colophon__links a:hover { border-bottom-color: var(--color-leaf-300); }
+  .app-footer__links a:hover { border-bottom-color: var(--color-leaf-300); }
 </style>

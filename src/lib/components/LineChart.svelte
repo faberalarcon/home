@@ -84,7 +84,9 @@
             ticks: {
               color: inkMuted,
               font: { family: fontMono, size: 10 },
-              maxTicksLimit: 10
+              autoSkip: true,
+              maxRotation: 0,
+              maxTicksLimit: 7
             }
           },
           y: {
@@ -105,6 +107,18 @@
   });
 </script>
 
-<div class="relative w-full" style="height: 280px">
+<div class="chart-box">
   <canvas bind:this={canvas}></canvas>
 </div>
+
+<style>
+  .chart-box {
+    position: relative;
+    width: 100%;
+    height: clamp(220px, 38vw, 300px);
+    min-width: 0;
+  }
+  @media (max-width: 520px) {
+    .chart-box { height: 220px; }
+  }
+</style>

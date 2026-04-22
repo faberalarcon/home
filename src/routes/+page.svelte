@@ -22,57 +22,66 @@
 </script>
 
 <svelte:head>
-  <title>Overview — 21 Bristoe Stats</title>
-  <meta name="description" content="Live household readings from 21 Bristoe Station Rd, Taneytown MD" />
+  <title>Overview - 21 Bristoe Stats</title>
+  <meta name="description" content="Live household dashboard for 21 Bristoe Station Rd, Taneytown MD" />
 </svelte:head>
 
 <article class="overview">
   <header class="overview__head reveal">
-    <p class="dossier-kicker">21 Bristoe Stats</p>
-    <h1 class="overview__title">Live household<br/>readings.</h1>
-    <p class="overview__lede">
-      Current sensors, weather, entertainment, and the occasional fact about Limón &mdash;
-      refreshed on every page load.
-    </p>
-    <hr class="dossier-rule dossier-rule--ornate" />
+    <div>
+      <p class="dashboard-kicker">Overview</p>
+      <h1 class="overview__title">House dashboard</h1>
+    </div>
+    <p class="overview__freshness">Updated on page load</p>
   </header>
 
-  {#if data.visitors}
-    <section class="overview__section reveal">
-      <SectionHeader title="Callers" />
-      <div class="stat-grid">
+  <section class="overview__section overview__section--first reveal">
+    <div class="kpi-grid">
+      {#if data.weather}
         <StatCard
-          label="Unique callers"
-          value={data.visitors.count.toLocaleString()}
-          sublabel="21bristoe.com + stats"
+          label="Outdoor"
+          value={Math.round(data.weather.temperature)}
+          unit="°F"
+          sublabel={`${data.weather.description} · feels ${Math.round(data.weather.apparentTemperature)}°`}
           accent
         />
-      </div>
-    </section>
-  {/if}
+      {/if}
+      {#if data.visitors}
+        <StatCard
+          label="Visitors"
+          value={data.visitors.count.toLocaleString()}
+          sublabel="21bristoe.com + stats"
+        />
+      {/if}
+      {#if data.ha.xbox.gamerscore != null}
+        <StatCard label="Gamerscore" value={data.ha.xbox.gamerscore.toLocaleString()} unit="pts" />
+      {/if}
+      <StatCard label="Sunrise" value={formatTime(data.ha.sun.sunrise)} />
+      <StatCard label="Sunset" value={formatTime(data.ha.sun.sunset)} />
+    </div>
+  </section>
 
   {#if data.weather}
     <section class="overview__section reveal">
-      <SectionHeader title="The Weather" meta="Taneytown, Md." />
+      <SectionHeader title="Weather" meta="Taneytown, MD" />
 
       <div class="weather">
-        <div class="dossier-figure weather__current">
-          <div class="dossier-figure__body">
-            <p class="dossier-kicker">As of now</p>
+        <div class="metric-panel weather__current">
+          <div>
+            <p class="panel-label">Current</p>
             <p class="weather__temp">
               {Math.round(data.weather.temperature)}<span class="weather__unit">°F</span>
             </p>
-            <p class="weather__desc">&mdash; {data.weather.description}</p>
+            <p class="weather__desc">{data.weather.description}</p>
             <p class="weather__meta">
-              Feels like {Math.round(data.weather.apparentTemperature)}°F &middot;
-              Wind {Math.round(data.weather.windSpeed)} mph
+              Feels {Math.round(data.weather.apparentTemperature)}°F · wind {Math.round(data.weather.windSpeed)} mph
             </p>
           </div>
         </div>
 
         {#if data.forecast.length > 0}
-          <div class="dossier-figure weather__forecast">
-            <p class="dossier-kicker">Forecast, 7 days</p>
+          <div class="metric-panel weather__forecast">
+            <p class="panel-label">7-day forecast</p>
             <div class="weather__days">
               {#each data.forecast as day}
                 <div class="weather__day">
@@ -121,18 +130,10 @@
       {/each}
       <StatusBadge label="Xbox" active={data.ha.xbox.on} activeText={data.ha.xbox.nowPlaying ?? 'On'} />
     </div>
-    <div class="stat-grid">
-      {#if data.ha.xbox.gamerscore != null}
-        <StatCard label="Gamerscore" value={data.ha.xbox.gamerscore.toLocaleString()} unit="pts" />
-      {/if}
-      <StatCard label="Sunrise" value={formatTime(data.ha.sun.sunrise)} />
-      <StatCard label="Sunset" value={formatTime(data.ha.sun.sunset)} />
-    </div>
   </section>
 
   <section class="overview__section reveal">
-    <SectionHeader title="Limón" meta={`Today ${data.ha.outdoor ? Math.round(data.ha.outdoor.temp) + '°F' : ''} outside`} />
-    <p class="overview__caption">Daily readings from our resident expert, Limón — purely apocryphal.</p>
+    <SectionHeader title="Limón" meta={data.ha.outdoor ? `${Math.round(data.ha.outdoor.temp)}°F outside` : ''} />
     <div class="stat-grid">
       {#each data.limonStats as stat}
         <StatCard label={stat.label} value={stat.value} />
@@ -142,39 +143,40 @@
 </article>
 
 <style>
-  .overview__head { margin-bottom: 2rem; }
+  .overview__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
   .overview__title {
     font-family: var(--font-display);
-    font-size: clamp(2.5rem, 5vw + 1rem, 4.5rem);
+    font-size: clamp(2.25rem, 5vw, 4rem);
     line-height: 1;
     font-weight: 500;
-    margin: 0.75rem 0 1rem;
+    margin: 0.35rem 0 0;
     color: var(--color-ink-900);
     font-variation-settings: 'opsz' 144, 'SOFT' 30;
   }
-  .overview__lede {
-    font-family: var(--font-body);
-    font-size: 1.0625rem;
-    color: var(--color-ink-700);
-    line-height: 1.55;
-    max-width: 56ch;
-  }
-  .overview__section { margin: 3rem 0; }
-  .overview__caption {
-    font-family: var(--font-display);
-    font-style: italic;
+  .overview__freshness {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
     color: var(--color-ink-500);
-    font-size: 0.9375rem;
-    margin-top: -0.5rem;
-    margin-bottom: 1rem;
-    font-variation-settings: 'opsz' 24, 'SOFT' 100;
+    margin: 0;
+    line-height: 1.2;
   }
+  .overview__section { margin: 2rem 0; min-width: 0; }
+  .overview__section--first { margin-top: 0; }
 
+  .kpi-grid,
   .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-    gap: 0 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: 0.85rem 1.25rem;
+    min-width: 0;
   }
+
   .stat-grid--tight { margin-top: 1.5rem; }
 
   .badges {
@@ -187,11 +189,28 @@
   .weather {
     display: grid;
     grid-template-columns: 1fr 1.2fr;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    min-width: 0;
   }
   @media (max-width: 768px) {
     .weather { grid-template-columns: 1fr; }
+  }
+  .metric-panel {
+    border: 1px solid var(--color-paper-300);
+    border-radius: var(--radius);
+    background: var(--color-paper-100);
+    padding: 1rem;
+    min-width: 0;
+  }
+  .panel-label {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-ink-500);
+    margin: 0;
   }
   .weather__temp {
     font-family: var(--font-mono);
@@ -199,8 +218,8 @@
     font-size: clamp(3.5rem, 8vw, 5rem);
     line-height: 1;
     color: var(--color-ink-900);
-    margin: 0.5rem 0 0;
-    letter-spacing: -0.03em;
+    margin: 0.45rem 0 0;
+    letter-spacing: 0;
   }
   .weather__unit {
     font-family: var(--font-body);
@@ -212,9 +231,9 @@
     margin-left: 0.25rem;
   }
   .weather__desc {
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: 1.125rem;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 700;
     color: var(--color-ink-700);
     margin: 0.25rem 0 0.5rem;
   }
@@ -227,9 +246,10 @@
 
   .weather__days {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(4.25rem, 1fr));
+    gap: 0.4rem;
     margin-top: 0.75rem;
+    min-width: 0;
   }
   .weather__day {
     display: flex;
@@ -242,7 +262,7 @@
     font-family: var(--font-body);
     font-size: 0.625rem;
     font-weight: 700;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--color-ink-500);
     margin-bottom: 0.4rem;
@@ -257,5 +277,16 @@
     font-family: var(--font-mono);
     font-size: 0.8125rem;
     color: var(--color-ink-500);
+  }
+  @media (max-width: 520px) {
+    .overview__head {
+      display: block;
+    }
+    .overview__freshness {
+      margin-top: 0.5rem;
+    }
+    .weather__days {
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
 </style>

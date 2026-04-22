@@ -7,14 +7,14 @@
 </svelte:head>
 
 <article class="errata">
-  <p class="dossier-kicker">Error</p>
+  <p class="dashboard-kicker">Error</p>
   <p class="errata__numeral">{$page.status}</p>
-  <hr class="dossier-rule" />
+  <hr class="dashboard-rule" />
   <h1 class="errata__head">
     {$page.status === 404 ? 'Page not found.' : 'Something went wrong.'}
   </h1>
   <p class="errata__body">{$page.error?.message ?? 'An unexpected error occurred.'}</p>
-  <a href="/" class="dossier-button dossier-button--accent">Return to Overview</a>
+  <a href="/" class="dashboard-button dashboard-button--accent">Return to Overview</a>
 </article>
 
 <style>

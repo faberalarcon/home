@@ -52,24 +52,22 @@
 
 <article class="archive">
   <header class="archive__head reveal">
-    <p class="dossier-kicker">Backups</p>
-    <h1 class="archive__title">Tiered snapshots,<br/><em>held in reserve.</em></h1>
+    <p class="dashboard-kicker">Backups</p>
+    <h1 class="archive__title">Backup status</h1>
     <p class="archive__lede">
-      Rsync snapshots of <code class="archive__code">/home/faber</code> to the USB drive,
-      rotated by tier. Health and last-success below.
+      Rsync snapshot health, retention, and USB drive capacity.
     </p>
-    <hr class="dossier-rule dossier-rule--ornate" />
   </header>
 
   {#if !data.manifest.available}
     <p class="archive__note">
-      <span class="dossier-status dossier-status--alert">No manifest yet</span>
+      <span class="dashboard-status dashboard-status--alert">No manifest yet</span>
       &mdash; cron will populate on next scheduled run, or run <code class="archive__code">/home/faber/bin/backup.sh daily</code> manually.
     </p>
   {/if}
 
   <section class="archive__section reveal">
-    <SectionHeader numeral="II.IV.01" title="Overview" meta="summary.log" />
+    <SectionHeader title="Overview" meta="Current" />
     <div class="stat-grid">
       <StatCard
         label="Healthy tiers"
@@ -94,8 +92,8 @@
   </section>
 
   <section class="archive__section reveal">
-    <SectionHeader numeral="II.IV.02" title="Tiers" meta="ledger" />
-    <table class="dossier-table archive__tiers">
+    <SectionHeader title="Tiers" meta="Retention" />
+    <table class="analytics-table archive__tiers">
       <thead>
         <tr>
           <th>Tier</th>
@@ -116,27 +114,27 @@
           {@const meta = TIER_META[tier]}
           {@const state = staleness(tier, t.last)}
           <tr>
-            <td class="archive__tier-label">{meta.label}</td>
-            <td><em class="archive__cadence">{meta.cadence}</em></td>
-            <td>{humanAge(t.last?.timestamp)}</td>
-            <td>
+            <td data-label="Tier" class="archive__tier-label">{meta.label}</td>
+            <td data-label="Cadence"><em class="archive__cadence">{meta.cadence}</em></td>
+            <td data-label="Last run">{humanAge(t.last?.timestamp)}</td>
+            <td data-label="Status">
               {#if t.last}
                 <span
-                  class="dossier-status"
-                  class:dossier-status--active={state === 'fresh' && t.last.status === 'success'}
-                  class:dossier-status--alert={state === 'overdue' || t.last.status !== 'success'}
-                  class:dossier-status--idle={state === 'due' || state === 'unknown'}
+                  class="dashboard-status"
+                  class:dashboard-status--active={state === 'fresh' && t.last.status === 'success'}
+                  class:dashboard-status--alert={state === 'overdue' || t.last.status !== 'success'}
+                  class:dashboard-status--idle={state === 'due' || state === 'unknown'}
                 >{t.last.status}</span>
               {:else}
                 &mdash;
               {/if}
             </td>
-            <td class="num">{formatBytes(t.lastSuccess?.sizeBytes ?? 0)}</td>
-            <td class="num">{formatDuration(t.lastSuccess?.durationSec ?? 0)}</td>
-            <td class="num">{(t.lastSuccess?.fileCount ?? 0).toLocaleString()}</td>
-            <td class="num">{t.retain}</td>
-            <td class="num">{t.successStreak}</td>
-            <td>
+            <td data-label="Last size" class="num">{formatBytes(t.lastSuccess?.sizeBytes ?? 0)}</td>
+            <td data-label="Duration" class="num">{formatDuration(t.lastSuccess?.durationSec ?? 0)}</td>
+            <td data-label="Files" class="num">{(t.lastSuccess?.fileCount ?? 0).toLocaleString()}</td>
+            <td data-label="Retain" class="num">{t.retain}</td>
+            <td data-label="Streak" class="num">{t.successStreak}</td>
+            <td data-label="Recent">
               {#if t.history.length > 0}
                 <div class="archive__history" aria-label="Recent runs">
                   {#each t.history.slice(-14) as entry}
@@ -163,17 +161,17 @@
   </section>
 
   <section class="archive__section reveal">
-    <SectionHeader numeral="II.IV.03" title="Drive Health" meta="usbbackup" />
-    <div class="dossier-figure">
+    <SectionHeader title="Drive health" meta="USB drive" />
+    <div class="chart-panel">
       <div class="archive__drive-head">
         <div>
           <h3 class="archive__drive-name">128 GB USB (SanDisk Ultra)</h3>
           <p class="archive__drive-mount">{drive.mountpoint}</p>
         </div>
         <span
-          class="dossier-status"
-          class:dossier-status--active={drive.mounted}
-          class:dossier-status--alert={!drive.mounted}
+          class="dashboard-status"
+          class:dashboard-status--active={drive.mounted}
+          class:dashboard-status--alert={!drive.mounted}
         >{drive.mounted ? 'mounted' : 'offline'}</span>
       </div>
 
@@ -197,8 +195,8 @@
   </section>
 
   <section class="archive__section reveal">
-    <SectionHeader numeral="II.IV.04" title="Destination" meta="paths" />
-    <div class="dossier-figure archive__dest">
+    <SectionHeader title="Destination" meta="Storage" />
+    <div class="chart-panel archive__dest">
       <p>128 GB USB drive (label <code class="archive__code">usbbackup</code>) mounted at <code class="archive__code">/mnt/usbbackup</code></p>
       <p>Snapshots under <code class="archive__code">/mnt/usbbackup/backups/&lt;tier&gt;/&lt;timestamp&gt;</code></p>
       <p>Dedup via <code class="archive__code">rsync --link-dest</code> against previous snapshot in the same tier</p>
@@ -216,11 +214,6 @@
     margin: 0.75rem 0 1rem;
     color: var(--color-ink-900);
     font-variation-settings: 'opsz' 144, 'SOFT' 30;
-  }
-  .archive__title em {
-    font-style: italic;
-    color: var(--color-blood-500);
-    font-variation-settings: 'opsz' 144, 'SOFT' 100;
   }
   .archive__lede {
     font-family: var(--font-body);
