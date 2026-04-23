@@ -234,6 +234,13 @@
     border: 1px solid var(--color-paper-300);
     border-radius: var(--radius);
     background: var(--color-paper-100);
+    box-shadow: 0 1px 2px 0 color-mix(in oklab, var(--color-ink-900) 6%, transparent);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .leader-row:hover,
+  .metric-panel:hover {
+    box-shadow: 0 4px 10px -2px color-mix(in oklab, var(--color-ink-900) 10%, transparent);
+    transform: translateY(-1px);
   }
   .leader-row {
     display: flex;
@@ -243,6 +250,12 @@
   }
   .metric-panel {
     padding: 1rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .leader-row,
+    .metric-panel { transition: none; }
+    .leader-row:hover,
+    .metric-panel:hover { transform: none; }
   }
   .metric-track {
     height: 0.5rem;
