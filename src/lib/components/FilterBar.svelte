@@ -105,6 +105,14 @@
     margin-bottom: 2rem;
     min-width: 0;
     border-radius: var(--radius);
+    box-shadow: 0 1px 2px 0 color-mix(in oklab, var(--color-ink-900) 6%, transparent);
+    transition: box-shadow 0.25s ease;
+  }
+  .filters:focus-within {
+    box-shadow: 0 4px 10px -2px color-mix(in oklab, var(--color-ink-900) 10%, transparent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .filters { transition: none; }
   }
   .filters__legend {
     font-family: var(--font-body);

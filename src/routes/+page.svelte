@@ -202,6 +202,16 @@
     background: var(--color-paper-100);
     padding: 1rem;
     min-width: 0;
+    box-shadow: 0 1px 2px 0 color-mix(in oklab, var(--color-ink-900) 6%, transparent);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .metric-panel:hover {
+    box-shadow: 0 4px 10px -2px color-mix(in oklab, var(--color-ink-900) 10%, transparent);
+    transform: translateY(-1px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .metric-panel { transition: none; }
+    .metric-panel:hover { transform: none; }
   }
   .panel-label {
     font-family: var(--font-body);
