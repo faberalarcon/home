@@ -17,9 +17,12 @@
 {:else}
   <div class="drink-shell">
     <header class="drink-shell__masthead">
-      <a href="/menu" class="drink-shell__brand">
-        <span aria-hidden="true">21&middot;</span>Bristoe <em>Drink Hub</em>
-      </a>
+      <div class="drink-shell__top">
+        <a href="/menu" class="drink-shell__brand">
+          <span aria-hidden="true">21&middot;</span>Bristoe <em>Drink Hub</em>
+        </a>
+        <HubNav current="drinks" />
+      </div>
       <nav class="drink-shell__nav" aria-label="Drink Hub">
         <a href="/menu" aria-current={$page.url.pathname === '/menu' ? 'page' : undefined}>Menu</a>
         <a href="/recent" aria-current={$page.url.pathname === '/recent' ? 'page' : undefined}>Recent</a>
@@ -43,7 +46,6 @@
           </form>
         {/if}
       </nav>
-      <HubNav current="drinks" />
     </header>
     <main class="drink-shell__main">
       {@render children()}
@@ -72,13 +74,18 @@
     top: 0;
     z-index: 40;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.8rem 1rem;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.65rem 1rem 0.5rem;
     border-bottom: 1px solid color-mix(in oklab, var(--color-paper-300) 80%, transparent);
     background: color-mix(in oklab, var(--color-paper-50) 92%, transparent);
     backdrop-filter: blur(14px);
+  }
+  .drink-shell__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
   }
   .drink-shell__brand {
     font-family: var(--font-display);
@@ -98,7 +105,7 @@
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
   .drink-shell__nav a,
   .drink-shell__signout {
@@ -146,13 +153,7 @@
     text-decoration: none;
   }
   @media (max-width: 520px) {
-    .drink-shell__masthead {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 0.55rem;
-    }
     .drink-shell__nav {
-      justify-content: flex-start;
       gap: 0.6rem;
     }
   }
