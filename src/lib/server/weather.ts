@@ -92,8 +92,9 @@ export async function getDailyForecast(): Promise<DailyWeather[]> {
 
 export async function getYearStats(): Promise<WeatherStats> {
   const now = new Date();
-  const yearStart = `${now.getFullYear()}-01-01`;
-  const today = now.toISOString().split('T')[0];
+  const year = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }).split('-')[0];
+  const yearStart = `${year}-01-01`;
+  const today = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=America%2FNew_York&start_date=${yearStart}&end_date=${today}&past_days=0`;
 
@@ -117,6 +118,7 @@ export async function getYearStats(): Promise<WeatherStats> {
     };
   }
 
+  const SNOW_CODES = new Set([71, 73, 75, 77, 85, 86]);
   let rainyDays = 0;
   let sunnyDays = 0;
   let hottestDay: { date: string; temp: number } | null = null;
@@ -135,7 +137,7 @@ export async function getYearStats(): Promise<WeatherStats> {
     const date = d.time[i];
     const dateMonth = new Date(date + 'T12:00:00').getMonth();
 
-    if (precip > 0.01) rainyDays++;
+    if (precip > 0.01 && !SNOW_CODES.has(code)) rainyDays++;
     if (code <= 1) sunnyDays++; // WMO: 0 = clear, 1 = mainly clear
 
     if (maxTemp != null && (!hottestDay || maxTemp > hottestDay.temp)) {
