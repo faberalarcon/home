@@ -19,6 +19,22 @@
       return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     } catch { return dateStr; }
   }
+
+  type WxInfo = { icon: string; color: string };
+  function wxInfo(code: number): WxInfo {
+    if (code === 0) return { icon: '☀️', color: 'var(--color-weather-sun)' };
+    if (code === 1) return { icon: '🌤️', color: 'var(--color-weather-sun)' };
+    if (code === 2) return { icon: '⛅', color: 'var(--color-weather-cloud)' };
+    if (code === 3) return { icon: '☁️', color: 'var(--color-weather-cloud)' };
+    if (code >= 45 && code <= 48) return { icon: '🌫️', color: 'var(--color-weather-fog)' };
+    if (code >= 51 && code <= 55) return { icon: '🌦️', color: 'var(--color-weather-rain)' };
+    if (code >= 56 && code <= 67) return { icon: '🌧️', color: 'var(--color-weather-rain)' };
+    if (code >= 71 && code <= 77) return { icon: '🌨️', color: 'var(--color-weather-snow)' };
+    if (code >= 80 && code <= 82) return { icon: '🌧️', color: 'var(--color-weather-rain)' };
+    if (code >= 85 && code <= 86) return { icon: '🌨️', color: 'var(--color-weather-snow)' };
+    if (code >= 95) return { icon: '⛈️', color: 'var(--color-weather-storm)' };
+    return { icon: '🌡️', color: 'var(--color-weather-cloud)' };
+  }
 </script>
 
 <svelte:head>
@@ -84,8 +100,10 @@
             <p class="panel-label">7-day forecast</p>
             <div class="weather__days">
               {#each data.forecast as day}
-                <div class="weather__day">
+                {@const wx = wxInfo(day.weatherCode)}
+                <div class="weather__day" style="border-top-color: {wx.color}">
                   <span class="weather__day-label">{formatDate(day.date)}</span>
+                  <span class="weather__day-icon" aria-hidden="true">{wx.icon}</span>
                   <span class="weather__day-hi">{Math.round(day.tempMax)}°</span>
                   <span class="weather__day-lo">{Math.round(day.tempMin)}°</span>
                 </div>
@@ -276,6 +294,11 @@
     text-transform: uppercase;
     color: var(--color-ink-500);
     margin-bottom: 0.4rem;
+  }
+  .weather__day-icon {
+    font-size: 1rem;
+    line-height: 1;
+    margin-bottom: 0.15rem;
   }
   .weather__day-hi {
     font-family: var(--font-mono);
