@@ -1,3 +1,10 @@
+/* Token-name vs value mapping (palette swapped 2026-04-23):
+   --color-warm-*  = door-blue primary accent (warm-500 = #6fa8dc, the front door).
+   --color-sage-*  = stainless-steel neutral ramp (sage-500 = #94a3b8); no green.
+   Names retained so every `bg-warm-*` / `text-sage-*` utility across the site
+   keeps working — only the hex values were swapped to match the physical house.
+   Red remains red for danger. See CLAUDE.md "Design tokens" for the full story. */
+
 @import "tailwindcss";
 
 /* Custom design tokens for 21 Bristoe */

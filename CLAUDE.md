@@ -66,10 +66,14 @@ npm run build         # produces dist/
 https://21bristoe.com (www redirects to non-www)
 
 ## Design tokens
-- Warm amber/gold: `#b8860b` (primary)
-- Sage green: `#6b8e6b` (secondary)
-- Warm cream: `#fdf8f0` (background)
-- Georgia/serif for headings, system sans-serif for body
+Palette was swapped on 2026-04-23 to match the physical house (cool white + door blue + stainless steel). The original `warm-*` / `sage-*` token names are **intentionally retained** — every Tailwind utility across the site (`bg-warm-500`, `text-sage-600`, `border-warm-200`, etc.) references them, so renaming would mean touching every template. Values were swapped in place; names are now semantic-in-retrospect, not literal.
+
+Canonical source: `src/styles/global.css` (under `@theme`).
+
+- `--color-warm-*` — **door-blue primary accent.** `warm-500` is `#6fa8dc` (the front door). Scale ramps cool-white (`warm-50` `#fafbfc`) through slate-navy (`warm-900` `#0f172a`). Ignore the "warm" in the name.
+- `--color-sage-*` — **stainless-steel neutrals.** `sage-500` is `#94a3b8` (appliance gray). Scale is a cool gray ramp, no green anywhere. Ignore the "sage" in the name.
+- Red stays red for danger states (no token swap).
+- Typography unchanged for now: Georgia/serif for headings (`--font-display`), system sans for body (`--font-body`). A typography migration is a later tier.
 
 ## Current implementation status
 See plan: `docs/improvement-plan.md`
