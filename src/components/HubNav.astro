@@ -1,0 +1,64 @@
+---
+// HubNav — three-pill ecosystem navigation shared across home / drink-hub / stats.
+// Pure layout; no client JS.
+
+interface Props {
+  current: 'home' | 'drinks' | 'stats';
+}
+
+const { current } = Astro.props;
+
+const pills = [
+  {
+    key: 'home' as const,
+    label: 'Home',
+    // Same-origin link when we're already on home; external otherwise.
+    href: current === 'home' ? '/' : 'https://21bristoe.com',
+  },
+  {
+    key: 'drinks' as const,
+    label: 'Drinks',
+    href: 'https://drink-hub.21bristoe.com',
+  },
+  {
+    key: 'stats' as const,
+    label: 'Stats',
+    href: 'https://stats.21bristoe.com',
+  },
+];
+
+const base =
+  'px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap transition-colors';
+const activeClasses = 'bg-warm-500 text-white hover:bg-warm-600';
+const inactiveClasses =
+  'bg-transparent text-warm-700 border border-warm-300 hover:bg-warm-100 hover:text-warm-900';
+---
+
+<nav aria-label="21 Bristoe sites">
+  <ul class="flex items-center gap-1.5 sm:gap-2 list-none" role="list">
+    {
+      pills.map((pill) => {
+        const isActive = pill.key === current;
+        const classes = `${base} ${isActive ? activeClasses : inactiveClasses}`;
+        return (
+          <li>
+            {isActive ? (
+              <a href={pill.href} class={classes} aria-current="page">
+                {pill.label}
+              </a>
+            ) : (
+              <a
+                href={pill.href}
+                class={classes}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {pill.label}
+              </a>
+            )}
+          </li>
+        );
+      })
+    }
+  </ul>
+</nav>

@@ -1,5 +1,6 @@
 ---
 // Header component — minimal site nav
+import HubNav from './HubNav.astro';
 ---
 
 <header class="w-full py-3 sm:py-4 px-4 sm:px-6 bg-gradient-to-b from-warm-50/85 to-warm-50/70 backdrop-blur-md border-b border-warm-200/60 sticky top-0 z-50 shadow-[0_1px_0_theme(colors.warm.500/12%)]">
@@ -16,7 +17,7 @@
       <span class="font-bold text-base sm:text-lg tracking-tight font-display">21 Bristoe</span>
     </a>
 
-    <!-- Navigation links — section anchors hidden on mobile to keep CTAs in viewport -->
+    <!-- Section links (internal anchors/routes) — hidden on small screens to keep ecosystem nav in viewport -->
     <ul class="flex items-center gap-2 sm:gap-4 md:gap-6 text-sm font-medium list-none" role="list">
       <li class="hidden md:block">
         <a href="/#neighborhood" class="text-warm-700 hover:text-warm-500 transition-colors">Neighborhood</a>
@@ -27,27 +28,9 @@
       <li class="hidden sm:block">
         <a href="/gallery" class="text-warm-700 hover:text-warm-500 transition-colors">Gallery</a>
       </li>
-      <li>
-        <a
-          href="https://stats.21bristoe.com"
-          class="px-2.5 sm:px-3 py-1.5 bg-warm-500 text-white rounded-md text-xs sm:text-sm font-medium hover:bg-warm-600 transition-colors whitespace-nowrap"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Stats
-        </a>
-      </li>
-      <li>
-        <a
-          href="https://drink-hub.21bristoe.com"
-          class="px-2.5 sm:px-3 py-1.5 bg-warm-500 text-white rounded-md text-xs sm:text-sm font-medium hover:bg-warm-600 transition-colors whitespace-nowrap"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span class="sm:hidden">Drinks</span>
-          <span class="hidden sm:inline">Drink Hub</span>
-        </a>
-      </li>
     </ul>
+
+    <!-- Ecosystem nav (cross-site) -->
+    <HubNav current="home" />
   </nav>
 </header>
