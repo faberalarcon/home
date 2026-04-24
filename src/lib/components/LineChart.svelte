@@ -105,6 +105,13 @@
 
     return () => chart?.destroy();
   });
+
+  $effect(() => {
+    if (!chart) return;
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data;
+    chart.update();
+  });
 </script>
 
 <div class="chart-box">
