@@ -347,7 +347,7 @@
     transition: width 0.6s ease-out;
   }
   .archive__usage-fill--warn { background: var(--color-leaf-500); }
-  .archive__usage-fill--alert { background: var(--color-blood-500); }
+  .archive__usage-fill--alert { background: var(--color-danger-text); }
 
   .archive__dest p {
     margin: 0 0 0.5rem;
