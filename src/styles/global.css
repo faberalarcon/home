@@ -2,29 +2,31 @@
 
 /* Custom design tokens for 21 Bristoe */
 @theme {
-  /* Warm amber/gold palette */
-  --color-warm-50: #fdf8f0;
-  --color-warm-100: #f5ead6;
-  --color-warm-200: #e8d5b0;
-  --color-warm-300: #d4b882;
-  --color-warm-400: #c9a04a;
-  --color-warm-500: #b8860b;
-  --color-warm-600: #9a6f09;
-  --color-warm-700: #7a5707;
-  --color-warm-800: #5c4206;
-  --color-warm-900: #3d2c04;
+  /* House palette — cool white + door blue + stainless steel.
+     Token names retained (warm/sage) to avoid renaming every utility;
+     values map to the physical house colors. */
+  --color-warm-50:  #fafbfc;
+  --color-warm-100: #f1f4f7;
+  --color-warm-200: #e3e8ee;
+  --color-warm-300: #c9d2dc;
+  --color-warm-400: #8bb8e0;
+  --color-warm-500: #6fa8dc;
+  --color-warm-600: #4a90d0;
+  --color-warm-700: #334155;
+  --color-warm-800: #1e293b;
+  --color-warm-900: #0f172a;
 
-  /* Sage green palette */
-  --color-sage-50: #f0f4f0;
-  --color-sage-100: #dce8dc;
-  --color-sage-200: #b8d0b8;
-  --color-sage-300: #90b490;
-  --color-sage-400: #7aa07a;
-  --color-sage-500: #6b8e6b;
-  --color-sage-600: #547054;
-  --color-sage-700: #3f5a3f;
-  --color-sage-800: #2a3d2a;
-  --color-sage-900: #182418;
+  /* Stainless-steel neutrals (sage token retained; values are gray now) */
+  --color-sage-50:  #f4f6f9;
+  --color-sage-100: #e6ebf1;
+  --color-sage-200: #d0d8e2;
+  --color-sage-300: #b8c4d0;
+  --color-sage-400: #a1adbb;
+  --color-sage-500: #94a3b8;
+  --color-sage-600: #7f8ea4;
+  --color-sage-700: #64748b;
+  --color-sage-800: #3f4959;
+  --color-sage-900: #232a36;
 
   /* Typography */
   --font-display: 'Georgia', 'Times New Roman', serif;
@@ -44,7 +46,7 @@ html {
 
 body {
   background-color: var(--color-warm-50);
-  color: #2d2318;
+  color: #334155;
   font-family: var(--font-body);
 }
 
@@ -137,59 +139,52 @@ body {
   :root {
     color-scheme: dark;
 
-    /* Surface backgrounds: invert the warm scale */
-    --color-warm-50:  #1c1710;
-    --color-warm-100: #231d13;
-    --color-warm-200: #2e2618;
-    --color-warm-300: #3d3320;
-    --color-warm-400: #6b5a2a;
-    /* warm-500 (#b8860b amber accent) — keep as highlight */
-    --color-warm-600: #9a7020;
-    --color-warm-700: #b89040;
-    /* Heading text: was dark brown, becomes warm gold */
-    --color-warm-800: #ddc070;
-    /* Footer bg: near black */
-    --color-warm-900: #0e0c08;
+    /* Surface backgrounds: deep slate */
+    --color-warm-50:  #0f1419;
+    --color-warm-100: #161b22;
+    --color-warm-200: #1f2630;
+    --color-warm-300: #30384a;
+    --color-warm-400: #6fa8dc;
+    /* warm-500 door-blue accent preserved as highlight */
+    --color-warm-600: #8bb8e0;
+    --color-warm-700: #c9d2dc;
+    /* Heading text: light cool */
+    --color-warm-800: #e3e8ee;
+    /* Footer bg: near black slate */
+    --color-warm-900: #05080c;
 
-    /* Sage surface backgrounds */
-    --color-sage-50:  #101510;
-    --color-sage-100: #161e16;
-    --color-sage-200: #1e2c1e;
-    --color-sage-300: #2a3d2a;
-    /* sage-500+ keep as accent */
+    /* Sage surface backgrounds (steel dark) */
+    --color-sage-50:  #0f141a;
+    --color-sage-100: #171d26;
+    --color-sage-200: #232a36;
+    --color-sage-300: #3f4959;
 
     /* Tailwind's built-in gray scale (used in paragraph text) */
-    --color-gray-600: #a08060;
-    --color-gray-500: #907050;
-    --color-gray-400: #806040;
+    --color-gray-600: #94a3b8;
+    --color-gray-500: #7f8ea4;
+    --color-gray-400: #64748b;
   }
 
-  body { color: #c8a870; }
+  body { color: #c9d2dc; }
 
-  /* bg-white uses --color-white which also affects text-white buttons.
-     Override the background for white-surface sections directly. */
-  .bg-white { background-color: #171210; }
+  .bg-white { background-color: #0f1419; }
 
   /* Preserve light text in sections that already have dark backgrounds */
-  /* Hero: slideshow/gradient is dark — keep warm text light */
-  [aria-label="Welcome hero"] .text-warm-50  { color: #fdf8f0; }
-  [aria-label="Welcome hero"] .text-warm-100 { color: #f5ead6; }
-  [aria-label="Welcome hero"] .text-warm-200 { color: #e8d5b0; }
-  [aria-label="Welcome hero"] .text-warm-300 { color: #d4b882; }
-  [aria-label="Welcome hero"] .text-warm-400 { color: #c9a04a; }
-  /* Footer: dark bg, keep light text */
-  footer .text-warm-100 { color: #f5ead6; }
-  footer .text-warm-200 { color: #e8d5b0; }
-  footer .text-warm-300 { color: #d4b882; }
-  footer .text-warm-400 { color: #c9a04a; }
-  footer .text-warm-500 { color: #b8860b; }
-  /* SkyStrip: bg-warm-900 (dark), keep its light text */
-  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-200 { color: #e8d5b0; }
-  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-300 { color: #d4b882; }
-  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-600 { color: #a07820; }
-  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-700 { color: #504030; }
-  /* Header sticky nav: bg-warm-50/95 → now dark, text needs adjustment */
-  header .text-warm-700 { color: #d4b882; }
+  [aria-label="Welcome hero"] .text-warm-50  { color: #fafbfc; }
+  [aria-label="Welcome hero"] .text-warm-100 { color: #f1f4f7; }
+  [aria-label="Welcome hero"] .text-warm-200 { color: #e3e8ee; }
+  [aria-label="Welcome hero"] .text-warm-300 { color: #c9d2dc; }
+  [aria-label="Welcome hero"] .text-warm-400 { color: #8bb8e0; }
+  footer .text-warm-100 { color: #f1f4f7; }
+  footer .text-warm-200 { color: #e3e8ee; }
+  footer .text-warm-300 { color: #c9d2dc; }
+  footer .text-warm-400 { color: #8bb8e0; }
+  footer .text-warm-500 { color: #6fa8dc; }
+  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-200 { color: #e3e8ee; }
+  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-300 { color: #c9d2dc; }
+  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-600 { color: #94a3b8; }
+  [aria-label="Daily sky info for Taneytown, MD"] .text-warm-700 { color: #64748b; }
+  header .text-warm-700 { color: #c9d2dc; }
 }
 
 /* ============================================================
