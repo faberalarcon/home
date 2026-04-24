@@ -295,12 +295,17 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
 .app-header__inner {
   max-width: var(--measure-full);
   margin: 0 auto;
-  padding: 0.75rem clamp(0.875rem, 2vw, 1.5rem);
+  padding: 0.6rem clamp(0.875rem, 2vw, 1.5rem) 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.app-header__top {
   display: flex;
   align-items: center;
-  gap: 1rem;
   justify-content: space-between;
-  min-width: 0;
+  gap: 1rem;
 }
 .app-header__brand {
   font-family: var(--font-display);
@@ -347,9 +352,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
 }
 @media (max-width: 640px) {
   .app-header__inner {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.45rem;
+    gap: 0.35rem;
   }
   .app-header__nav {
     width: 100%;
