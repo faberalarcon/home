@@ -5,6 +5,43 @@
    keeps working — only the hex values were swapped to match the physical house.
    Red remains red for danger. See CLAUDE.md "Design tokens" for the full story. */
 
+/* --- Self-hosted fonts (variable woff2) --- */
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/fraunces-wght.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/fraunces-wght-italic.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter Tight';
+  src: url('/fonts/inter-tight-wght.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter Tight';
+  src: url('/fonts/inter-tight-wght-italic.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono-wght.woff2') format('woff2-variations');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 @import "tailwindcss";
 
 /* Custom design tokens for 21 Bristoe */
@@ -35,9 +72,10 @@
   --color-sage-800: #3f4959;
   --color-sage-900: #232a36;
 
-  /* Typography */
-  --font-display: 'Georgia', 'Times New Roman', serif;
-  --font-body: 'system-ui', '-apple-system', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  /* Typography — matches drink-hub and stats (self-hosted variable fonts) */
+  --font-display: 'Fraunces', 'Georgia', 'Times New Roman', serif;
+  --font-body:    'Inter Tight', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
 /* Base styles */
