@@ -1,6 +1,7 @@
 <script lang="ts">
   import '../app.css';
   import { page } from '$app/stores';
+  import HubNav from '$lib/components/HubNav.svelte';
 
   let { children } = $props();
 
@@ -23,6 +24,7 @@
     <a class="app-header__brand" href="https://21bristoe.com">
       21 Bristoe <em>Stats</em>
     </a>
+    <HubNav current="stats" />
     <nav class="app-header__nav" aria-label="Stats sections">
       {#each navLinks as link}
         <a
