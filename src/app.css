@@ -1,3 +1,20 @@
+/* =============================================================
+   Token-name semantics (read before editing colors)
+
+   2026-04-23 palette swap: values now match the physical house
+   (cool white + door blue + stainless steel). Token NAMES were
+   kept to avoid touching every Svelte component — they no longer
+   all describe their literal color. Mapping:
+
+     --color-paper-*  cool-white surfaces      (paper-50  = #fafbfc)
+     --color-ink-*    deep slate text          (ink-900   = #0f172a)
+     --color-blood-*  DOOR BLUE accent, NOT red (blood-500 = #6fa8dc, the front door)
+     --color-olive-*  STAINLESS STEEL neutrals, NOT green (olive-500 = #94a3b8, appliance gray)
+     --color-leaf-*   warm amber — warning semantics only (leaf-500 = #c49a2e)
+
+   Red still means danger (use Tailwind's red-*, not a token).
+   ============================================================= */
+
 @import "tailwindcss";
 
 /* =============================================================
