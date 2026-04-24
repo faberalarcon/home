@@ -115,6 +115,7 @@
                 data={data.pi.history.map(p => p.cpuPct)}
                 label="CPU %"
                 unit="%"
+                color="var(--color-chart-cpu)"
               />
             </div>
           </figure>
@@ -126,6 +127,7 @@
                 data={data.pi.history.map(p => p.tempC)}
                 label="°C"
                 unit="°"
+                color="var(--color-chart-temp)"
               />
             </div>
           </figure>
@@ -137,6 +139,7 @@
                 data={data.pi.history.map(p => p.memPct)}
                 label="Mem %"
                 unit="%"
+                color="var(--color-chart-memory)"
               />
             </div>
           </figure>
@@ -147,6 +150,7 @@
                 labels={data.pi.history.map(p => p.time)}
                 data={data.pi.history.map(p => p.netDownMBps)}
                 label="MiB/s"
+                color="var(--color-chart-network)"
               />
             </div>
           </figure>
