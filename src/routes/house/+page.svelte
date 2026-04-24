@@ -37,6 +37,22 @@
     return `${daysAvailable + 1} of ${requested} days (HA retention limit)`;
   }
 
+  type WxInfo = { icon: string; color: string };
+  function wxInfo(code: number): WxInfo {
+    if (code === 0) return { icon: '☀️', color: 'var(--color-weather-sun)' };
+    if (code === 1) return { icon: '🌤️', color: 'var(--color-weather-sun)' };
+    if (code === 2) return { icon: '⛅', color: 'var(--color-weather-cloud)' };
+    if (code === 3) return { icon: '☁️', color: 'var(--color-weather-cloud)' };
+    if (code >= 45 && code <= 48) return { icon: '🌫️', color: 'var(--color-weather-fog)' };
+    if (code >= 51 && code <= 55) return { icon: '🌦️', color: 'var(--color-weather-rain)' };
+    if (code >= 56 && code <= 67) return { icon: '🌧️', color: 'var(--color-weather-rain)' };
+    if (code >= 71 && code <= 77) return { icon: '🌨️', color: 'var(--color-weather-snow)' };
+    if (code >= 80 && code <= 82) return { icon: '🌧️', color: 'var(--color-weather-rain)' };
+    if (code >= 85 && code <= 86) return { icon: '🌨️', color: 'var(--color-weather-snow)' };
+    if (code >= 95) return { icon: '⛈️', color: 'var(--color-weather-storm)' };
+    return { icon: '🌡️', color: 'var(--color-weather-cloud)' };
+  }
+
   const alarmLabels: Record<string, string> = {
     armed_away: 'Armed Away', armed_home: 'Armed Home',
     armed_night: 'Armed Night', disarmed: 'Disarmed', triggered: 'TRIGGERED'
@@ -170,6 +186,7 @@
             data={data.charts.bedroomTVHours.map(d => d.hours)}
             label="Hours"
             unit="h"
+            colors={data.charts.bedroomTVHours.map(() => 'var(--color-chart-tv)')}
           />
         </div>
       </figure>
@@ -182,6 +199,7 @@
             data={data.charts.livingTVHours.map(d => d.hours)}
             label="Hours"
             unit="h"
+            colors={data.charts.livingTVHours.map(() => 'var(--color-chart-tv)')}
           />
         </div>
       </figure>
@@ -194,8 +212,10 @@
       <div class="chart-panel">
         <div class="forecast">
           {#each data.forecast as day}
-            <div class="forecast__day">
+            {@const wx = wxInfo(day.weatherCode)}
+            <div class="forecast__day" style="border-top: 2px solid {wx.color}">
               <span class="forecast__date">{formatDate(day.date)}</span>
+              <span class="forecast__icon" aria-hidden="true">{wx.icon}</span>
               <span class="forecast__hi">{Math.round(day.tempMax)}°</span>
               <span class="forecast__lo">{Math.round(day.tempMin)}°</span>
               {#if day.precipitationSum > 0}
@@ -327,6 +347,7 @@
     text-align: center;
     padding: 0.75rem 0.35rem;
     border-right: 1px solid var(--color-paper-300);
+    border-top: 2px solid var(--color-paper-300);
     gap: 0.2rem;
   }
   .forecast__day:last-child { border-right: 0; }
@@ -338,6 +359,11 @@
     text-transform: uppercase;
     color: var(--color-ink-500);
     margin-bottom: 0.35rem;
+  }
+  .forecast__icon {
+    font-size: 1.125rem;
+    line-height: 1;
+    margin-bottom: 0.1rem;
   }
   .forecast__hi {
     font-family: var(--font-mono);
