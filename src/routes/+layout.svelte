@@ -1,5 +1,6 @@
 <script lang="ts">
   import '../app.css';
+  import HubNav from '$lib/components/HubNav.svelte';
   import { selectedProfile } from '$lib/profile';
   import { page } from '$app/stores';
   import { pageTitle } from '$lib/stores/title';
@@ -19,6 +20,7 @@
       <a href="/menu" class="drink-shell__brand">
         <span aria-hidden="true">21&middot;</span>Bristoe <em>Drink Hub</em>
       </a>
+      <HubNav current="drinks" />
       <nav class="drink-shell__nav" aria-label="Drink Hub">
         <a href="/menu" aria-current={$page.url.pathname === '/menu' ? 'page' : undefined}>Menu</a>
         <a href="/recent" aria-current={$page.url.pathname === '/recent' ? 'page' : undefined}>Recent</a>
