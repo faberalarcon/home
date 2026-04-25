@@ -2,7 +2,7 @@
 
 A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi alongside Home Assistant, serves a mobile-friendly menu on the local network, tracks orders per person, and dispatches fun automations through HA — speaker announcements, milestone light flashes, whatever you can wire up.
 
-> **Status:** Phases 1–11 complete. Phase 8 polish partially shipped — see [docs/future-phases.md](./docs/future-phases.md) for remaining items.
+> **Status:** Live in production at <https://drink-hub.21bristoe.com>. Phases 1–11 complete. Phase 8 polish partially shipped — see [docs/future-phases.md](./docs/future-phases.md) for remaining items.
 
 ---
 
