@@ -137,7 +137,7 @@
             <td data-label="Recent">
               {#if t.history.length > 0}
                 <div class="archive__history" aria-label="Recent runs">
-                  {#each t.history.slice(-14) as entry}
+                  {#each t.history.slice(-7) as entry}
                     <span
                       class="archive__tick"
                       class:archive__tick--fail={entry.status !== 'success'}
