@@ -10,12 +10,19 @@ const defaultHighlights = [
 ];
 
 let highlights = defaultHighlights;
+let nhLabel = 'Where We Live';
+let nhHeading = 'Our Neighborhood';
+let nhDescription = 'Meades Crossing in Taneytown, Maryland — a slice of real community in the heart of Carroll County.';
 try {
   const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
   const cfg = JSON.parse(raw);
   if (Array.isArray(cfg.neighborhoodHighlights) && cfg.neighborhoodHighlights.length > 0) {
     highlights = cfg.neighborhoodHighlights;
   }
+  const nt = cfg.sectionText?.neighborhood || {};
+  if (nt.label) nhLabel = nt.label;
+  if (nt.heading) nhHeading = nt.heading;
+  if (nt.description) nhDescription = nt.description;
 } catch { /* no config yet — use defaults */ }
 ---
 
@@ -23,15 +30,15 @@ try {
   <div class="max-w-5xl mx-auto reveal">
     <!-- Section header -->
     <div class="text-center mb-14">
-      <p class="text-sage-600 text-sm font-medium uppercase tracking-widest mb-2">Where We Live</p>
+      <p class="text-sage-600 text-sm font-medium uppercase tracking-widest mb-2">{nhLabel}</p>
       <h2
         id="neighborhood-heading"
         class="text-4xl md:text-5xl font-bold text-warm-800 mb-4 font-display"
       >
-        Our Neighborhood
+        {nhHeading}
       </h2>
       <p class="text-gray-500 text-lg max-w-2xl mx-auto">
-        Meades Crossing in Taneytown, Maryland — a slice of real community in the heart of Carroll County.
+        {nhDescription}
       </p>
     </div>
 

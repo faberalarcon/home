@@ -11,10 +11,17 @@ const defaultLinks = [
 ];
 
 let linksRaw = defaultLinks;
+let qlLabel = 'Around the House';
+let qlHeading = 'Quick Links';
+let qlDescription = "The household's most-used links and resources, one click away.";
 try {
   const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
   const cfg = JSON.parse(raw);
   if (Array.isArray(cfg.quickLinks) && cfg.quickLinks.length > 0) linksRaw = cfg.quickLinks;
+  const qt = cfg.sectionText?.quickLinks || {};
+  if (qt.label) qlLabel = qt.label;
+  if (qt.heading) qlHeading = qt.heading;
+  if (qt.description) qlDescription = qt.description;
 } catch { /* no config yet — use defaults */ }
 
 // Alternate warm/sage accent styles by index
@@ -29,15 +36,15 @@ const links = linksRaw.map((l, i) => ({ ...l, ...accentStyles[i % 2] }));
   <div class="max-w-5xl mx-auto reveal">
     <!-- Section header -->
     <div class="text-center mb-14">
-      <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-2">Around the House</p>
+      <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-2">{qlLabel}</p>
       <h2
         id="quicklinks-heading"
         class="text-4xl md:text-5xl font-bold text-warm-800 mb-4 font-display"
       >
-        Quick Links
+        {qlHeading}
       </h2>
       <p class="text-gray-500 text-lg max-w-xl mx-auto">
-        The household's most-used links and resources, one click away.
+        {qlDescription}
       </p>
     </div>
 

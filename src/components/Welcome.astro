@@ -48,6 +48,13 @@ const defaultMembers = [
 ];
 
 let members = defaultMembers;
+let welcomeLabel = 'The Household';
+let welcomeHeading = 'Welcome to Our Home';
+let welcomePara1 = "We're Faber and Kasey, and we've made our home here in Meades Crossing — a neighborhood in Taneytown, Maryland that we're proud to be part of.";
+let welcomePara2 = "Whether it's a quiet evening on the back porch, a morning walk through the neighborhood, or hosting friends over a good meal and a great drink, 21 Bristoe is where life happens for us.";
+let welcomePara3 = "This little corner of the internet is our household portal — a place to share what we're up to, what we love, and yes, plenty of Limón content.";
+let accentAddress = '21 Bristoe Station Rd';
+let accentCity = 'Taneytown, MD';
 try {
   const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
   const cfg = JSON.parse(raw);
@@ -58,6 +65,14 @@ try {
       cardClass: defaultMembers[i]?.cardClass ?? defaultMembers[0].cardClass,
     }));
   }
+  const wt = cfg.sectionText?.welcome || {};
+  if (wt.label) welcomeLabel = wt.label;
+  if (wt.heading) welcomeHeading = wt.heading;
+  if (wt.para1) welcomePara1 = wt.para1;
+  if (wt.para2) welcomePara2 = wt.para2;
+  if (wt.para3) welcomePara3 = wt.para3;
+  if (wt.accentAddress) accentAddress = wt.accentAddress;
+  if (wt.accentCity) accentCity = wt.accentCity;
 } catch { /* no config yet — use defaults */ }
 ---
 
@@ -69,29 +84,19 @@ try {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
       <!-- Text content -->
       <div>
-        <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-3">The Household</p>
+        <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-3">{welcomeLabel}</p>
         <h2
           id="welcome-heading"
           class="text-4xl md:text-5xl font-bold text-warm-800 mb-3 font-display"
         >
-          Welcome to Our Home
+          {welcomeHeading}
         </h2>
         <!-- A3: Seasonal tagline -->
         <p class="text-warm-500 italic text-sm mb-6">{seasonalNote[season]}</p>
         <div class="space-y-4 text-gray-600 leading-relaxed">
-          <p>
-            We're Faber and Kasey, and we've made our home here in Meades Crossing —
-            a neighborhood in Taneytown, Maryland that we're proud to be part of.
-          </p>
-          <p>
-            Whether it's a quiet evening on the back porch, a morning walk through
-            the neighborhood, or hosting friends over a good meal and a great drink,
-            21 Bristoe is where life happens for us.
-          </p>
-          <p>
-            This little corner of the internet is our household portal — a place to
-            share what we're up to, what we love, and yes, plenty of Limón content.
-          </p>
+          <p>{welcomePara1}</p>
+          <p>{welcomePara2}</p>
+          <p>{welcomePara3}</p>
         </div>
       </div>
 
@@ -102,8 +107,8 @@ try {
       >
         <div class="text-center text-warm-700 p-8">
           <div class="text-7xl mb-4">🏡</div>
-          <p class="font-medium text-lg font-display">21 Bristoe Station Rd</p>
-          <p class="text-sm text-warm-600 mt-1">Taneytown, MD</p>
+          <p class="font-medium text-lg font-display">{accentAddress}</p>
+          <p class="text-sm text-warm-600 mt-1">{accentCity}</p>
         </div>
       </div>
     </div>

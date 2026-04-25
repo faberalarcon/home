@@ -597,6 +597,28 @@ header .home-link:hover { background: rgba(255,255,255,0.1); }
 .btn-outline:disabled { opacity: 0.3; cursor: default; }
 .reorder-btns { display: flex; flex-direction: column; gap: 0.2rem; flex-shrink: 0; }
 
+/* Section text editor */
+.st-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  cursor: pointer;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+  user-select: none;
+}
+.st-section-title::-webkit-details-marker { display: none; }
+.st-section-title::marker { display: none; }
+details:first-child .st-section-title { border-top: none; padding-top: 0; }
+.st-fields {
+  padding: 0.5rem 0 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.st-fields .field-row label { width: 90px; min-width: 90px; }
+
 .slide-info {
   background: var(--accent-light);
   border: 1px solid var(--border);

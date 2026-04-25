@@ -28,27 +28,34 @@ const defaultTips = [
 ];
 
 let tips = defaultTips;
+let vgLabel = 'For Visitors';
+let vgHeading = 'Coming Over?';
+let vgDescription = "Here's everything you need to know before you arrive.";
 try {
   const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
   const cfg = JSON.parse(raw);
   if (Array.isArray(cfg.visitorTips) && cfg.visitorTips.length > 0) {
     tips = cfg.visitorTips;
   }
+  const vt = cfg.sectionText?.visitorGuide || {};
+  if (vt.label) vgLabel = vt.label;
+  if (vt.heading) vgHeading = vt.heading;
+  if (vt.description) vgDescription = vt.description;
 } catch { /* no config yet — use defaults */ }
 ---
 
 <section class="py-16 px-6 bg-warm-100" aria-labelledby="visitor-heading">
   <div class="max-w-5xl mx-auto reveal">
     <div class="text-center mb-10">
-      <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-2">For Visitors</p>
+      <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-2">{vgLabel}</p>
       <h2
         id="visitor-heading"
         class="text-3xl md:text-4xl font-bold text-warm-800 font-display"
       >
-        Coming Over?
+        {vgHeading}
       </h2>
       <p class="text-gray-500 text-base mt-3 max-w-md mx-auto">
-        Here's everything you need to know before you arrive.
+        {vgDescription}
       </p>
     </div>
 

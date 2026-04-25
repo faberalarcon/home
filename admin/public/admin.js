@@ -450,6 +450,129 @@ async function loadSiteConfig() {
   renderQuickLinksEditor();
   renderNeighborhoodEditor();
   renderTipEditor();
+  renderSectionTextEditor(siteConfig.sectionText || {});
+}
+
+function renderSectionTextEditor(st = {}) {
+  const s = {
+    hero:         st.hero         || {},
+    welcome:      st.welcome      || {},
+    neighborhood: st.neighborhood || {},
+    quickLinks:   st.quickLinks   || {},
+    limon:        st.limon        || {},
+    visitorGuide: st.visitorGuide || {},
+    footer:       st.footer       || {},
+  };
+  const h = s.hero, w = s.welcome, n = s.neighborhood, q = s.quickLinks;
+  const l = s.limon, v = s.visitorGuide, f = s.footer;
+  document.getElementById('sectionTextEditor').innerHTML = `
+    <details open>
+      <summary class="st-section-title">Hero</summary>
+      <div class="st-fields">
+        <div class="field-row"><label>Pre-heading</label>
+          <input type="text" class="field-input" data-st-section="hero" data-st-field="preHeading"
+                 value="${escHtml(h.preHeading || 'Welcome Home')}" maxlength="80" /></div>
+      </div>
+    </details>
+    <details>
+      <summary class="st-section-title">Welcome / Household</summary>
+      <div class="st-fields">
+        <div class="field-row"><label>Label</label>
+          <input type="text" class="field-input" data-st-section="welcome" data-st-field="label"
+                 value="${escHtml(w.label || 'The Household')}" maxlength="80" /></div>
+        <div class="field-row"><label>Heading</label>
+          <input type="text" class="field-input" data-st-section="welcome" data-st-field="heading"
+                 value="${escHtml(w.heading || 'Welcome to Our Home')}" maxlength="120" /></div>
+        <div class="field-row"><label>Paragraph 1</label>
+          <textarea class="field-input" data-st-section="welcome" data-st-field="para1" rows="2" maxlength="600">${escHtml(w.para1 || "We're Faber and Kasey, and we've made our home here in Meades Crossing — a neighborhood in Taneytown, Maryland that we're proud to be part of.")}</textarea></div>
+        <div class="field-row"><label>Paragraph 2</label>
+          <textarea class="field-input" data-st-section="welcome" data-st-field="para2" rows="2" maxlength="600">${escHtml(w.para2 || "Whether it's a quiet evening on the back porch, a morning walk through the neighborhood, or hosting friends over a good meal and a great drink, 21 Bristoe is where life happens for us.")}</textarea></div>
+        <div class="field-row"><label>Paragraph 3</label>
+          <textarea class="field-input" data-st-section="welcome" data-st-field="para3" rows="2" maxlength="600">${escHtml(w.para3 || "This little corner of the internet is our household portal — a place to share what we're up to, what we love, and yes, plenty of Limón content.")}</textarea></div>
+        <div class="field-row"><label>Address</label>
+          <input type="text" class="field-input" data-st-section="welcome" data-st-field="accentAddress"
+                 value="${escHtml(w.accentAddress || '21 Bristoe Station Rd')}" maxlength="120" /></div>
+        <div class="field-row"><label>City</label>
+          <input type="text" class="field-input" data-st-section="welcome" data-st-field="accentCity"
+                 value="${escHtml(w.accentCity || 'Taneytown, MD')}" maxlength="120" /></div>
+      </div>
+    </details>
+    <details>
+      <summary class="st-section-title">Neighborhood</summary>
+      <div class="st-fields">
+        <div class="field-row"><label>Label</label>
+          <input type="text" class="field-input" data-st-section="neighborhood" data-st-field="label"
+                 value="${escHtml(n.label || 'Where We Live')}" maxlength="80" /></div>
+        <div class="field-row"><label>Heading</label>
+          <input type="text" class="field-input" data-st-section="neighborhood" data-st-field="heading"
+                 value="${escHtml(n.heading || 'Our Neighborhood')}" maxlength="120" /></div>
+        <div class="field-row"><label>Description</label>
+          <textarea class="field-input" data-st-section="neighborhood" data-st-field="description" rows="2" maxlength="300">${escHtml(n.description || 'Meades Crossing in Taneytown, Maryland — a slice of real community in the heart of Carroll County.')}</textarea></div>
+      </div>
+    </details>
+    <details>
+      <summary class="st-section-title">Quick Links</summary>
+      <div class="st-fields">
+        <div class="field-row"><label>Label</label>
+          <input type="text" class="field-input" data-st-section="quickLinks" data-st-field="label"
+                 value="${escHtml(q.label || 'Around the House')}" maxlength="80" /></div>
+        <div class="field-row"><label>Heading</label>
+          <input type="text" class="field-input" data-st-section="quickLinks" data-st-field="heading"
+                 value="${escHtml(q.heading || 'Quick Links')}" maxlength="120" /></div>
+        <div class="field-row"><label>Description</label>
+          <textarea class="field-input" data-st-section="quickLinks" data-st-field="description" rows="2" maxlength="300">${escHtml(q.description || "The household's most-used links and resources, one click away.")}</textarea></div>
+      </div>
+    </details>
+    <details>
+      <summary class="st-section-title">Limón Section</summary>
+      <div class="st-fields">
+        <div class="field-row"><label>Label</label>
+          <input type="text" class="field-input" data-st-section="limon" data-st-field="sectionLabel"
+                 value="${escHtml(l.sectionLabel || 'Meet the Resident Expert')}" maxlength="80" /></div>
+        <div class="field-row"><label>Subtitle</label>
+          <input type="text" class="field-input" data-st-section="limon" data-st-field="fallbackSubtitle"
+                 value="${escHtml(l.fallbackSubtitle || 'The Golden Girl')}" maxlength="80" /></div>
+      </div>
+    </details>
+    <details>
+      <summary class="st-section-title">Visitor Guide</summary>
+      <div class="st-fields">
+        <div class="field-row"><label>Label</label>
+          <input type="text" class="field-input" data-st-section="visitorGuide" data-st-field="label"
+                 value="${escHtml(v.label || 'For Visitors')}" maxlength="80" /></div>
+        <div class="field-row"><label>Heading</label>
+          <input type="text" class="field-input" data-st-section="visitorGuide" data-st-field="heading"
+                 value="${escHtml(v.heading || 'Coming Over?')}" maxlength="120" /></div>
+        <div class="field-row"><label>Description</label>
+          <textarea class="field-input" data-st-section="visitorGuide" data-st-field="description" rows="2" maxlength="300">${escHtml(v.description || "Here's everything you need to know before you arrive.")}</textarea></div>
+      </div>
+    </details>
+    <details>
+      <summary class="st-section-title">Footer</summary>
+      <div class="st-fields">
+        <div class="field-row"><label>Brand</label>
+          <input type="text" class="field-input" data-st-section="footer" data-st-field="brand"
+                 value="${escHtml(f.brand || '21 Bristoe')}" maxlength="80" /></div>
+        <div class="field-row"><label>Location</label>
+          <input type="text" class="field-input" data-st-section="footer" data-st-field="location"
+                 value="${escHtml(f.location || 'Meades Crossing · Taneytown, Maryland')}" maxlength="120" /></div>
+        <div class="field-row"><label>Tagline</label>
+          <input type="text" class="field-input" data-st-section="footer" data-st-field="tagline"
+                 value="${escHtml(f.tagline || 'Home of Faber, Kasey & Limón')}" maxlength="120" /></div>
+      </div>
+    </details>
+  `;
+}
+
+function getSectionTextFromEditor() {
+  const result = {};
+  document.querySelectorAll('[data-st-section]').forEach(el => {
+    const section = el.dataset.stSection;
+    const field = el.dataset.stField;
+    if (!result[section]) result[section] = {};
+    result[section][field] = el.value;
+  });
+  return result;
 }
 
 function renderHeroEditor() {
@@ -780,8 +903,8 @@ async function saveContent() {
   siteConfig.limon = getLimonFromEditor();
   siteConfig.quickLinks = getQuickLinksFromEditor();
   siteConfig.neighborhoodHighlights = getNeighborhoodFromEditor();
-  const visitorTips = getTipsFromEditor();
-  siteConfig.visitorTips = visitorTips;
+  siteConfig.visitorTips = getTipsFromEditor();
+  siteConfig.sectionText = getSectionTextFromEditor();
 
   try {
     const res = await fetch(`${API}/api/site-config`, {

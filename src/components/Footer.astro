@@ -12,6 +12,18 @@ try {
 } catch {
   visitorCount = null;
 }
+
+let footerBrand = '21 Bristoe';
+let footerLocation = 'Meades Crossing · Taneytown, Maryland';
+let footerTagline = 'Home of Faber, Kasey & Limón';
+try {
+  const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
+  const cfg = JSON.parse(raw);
+  const ft = cfg.sectionText?.footer || {};
+  if (ft.brand) footerBrand = ft.brand;
+  if (ft.location) footerLocation = ft.location;
+  if (ft.tagline) footerTagline = ft.tagline;
+} catch { /* footer text config optional */ }
 ---
 
 <footer class="w-full bg-warm-900 text-warm-100 py-12 px-6 mt-auto">
@@ -19,9 +31,9 @@ try {
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
       <!-- Left: branding -->
       <div>
-        <p class="text-2xl font-bold text-warm-200 mb-1 font-display">21 Bristoe</p>
-        <p class="text-warm-400 text-sm">Meades Crossing · Taneytown, Maryland</p>
-        <p class="text-warm-500 text-xs mt-1">Home of Faber, Kasey & Limón</p>
+        <p class="text-2xl font-bold text-warm-200 mb-1 font-display">{footerBrand}</p>
+        <p class="text-warm-400 text-sm">{footerLocation}</p>
+        <p class="text-warm-500 text-xs mt-1">{footerTagline}</p>
       </div>
 
       <!-- Right: links -->

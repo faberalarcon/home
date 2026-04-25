@@ -4,9 +4,12 @@ import Slideshow from './Slideshow.astro';
 import fs from 'node:fs';
 
 let heroConfig = {};
+let heroPreHeading = 'Welcome Home';
 try {
   const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
-  heroConfig = JSON.parse(raw).hero || {};
+  const cfg = JSON.parse(raw);
+  heroConfig = cfg.hero || {};
+  heroPreHeading = cfg.sectionText?.hero?.preHeading || 'Welcome Home';
 } catch { /* no config yet — use defaults */ }
 
 const subtitle = heroConfig.subtitle || 'Home of Faber, Kasey & Limón';
@@ -24,7 +27,7 @@ const location = heroConfig.location || 'Meades Crossing · Taneytown, Maryland'
   <div class="relative z-20 text-center px-6 max-w-4xl mx-auto">
     <!-- Pre-heading -->
     <p class="text-warm-300 text-sm md:text-base font-medium uppercase tracking-widest mb-4 drop-shadow">
-      Welcome Home
+      {heroPreHeading}
     </p>
 
     <!-- Main heading — font-family via scoped CSS to avoid inline style= attribute -->

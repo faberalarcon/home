@@ -3,9 +3,15 @@
 import fs from 'node:fs';
 
 let limonConfig = {};
+let limonSectionLabel = 'Meet the Resident Expert';
+let limonFallbackSubtitle = 'The Golden Girl';
 try {
   const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
-  limonConfig = JSON.parse(raw).limon || {};
+  const cfg = JSON.parse(raw);
+  limonConfig = cfg.limon || {};
+  const lt = cfg.sectionText?.limon || {};
+  if (lt.sectionLabel) limonSectionLabel = lt.sectionLabel;
+  if (lt.fallbackSubtitle) limonFallbackSubtitle = lt.fallbackSubtitle;
 } catch { /* no config yet — use defaults */ }
 
 const limonName = limonConfig.name || 'Limón';
@@ -47,7 +53,7 @@ const facts = [
           <div class="relative text-center p-8">
             <div class="text-8xl mb-4" role="img" aria-label="Dog emoji">🐕</div>
             <p class="text-warm-900 font-bold text-2xl font-display">{limonName}</p>
-            <p class="text-warm-800 text-sm mt-1">The Golden Girl</p>
+            <p class="text-warm-800 text-sm mt-1">{limonFallbackSubtitle}</p>
           </div>
           <span class="absolute top-6 right-6 text-warm-200 text-2xl opacity-50" aria-hidden="true">🐾</span>
           <span class="absolute bottom-6 left-6 text-warm-200 text-2xl opacity-50" aria-hidden="true">🐾</span>
@@ -75,7 +81,7 @@ const facts = [
 
       <!-- Text content -->
       <div class="order-1 md:order-2">
-        <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-3">Meet the Resident Expert</p>
+        <p class="text-warm-500 text-sm font-medium uppercase tracking-widest mb-3">{limonSectionLabel}</p>
         <h2
           id="limon-heading"
           class="text-4xl md:text-5xl font-bold text-warm-800 mb-6 font-display"

@@ -116,7 +116,7 @@ const MAX_MEMBERS = 10;
 const MAX_TIPS = 20;
 const MAX_QUICK_LINKS = 10;
 const MAX_NEIGHBORHOOD = 8;
-const SITE_CONFIG_ALLOWED_KEYS = new Set(['members', 'visitorTips', 'hero', 'limon', 'quickLinks', 'neighborhoodHighlights']);
+const SITE_CONFIG_ALLOWED_KEYS = new Set(['members', 'visitorTips', 'hero', 'limon', 'quickLinks', 'neighborhoodHighlights', 'sectionText']);
 
 function isPlainString(v, max) {
   return typeof v === 'string' && v.length <= max;
@@ -265,6 +265,40 @@ function validateSiteConfig(input) {
       }
       out.neighborhoodHighlights.push(cleaned);
     }
+  }
+
+  if ('sectionText' in input) {
+    if (typeof input.sectionText !== 'object' || input.sectionText === null || Array.isArray(input.sectionText)) {
+      return { error: 'sectionText must be an object' };
+    }
+    const ST_FIELDS = {
+      hero:         { preHeading: 80 },
+      welcome:      { label: 80, heading: 120, para1: 600, para2: 600, para3: 600, accentAddress: 120, accentCity: 120 },
+      neighborhood: { label: 80, heading: 120, description: 300 },
+      quickLinks:   { label: 80, heading: 120, description: 300 },
+      limon:        { sectionLabel: 80, fallbackSubtitle: 80 },
+      visitorGuide: { label: 80, heading: 120, description: 300 },
+      footer:       { brand: 80, location: 120, tagline: 120 },
+    };
+    const stOut = {};
+    for (const section of Object.keys(input.sectionText)) {
+      if (!(section in ST_FIELDS)) return { error: `Unknown sectionText key: ${section}` };
+      const sv = input.sectionText[section];
+      if (typeof sv !== 'object' || sv === null || Array.isArray(sv)) {
+        return { error: `sectionText.${section} must be an object` };
+      }
+      const allowed = ST_FIELDS[section];
+      const sOut = {};
+      for (const field of Object.keys(sv)) {
+        if (!(field in allowed)) return { error: `Unknown sectionText.${section} field: ${field}` };
+        if (!isPlainString(sv[field], allowed[field])) {
+          return { error: `sectionText.${section}.${field} must be a string ≤${allowed[field]} chars` };
+        }
+        sOut[field] = sv[field];
+      }
+      stOut[section] = sOut;
+    }
+    out.sectionText = stOut;
   }
 
   return { value: out };
