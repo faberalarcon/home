@@ -110,9 +110,12 @@ const upload = multer({
 // to prevent arbitrary JSON from being persisted and surfaced to visitors.
 
 const SAFE_PHOTO_FILE = /^[a-zA-Z0-9_-]{1,72}\.(jpg|jpeg|png|webp)$/;
+const SAFE_HREF = /^https?:\/\//;
 const MAX_MEMBERS = 10;
 const MAX_TIPS = 20;
-const SITE_CONFIG_ALLOWED_KEYS = new Set(['members', 'visitorTips']);
+const MAX_QUICK_LINKS = 10;
+const MAX_NEIGHBORHOOD = 8;
+const SITE_CONFIG_ALLOWED_KEYS = new Set(['members', 'visitorTips', 'hero', 'limon', 'quickLinks', 'neighborhoodHighlights']);
 
 function isPlainString(v, max) {
   return typeof v === 'string' && v.length <= max;
@@ -180,6 +183,86 @@ function validateSiteConfig(input) {
       cleaned.body = t.body;
       if (t.icon) cleaned.icon = t.icon;
       out.visitorTips.push(cleaned);
+    }
+  }
+
+  if ('hero' in input) {
+    if (typeof input.hero !== 'object' || input.hero === null || Array.isArray(input.hero)) {
+      return { error: 'hero must be an object' };
+    }
+    const h = {};
+    if ('subtitle' in input.hero) {
+      if (!isPlainString(input.hero.subtitle, 120)) return { error: 'hero.subtitle must be a string ≤120 chars' };
+      h.subtitle = input.hero.subtitle;
+    }
+    if ('location' in input.hero) {
+      if (!isPlainString(input.hero.location, 120)) return { error: 'hero.location must be a string ≤120 chars' };
+      h.location = input.hero.location;
+    }
+    out.hero = h;
+  }
+
+  if ('limon' in input) {
+    if (typeof input.limon !== 'object' || input.limon === null || Array.isArray(input.limon)) {
+      return { error: 'limon must be an object' };
+    }
+    const l = {};
+    const limonStrFields = { name: 60, breed: 80, specialty: 80, hobbies: 80, mood: 80, quoteAttribution: 80 };
+    for (const [field, max] of Object.entries(limonStrFields)) {
+      if (field in input.limon) {
+        if (!isPlainString(input.limon[field], max)) return { error: `limon.${field} must be a string ≤${max} chars` };
+        l[field] = input.limon[field];
+      }
+    }
+    if ('bio' in input.limon) {
+      if (!isPlainString(input.limon.bio, 500)) return { error: 'limon.bio must be a string ≤500 chars' };
+      l.bio = input.limon.bio;
+    }
+    if ('quote' in input.limon) {
+      if (!isPlainString(input.limon.quote, 300)) return { error: 'limon.quote must be a string ≤300 chars' };
+      l.quote = input.limon.quote;
+    }
+    out.limon = l;
+  }
+
+  if ('quickLinks' in input) {
+    if (!Array.isArray(input.quickLinks)) return { error: 'quickLinks must be an array' };
+    if (input.quickLinks.length > MAX_QUICK_LINKS) return { error: `quickLinks exceeds ${MAX_QUICK_LINKS}` };
+    out.quickLinks = [];
+    for (const ql of input.quickLinks) {
+      if (typeof ql !== 'object' || ql === null || Array.isArray(ql)) {
+        return { error: 'each quickLink must be an object' };
+      }
+      if (!isPlainString(ql.title, 80)) return { error: 'quickLink.title must be a string ≤80 chars' };
+      if (!isPlainString(ql.description, 300)) return { error: 'quickLink.description must be a string ≤300 chars' };
+      if (!isPlainString(ql.href, 300) || !SAFE_HREF.test(ql.href)) {
+        return { error: 'quickLink.href must be a valid http/https URL ≤300 chars' };
+      }
+      const cleaned = { title: ql.title, description: ql.description, href: ql.href };
+      if ('icon' in ql) {
+        if (!isPlainString(ql.icon, 8)) return { error: 'quickLink.icon must be a string ≤8 chars' };
+        cleaned.icon = ql.icon;
+      }
+      out.quickLinks.push(cleaned);
+    }
+  }
+
+  if ('neighborhoodHighlights' in input) {
+    if (!Array.isArray(input.neighborhoodHighlights)) return { error: 'neighborhoodHighlights must be an array' };
+    if (input.neighborhoodHighlights.length > MAX_NEIGHBORHOOD) return { error: `neighborhoodHighlights exceeds ${MAX_NEIGHBORHOOD}` };
+    out.neighborhoodHighlights = [];
+    for (const nh of input.neighborhoodHighlights) {
+      if (typeof nh !== 'object' || nh === null || Array.isArray(nh)) {
+        return { error: 'each neighborhoodHighlight must be an object' };
+      }
+      if (!isPlainString(nh.title, 80)) return { error: 'neighborhoodHighlight.title must be a string ≤80 chars' };
+      if (!isPlainString(nh.description, 300)) return { error: 'neighborhoodHighlight.description must be a string ≤300 chars' };
+      const cleaned = { title: nh.title, description: nh.description };
+      if ('icon' in nh) {
+        if (!isPlainString(nh.icon, 8)) return { error: 'neighborhoodHighlight.icon must be a string ≤8 chars' };
+        cleaned.icon = nh.icon;
+      }
+      out.neighborhoodHighlights.push(cleaned);
     }
   }
 

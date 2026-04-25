@@ -1,6 +1,16 @@
 ---
 // Hero section — full-viewport with dynamic photo slideshow
 import Slideshow from './Slideshow.astro';
+import fs from 'node:fs';
+
+let heroConfig = {};
+try {
+  const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
+  heroConfig = JSON.parse(raw).hero || {};
+} catch { /* no config yet — use defaults */ }
+
+const subtitle = heroConfig.subtitle || 'Home of Faber, Kasey & Limón';
+const location = heroConfig.location || 'Meades Crossing · Taneytown, Maryland';
 ---
 
 <section
@@ -24,9 +34,7 @@ import Slideshow from './Slideshow.astro';
 
     <!-- Subtitle -->
     <p class="text-warm-100 text-xl md:text-2xl mb-4 font-light drop-shadow">
-      Home of <strong class="font-semibold text-warm-200">Faber</strong>,{' '}
-      <strong class="font-semibold text-warm-200">Kasey</strong> &amp;{' '}
-      <strong class="font-semibold text-warm-300">Limón</strong>
+      {subtitle}
     </p>
 
     <!-- Location -->
@@ -34,7 +42,7 @@ import Slideshow from './Slideshow.astro';
       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
         <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
       </svg>
-      Meades Crossing · Taneytown, Maryland
+      {location}
     </p>
 
     <!-- Scroll cue -->

@@ -1,11 +1,23 @@
 ---
 // Limón Spotlight — the golden retriever feature section
+import fs from 'node:fs';
+
+let limonConfig = {};
+try {
+  const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
+  limonConfig = JSON.parse(raw).limon || {};
+} catch { /* no config yet — use defaults */ }
+
+const limonName = limonConfig.name || 'Limón';
+const limonBio = limonConfig.bio || 'Limón is our golden retriever and the undisputed heart of the household. Named for the sunshine-yellow coat and the bright energy she brings to every single morning. Whether she\'s greeting you at the door, stealing a spot on the couch, or doing zoomies through the backyard — life with Limón is never boring.';
+const limonQuote = limonConfig.quote || 'She has never met a stranger. She has also never turned down a treat.';
+const limonQuoteAttribution = limonConfig.quoteAttribution || 'Faber & Kasey';
 
 const facts = [
-  { label: 'Breed', value: 'Golden Retriever' },
-  { label: 'Specialty', value: 'Maximum cuteness' },
-  { label: 'Hobbies', value: 'Walks, naps, zoomies' },
-  { label: 'Mood', value: 'Always happy to see you' },
+  { label: 'Breed', value: limonConfig.breed || 'Golden Retriever' },
+  { label: 'Specialty', value: limonConfig.specialty || 'Maximum cuteness' },
+  { label: 'Hobbies', value: limonConfig.hobbies || 'Walks, naps, zoomies' },
+  { label: 'Mood', value: limonConfig.mood || 'Always happy to see you' },
 ];
 ---
 
@@ -34,7 +46,7 @@ const facts = [
           <div class="absolute inset-0 bg-gradient-to-t from-warm-600/30 to-transparent" aria-hidden="true"></div>
           <div class="relative text-center p-8">
             <div class="text-8xl mb-4" role="img" aria-label="Dog emoji">🐕</div>
-            <p class="text-warm-900 font-bold text-2xl font-display">Limón</p>
+            <p class="text-warm-900 font-bold text-2xl font-display">{limonName}</p>
             <p class="text-warm-800 text-sm mt-1">The Golden Girl</p>
           </div>
           <span class="absolute top-6 right-6 text-warm-200 text-2xl opacity-50" aria-hidden="true">🐾</span>
@@ -68,13 +80,10 @@ const facts = [
           id="limon-heading"
           class="text-4xl md:text-5xl font-bold text-warm-800 mb-6 font-display"
         >
-          Limón
+          {limonName}
         </h2>
         <p class="text-gray-600 leading-relaxed mb-8">
-          Limón is our golden retriever and the undisputed heart of the household. Named for the
-          sunshine-yellow coat and the bright energy she brings to every single morning. Whether
-          she's greeting you at the door, stealing a spot on the couch, or doing zoomies through
-          the backyard — life with Limón is never boring.
+          {limonBio}
         </p>
 
         <!-- Facts grid -->
@@ -90,9 +99,9 @@ const facts = [
         <!-- Fun quote -->
         <blockquote class="mt-8 pl-4 border-l-4 border-warm-400">
           <p class="text-warm-700 italic text-base leading-relaxed">
-            "She has never met a stranger. She has also never turned down a treat."
+            "{limonQuote}"
           </p>
-          <cite class="text-warm-500 text-sm mt-2 block not-italic">— Faber & Kasey</cite>
+          <cite class="text-warm-500 text-sm mt-2 block not-italic">— {limonQuoteAttribution}</cite>
         </blockquote>
       </div>
     </div>

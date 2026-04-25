@@ -1,41 +1,28 @@
 ---
 // QuickLinks section — useful links and household quick actions
 import WeatherCard from './WeatherCard.astro';
+import fs from 'node:fs';
 
-const links = [
-  {
-    icon: '🍹',
-    title: 'Drink Hub',
-    description: 'Browse our cocktail recipes, home bar inventory, and drink recommendations.',
-    href: 'https://drink-hub.21bristoe.com',
-    accent: 'bg-warm-50 border-warm-200 hover:border-warm-400',
-    iconBg: 'bg-warm-100',
-  },
-  {
-    icon: '📊',
-    title: 'Stats Dashboard',
-    description: 'Live house status, TV on-time, weather, drinks leaderboard, and household trends.',
-    href: 'https://stats.21bristoe.com',
-    accent: 'bg-sage-50 border-sage-200 hover:border-sage-400',
-    iconBg: 'bg-sage-100',
-  },
-  {
-    icon: '🏛️',
-    title: 'Carroll County',
-    description: 'Local government, services, parks, and community resources for Carroll County residents.',
-    href: 'https://ccgovernment.carr.org',
-    accent: 'bg-warm-50 border-warm-200 hover:border-warm-400',
-    iconBg: 'bg-warm-100',
-  },
-  {
-    icon: '🗺️',
-    title: 'Taneytown, MD',
-    description: 'Explore Taneytown on the map — parks, local businesses, and all the spots we love.',
-    href: 'https://www.google.com/maps/search/Taneytown+MD',
-    accent: 'bg-sage-50 border-sage-200 hover:border-sage-400',
-    iconBg: 'bg-sage-100',
-  },
+const defaultLinks = [
+  { icon: '🍹', title: 'Drink Hub', description: 'Browse our cocktail recipes, home bar inventory, and drink recommendations.', href: 'https://drink-hub.21bristoe.com' },
+  { icon: '📊', title: 'Stats Dashboard', description: 'Live house status, TV on-time, weather, drinks leaderboard, and household trends.', href: 'https://stats.21bristoe.com' },
+  { icon: '🏛️', title: 'Carroll County', description: 'Local government, services, parks, and community resources for Carroll County residents.', href: 'https://ccgovernment.carr.org' },
+  { icon: '🗺️', title: 'Taneytown, MD', description: 'Explore Taneytown on the map — parks, local businesses, and all the spots we love.', href: 'https://www.google.com/maps/search/Taneytown+MD' },
 ];
+
+let linksRaw = defaultLinks;
+try {
+  const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
+  const cfg = JSON.parse(raw);
+  if (Array.isArray(cfg.quickLinks) && cfg.quickLinks.length > 0) linksRaw = cfg.quickLinks;
+} catch { /* no config yet — use defaults */ }
+
+// Alternate warm/sage accent styles by index
+const accentStyles = [
+  { accent: 'bg-warm-50 border-warm-200 hover:border-warm-400', iconBg: 'bg-warm-100' },
+  { accent: 'bg-sage-50 border-sage-200 hover:border-sage-400', iconBg: 'bg-sage-100' },
+];
+const links = linksRaw.map((l, i) => ({ ...l, ...accentStyles[i % 2] }));
 ---
 
 <section id="quicklinks" class="py-20 px-6 bg-white" aria-labelledby="quicklinks-heading">

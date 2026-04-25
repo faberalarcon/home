@@ -1,32 +1,22 @@
 ---
 // Neighborhood Highlights — Meades Crossing / Taneytown facts and features
+import fs from 'node:fs';
 
-const highlights = [
-  {
-    icon: '🏘️',
-    title: 'Meades Crossing',
-    description:
-      'A welcoming planned community in Carroll County — quiet streets, friendly neighbors, and a real sense of place just outside the bustle of the city.',
-  },
-  {
-    icon: '🌿',
-    title: 'Taneytown Charm',
-    description:
-      'Founded in 1754, Taneytown blends small-town warmth with modern convenience. Parks, local shops, and a thriving community make it a place worth calling home.',
-  },
-  {
-    icon: '🌄',
-    title: 'Maryland Countryside',
-    description:
-      'Rolling hills, open farmland, and scenic vistas — Carroll County offers the kind of wide-open beauty that never gets old on a morning walk or evening drive.',
-  },
-  {
-    icon: '🐾',
-    title: 'Dog-Friendly',
-    description:
-      'From trails to open green spaces, the neighborhood is perfect for four-legged residents. Limón approves.',
-  },
+const defaultHighlights = [
+  { icon: '🏘️', title: 'Meades Crossing', description: 'A welcoming planned community in Carroll County — quiet streets, friendly neighbors, and a real sense of place just outside the bustle of the city.' },
+  { icon: '🌿', title: 'Taneytown Charm', description: 'Founded in 1754, Taneytown blends small-town warmth with modern convenience. Parks, local shops, and a thriving community make it a place worth calling home.' },
+  { icon: '🌄', title: 'Maryland Countryside', description: 'Rolling hills, open farmland, and scenic vistas — Carroll County offers the kind of wide-open beauty that never gets old on a morning walk or evening drive.' },
+  { icon: '🐾', title: 'Dog-Friendly', description: 'From trails to open green spaces, the neighborhood is perfect for four-legged residents. Limón approves.' },
 ];
+
+let highlights = defaultHighlights;
+try {
+  const raw = fs.readFileSync('/var/www/21bristoe-media/site-config.json', 'utf8');
+  const cfg = JSON.parse(raw);
+  if (Array.isArray(cfg.neighborhoodHighlights) && cfg.neighborhoodHighlights.length > 0) {
+    highlights = cfg.neighborhoodHighlights;
+  }
+} catch { /* no config yet — use defaults */ }
 ---
 
 <section id="neighborhood" class="py-20 px-6 bg-white" aria-labelledby="neighborhood-heading">

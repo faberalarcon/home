@@ -386,6 +386,20 @@ const DEFAULT_TIPS = [
   { icon: '📶', title: 'Guest Wi-Fi',   body: 'Ask us for the guest network name and password when you arrive.' },
 ];
 
+const DEFAULT_QUICK_LINKS = [
+  { icon: '🍹', title: 'Drink Hub',        description: 'Browse our cocktail recipes, home bar inventory, and drink recommendations.',                          href: 'https://drink-hub.21bristoe.com' },
+  { icon: '📊', title: 'Stats Dashboard',  description: 'Live house status, TV on-time, weather, drinks leaderboard, and household trends.',                   href: 'https://stats.21bristoe.com' },
+  { icon: '🏛️', title: 'Carroll County',   description: 'Local government, services, parks, and community resources for Carroll County residents.',             href: 'https://ccgovernment.carr.org' },
+  { icon: '🗺️', title: 'Taneytown, MD',    description: 'Explore Taneytown on the map — parks, local businesses, and all the spots we love.',                  href: 'https://www.google.com/maps/search/Taneytown+MD' },
+];
+
+const DEFAULT_NEIGHBORHOOD = [
+  { icon: '🏘️', title: 'Meades Crossing',      description: 'A welcoming planned community in Carroll County — quiet streets, friendly neighbors, and a real sense of place just outside the bustle of the city.' },
+  { icon: '🌿', title: 'Taneytown Charm',       description: 'Founded in 1754, Taneytown blends small-town warmth with modern convenience. Parks, local shops, and a thriving community make it a place worth calling home.' },
+  { icon: '🌄', title: 'Maryland Countryside',  description: 'Rolling hills, open farmland, and scenic vistas — Carroll County offers the kind of wide-open beauty that never gets old on a morning walk or evening drive.' },
+  { icon: '🐾', title: 'Dog-Friendly',          description: 'From trails to open green spaces, the neighborhood is perfect for four-legged residents. Limón approves.' },
+];
+
 async function loadSiteConfig() {
   try {
     const res = await fetch(`${API}/api/site-config`);
@@ -393,8 +407,26 @@ async function loadSiteConfig() {
   } catch {
     siteConfig = {};
   }
+  renderHeroEditor();
   renderMemberEditor();
+  renderLimonEditor();
+  renderQuickLinksEditor();
+  renderNeighborhoodEditor();
   renderTipEditor();
+}
+
+function renderHeroEditor() {
+  const container = document.getElementById('heroEditor');
+  const hero = siteConfig.hero || {};
+  container.innerHTML = `
+    <div class="field-row">
+      <label>Subtitle</label>
+      <input type="text" class="field-input" id="heroSubtitle" value="${escHtml(hero.subtitle || 'Home of Faber, Kasey &amp; Limón')}" maxlength="120" />
+    </div>
+    <div class="field-row">
+      <label>Location</label>
+      <input type="text" class="field-input" id="heroLocation" value="${escHtml(hero.location || 'Meades Crossing · Taneytown, Maryland')}" maxlength="120" />
+    </div>`;
 }
 
 function renderMemberEditor() {
@@ -455,11 +487,127 @@ function renderMemberEditor() {
   });
 }
 
+function renderLimonEditor() {
+  const container = document.getElementById('limonEditor');
+  const l = siteConfig.limon || {};
+  container.innerHTML = `
+    <div class="field-row"><label>Name</label>
+      <input type="text" class="field-input" id="limonName" value="${escHtml(l.name || 'Limón')}" maxlength="60" /></div>
+    <div class="field-row"><label>Bio</label>
+      <textarea class="field-input" id="limonBio" rows="3" maxlength="500">${escHtml(l.bio || 'Limón is our golden retriever and the undisputed heart of the household.')}</textarea></div>
+    <div class="field-row"><label>Breed</label>
+      <input type="text" class="field-input" id="limonBreed" value="${escHtml(l.breed || 'Golden Retriever')}" maxlength="80" /></div>
+    <div class="field-row"><label>Specialty</label>
+      <input type="text" class="field-input" id="limonSpecialty" value="${escHtml(l.specialty || 'Maximum cuteness')}" maxlength="80" /></div>
+    <div class="field-row"><label>Hobbies</label>
+      <input type="text" class="field-input" id="limonHobbies" value="${escHtml(l.hobbies || 'Walks, naps, zoomies')}" maxlength="80" /></div>
+    <div class="field-row"><label>Mood</label>
+      <input type="text" class="field-input" id="limonMood" value="${escHtml(l.mood || 'Always happy to see you')}" maxlength="80" /></div>
+    <div class="field-row"><label>Quote</label>
+      <textarea class="field-input" id="limonQuote" rows="2" maxlength="300">${escHtml(l.quote || 'She has never met a stranger. She has also never turned down a treat.')}</textarea></div>
+    <div class="field-row"><label>Quote by</label>
+      <input type="text" class="field-input" id="limonQuoteAttribution" value="${escHtml(l.quoteAttribution || 'Faber &amp; Kasey')}" maxlength="80" /></div>`;
+}
+
+function renderQuickLinksEditor() {
+  const container = document.getElementById('quickLinksEditor');
+  const items = (siteConfig.quickLinks && siteConfig.quickLinks.length) ? siteConfig.quickLinks : DEFAULT_QUICK_LINKS;
+  const total = items.length;
+
+  container.innerHTML = items.map((ql, i) => `
+    <div class="tip-row" data-ql-index="${i}">
+      <div class="field-row tip-fields">
+        <input type="text" class="field-input field-emoji ql-icon" value="${escHtml(ql.icon || '')}" placeholder="🔗" data-field="icon" title="Icon (emoji)" />
+        <input type="text" class="field-input ql-title" value="${escHtml(ql.title || '')}" placeholder="Title" data-field="title" />
+        <input type="text" class="field-input ql-href" value="${escHtml(ql.href || '')}" placeholder="https://..." data-field="href" />
+        <textarea class="field-input ql-description" rows="2" placeholder="Description" data-field="description">${escHtml(ql.description || '')}</textarea>
+        <div class="reorder-btns">
+          <button class="btn-sm btn-outline ql-up" data-ql-index="${i}" title="Move up" ${i === 0 ? 'disabled' : ''}>▲</button>
+          <button class="btn-sm btn-outline ql-down" data-ql-index="${i}" title="Move down" ${i === total - 1 ? 'disabled' : ''}>▼</button>
+          <button class="btn-sm btn-outline-red ql-remove" data-ql-index="${i}" title="Remove">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  container.querySelectorAll('.ql-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const links = getQuickLinksFromEditor();
+      links.splice(parseInt(btn.dataset.qlIndex), 1);
+      siteConfig.quickLinks = links;
+      renderQuickLinksEditor();
+    });
+  });
+  container.querySelectorAll('.ql-up').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const links = getQuickLinksFromEditor();
+      const idx = parseInt(btn.dataset.qlIndex);
+      if (idx > 0) { [links[idx - 1], links[idx]] = [links[idx], links[idx - 1]]; }
+      siteConfig.quickLinks = links;
+      renderQuickLinksEditor();
+    });
+  });
+  container.querySelectorAll('.ql-down').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const links = getQuickLinksFromEditor();
+      const idx = parseInt(btn.dataset.qlIndex);
+      if (idx < links.length - 1) { [links[idx], links[idx + 1]] = [links[idx + 1], links[idx]]; }
+      siteConfig.quickLinks = links;
+      renderQuickLinksEditor();
+    });
+  });
+}
+
+function renderNeighborhoodEditor() {
+  const container = document.getElementById('neighborhoodEditor');
+  const items = (siteConfig.neighborhoodHighlights && siteConfig.neighborhoodHighlights.length) ? siteConfig.neighborhoodHighlights : DEFAULT_NEIGHBORHOOD;
+  const total = items.length;
+
+  container.innerHTML = items.map((nh, i) => `
+    <div class="tip-row" data-nh-index="${i}">
+      <div class="field-row tip-fields">
+        <input type="text" class="field-input field-emoji nh-icon" value="${escHtml(nh.icon || '')}" placeholder="🏘️" data-field="icon" title="Icon (emoji)" />
+        <input type="text" class="field-input nh-title" value="${escHtml(nh.title || '')}" placeholder="Title" data-field="title" />
+        <textarea class="field-input nh-description" rows="2" placeholder="Description" data-field="description">${escHtml(nh.description || '')}</textarea>
+        <div class="reorder-btns">
+          <button class="btn-sm btn-outline nh-up" data-nh-index="${i}" title="Move up" ${i === 0 ? 'disabled' : ''}>▲</button>
+          <button class="btn-sm btn-outline nh-down" data-nh-index="${i}" title="Move down" ${i === total - 1 ? 'disabled' : ''}>▼</button>
+          <button class="btn-sm btn-outline-red nh-remove" data-nh-index="${i}" title="Remove">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  container.querySelectorAll('.nh-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const items = getNeighborhoodFromEditor();
+      items.splice(parseInt(btn.dataset.nhIndex), 1);
+      siteConfig.neighborhoodHighlights = items;
+      renderNeighborhoodEditor();
+    });
+  });
+  container.querySelectorAll('.nh-up').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const items = getNeighborhoodFromEditor();
+      const idx = parseInt(btn.dataset.nhIndex);
+      if (idx > 0) { [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]]; }
+      siteConfig.neighborhoodHighlights = items;
+      renderNeighborhoodEditor();
+    });
+  });
+  container.querySelectorAll('.nh-down').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const items = getNeighborhoodFromEditor();
+      const idx = parseInt(btn.dataset.nhIndex);
+      if (idx < items.length - 1) { [items[idx], items[idx + 1]] = [items[idx + 1], items[idx]]; }
+      siteConfig.neighborhoodHighlights = items;
+      renderNeighborhoodEditor();
+    });
+  });
+}
+
 function renderTipEditor() {
   const container = document.getElementById('tipEditor');
-  const tips = siteConfig.visitorTips && siteConfig.visitorTips.length
-    ? siteConfig.visitorTips
-    : DEFAULT_TIPS;
+  const tips = (siteConfig.visitorTips && siteConfig.visitorTips.length) ? siteConfig.visitorTips : DEFAULT_TIPS;
+  const total = tips.length;
 
   container.innerHTML = tips.map((t, i) => `
     <div class="tip-row" data-tip-index="${i}">
@@ -467,7 +615,11 @@ function renderTipEditor() {
         <input type="text" class="field-input field-emoji tip-icon" value="${escHtml(t.icon || '')}" placeholder="🏠" data-field="icon" title="Icon (emoji)" />
         <input type="text" class="field-input tip-title" value="${escHtml(t.title || '')}" placeholder="Title" data-field="title" />
         <textarea class="field-input tip-body" rows="2" placeholder="Description" data-field="body">${escHtml(t.body || '')}</textarea>
-        <button class="btn-sm btn-outline-red tip-remove" data-tip-index="${i}" title="Remove tip">✕</button>
+        <div class="reorder-btns">
+          <button class="btn-sm btn-outline tip-up" data-tip-index="${i}" title="Move up" ${i === 0 ? 'disabled' : ''}>▲</button>
+          <button class="btn-sm btn-outline tip-down" data-tip-index="${i}" title="Move down" ${i === total - 1 ? 'disabled' : ''}>▼</button>
+          <button class="btn-sm btn-outline-red tip-remove" data-tip-index="${i}" title="Remove tip">✕</button>
+        </div>
       </div>
     </div>`).join('');
 
@@ -475,7 +627,24 @@ function renderTipEditor() {
     btn.addEventListener('click', () => {
       const tips = getTipsFromEditor();
       tips.splice(parseInt(btn.dataset.tipIndex), 1);
-      if (!siteConfig.visitorTips) siteConfig.visitorTips = DEFAULT_TIPS.slice();
+      siteConfig.visitorTips = tips;
+      renderTipEditor();
+    });
+  });
+  container.querySelectorAll('.tip-up').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tips = getTipsFromEditor();
+      const idx = parseInt(btn.dataset.tipIndex);
+      if (idx > 0) { [tips[idx - 1], tips[idx]] = [tips[idx], tips[idx - 1]]; }
+      siteConfig.visitorTips = tips;
+      renderTipEditor();
+    });
+  });
+  container.querySelectorAll('.tip-down').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tips = getTipsFromEditor();
+      const idx = parseInt(btn.dataset.tipIndex);
+      if (idx < tips.length - 1) { [tips[idx], tips[idx + 1]] = [tips[idx + 1], tips[idx]]; }
       siteConfig.visitorTips = tips;
       renderTipEditor();
     });
@@ -507,18 +676,74 @@ function getTipsFromEditor() {
   });
 }
 
-document.getElementById('addTipBtn').addEventListener('click', () => {
-  if (!siteConfig.visitorTips) {
-    siteConfig.visitorTips = DEFAULT_TIPS.slice();
+function getHeroFromEditor() {
+  return {
+    subtitle: (document.getElementById('heroSubtitle')?.value || '').trim(),
+    location: (document.getElementById('heroLocation')?.value || '').trim(),
+  };
+}
+
+function getLimonFromEditor() {
+  const fields = ['Name', 'Bio', 'Breed', 'Specialty', 'Hobbies', 'Mood', 'Quote', 'QuoteAttribution'];
+  const out = {};
+  for (const f of fields) {
+    const el = document.getElementById(`limon${f}`);
+    if (el) out[f.charAt(0).toLowerCase() + f.slice(1)] = el.value.trim();
   }
+  return out;
+}
+
+function getQuickLinksFromEditor() {
+  const rows = document.querySelectorAll('[data-ql-index]');
+  return Array.from(rows).map(row => {
+    const ql = {};
+    row.querySelectorAll('[data-field]').forEach(el => {
+      ql[el.dataset.field] = el.value.trim();
+    });
+    return ql;
+  });
+}
+
+function getNeighborhoodFromEditor() {
+  const rows = document.querySelectorAll('[data-nh-index]');
+  return Array.from(rows).map(row => {
+    const nh = {};
+    row.querySelectorAll('[data-field]').forEach(el => {
+      nh[el.dataset.field] = el.value.trim();
+    });
+    return nh;
+  });
+}
+
+document.getElementById('addTipBtn').addEventListener('click', () => {
+  if (!siteConfig.visitorTips) siteConfig.visitorTips = DEFAULT_TIPS.slice();
   siteConfig.visitorTips.push({ icon: '📌', title: '', body: '' });
   renderTipEditor();
 });
 
+document.getElementById('addQuickLinkBtn').addEventListener('click', () => {
+  const links = getQuickLinksFromEditor();
+  if (links.length >= 10) { showToast('Max 10 quick links', 'error'); return; }
+  links.push({ icon: '🔗', title: '', description: '', href: '' });
+  siteConfig.quickLinks = links;
+  renderQuickLinksEditor();
+});
+
+document.getElementById('addNeighborhoodBtn').addEventListener('click', () => {
+  const items = getNeighborhoodFromEditor();
+  if (items.length >= 8) { showToast('Max 8 neighborhood highlights', 'error'); return; }
+  items.push({ icon: '🏘️', title: '', description: '' });
+  siteConfig.neighborhoodHighlights = items;
+  renderNeighborhoodEditor();
+});
+
 async function saveContent() {
-  const members = getMembersFromEditor();
+  siteConfig.hero = getHeroFromEditor();
+  siteConfig.members = getMembersFromEditor();
+  siteConfig.limon = getLimonFromEditor();
+  siteConfig.quickLinks = getQuickLinksFromEditor();
+  siteConfig.neighborhoodHighlights = getNeighborhoodFromEditor();
   const visitorTips = getTipsFromEditor();
-  siteConfig.members = members;
   siteConfig.visitorTips = visitorTips;
 
   try {

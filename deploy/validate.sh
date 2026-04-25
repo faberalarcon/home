@@ -49,7 +49,7 @@ check "404 page returns 404" "$(curl -so /dev/null -w '%{http_code}' "$BASE/this
 
 echo ""
 echo "--- Content checks ---"
-check "robots.txt has Sitemap" "$(curl -s "$BASE/robots.txt")" "Sitemap"
+check "robots.txt blocks GPTBot" "$(curl -s "$BASE/robots.txt")" "GPTBot"
 check "sitemap has 21bristoe.com" "$(curl -s "$BASE/sitemap-index.xml")" "21bristoe.com"
 check "Homepage has 21 Bristoe" "$(curl -s "$BASE/")" "21 Bristoe"
 check "Homepage has Limón" "$(curl -s "$BASE/")" "Lim"
