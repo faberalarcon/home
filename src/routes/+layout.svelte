@@ -207,6 +207,16 @@
     transition: border-color 0.2s;
   }
   .drink-shell__footer-links a:hover { border-bottom-color: var(--color-blood-300); }
+  /* Footer is always dark — pin bg + text so dark-mode token inversion doesn't flip it white */
+  @media (prefers-color-scheme: dark) {
+    .drink-shell__footer { background: #05080c; }
+    .drink-shell__footer-mark-word { color: #f0f4f8; }
+    .drink-shell__footer-mark-sub { color: #c9d2dc; }
+    .drink-shell__footer-foot { color: #c9d2dc; }
+    .drink-shell__footer-links a { color: #8bb8e0; }
+    .drink-shell__footer-visitors { color: #c9d2dc; }
+    .drink-shell__footer-count { color: #f0f4f8; }
+  }
   .drink-shell__footer-visitors {
     margin-top: 1.25rem;
     padding-top: 1.25rem;
