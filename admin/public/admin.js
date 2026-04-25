@@ -16,6 +16,26 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// Decode any HTML entities in a stored string (guards against stale double-encoded data)
+function decodeHtml(str) {
+  if (typeof str !== 'string') return str;
+  const el = document.createElement('textarea');
+  el.innerHTML = str;
+  return el.value;
+}
+
+// Recursively decode all string values in a loaded config object
+function decodeConfigStrings(obj) {
+  if (typeof obj === 'string') return decodeHtml(obj);
+  if (Array.isArray(obj)) return obj.map(decodeConfigStrings);
+  if (obj && typeof obj === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) out[k] = decodeConfigStrings(v);
+    return out;
+  }
+  return obj;
+}
+
 function fmtBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -420,7 +440,7 @@ const DEFAULT_NEIGHBORHOOD = [
 async function loadSiteConfig() {
   try {
     const res = await fetch(`${API}/api/site-config`);
-    siteConfig = await res.json();
+    siteConfig = decodeConfigStrings(await res.json());
   } catch {
     siteConfig = {};
   }
