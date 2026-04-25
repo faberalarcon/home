@@ -79,12 +79,27 @@ sudo rsync -av --delete "$REPO_DIR/dist/" "$WEB_ROOT/"
 sudo chown -R www-data:www-data "$WEB_ROOT"
 echo "      Sync complete."
 
-# 4. Test nginx config
-echo "[4/5] Testing nginx config..."
+# 4. Restart admin service if server.js changed since last deploy
+echo "[4/6] Checking admin service..."
+ADMIN_JS="$REPO_DIR/admin/server.js"
+ADMIN_STAMP="/tmp/21bristoe-admin-server.md5"
+CURRENT_MD5=$(md5sum "$ADMIN_JS" | cut -d' ' -f1)
+STORED_MD5=$(cat "$ADMIN_STAMP" 2>/dev/null || echo "")
+if [[ "$CURRENT_MD5" != "$STORED_MD5" ]]; then
+    echo "      server.js changed — restarting admin service..."
+    sudo systemctl restart 21bristoe-admin
+    echo "$CURRENT_MD5" > "$ADMIN_STAMP"
+    echo "      Admin service restarted."
+else
+    echo "      server.js unchanged — skipping restart."
+fi
+
+# 5. Test nginx config
+echo "[5/6] Testing nginx config..."
 sudo nginx -t
 
-# 5. Reload nginx
-echo "[5/5] Reloading nginx..."
+# 6. Reload nginx
+echo "[6/6] Reloading nginx..."
 sudo systemctl reload nginx
 echo "      nginx reloaded."
 
