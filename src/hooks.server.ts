@@ -78,6 +78,7 @@ const SECURITY_HEADERS: Record<string, string> = {
     "object-src 'none'",
     "frame-ancestors 'none'",
   ].join('; '),
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
 };
 
 export const handle: Handle = async ({ event, resolve }) => {
