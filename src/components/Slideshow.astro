@@ -171,18 +171,31 @@
     slideshowEl.addEventListener('mouseenter', () => clearInterval(slideshowTimer), { signal });
     slideshowEl.addEventListener('mouseleave', resetTimer, { signal });
 
-    // Touch swipe — prevent click-to-gallery firing when the user swipes
+    // Touch swipe — intercept horizontal flicks before browser scrolls the page
     let touchStartX = 0;
+    let touchStartY = 0;
+    let swipeActive = false;
     slideshowEl.addEventListener('touchstart', e => {
       touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      swipeActive = false;
     }, { signal, passive: true });
+    slideshowEl.addEventListener('touchmove', e => {
+      const dx = Math.abs(e.touches[0].clientX - touchStartX);
+      const dy = Math.abs(e.touches[0].clientY - touchStartY);
+      if (dx > dy && dx > 8) {
+        swipeActive = true;
+        e.preventDefault(); // stop page scroll on horizontal swipe
+      }
+    }, { signal, passive: false });
     slideshowEl.addEventListener('touchend', e => {
+      if (!swipeActive) return;
       const dx = e.changedTouches[0].clientX - touchStartX;
-      if (Math.abs(dx) > 50) {
-        e.preventDefault();
+      if (Math.abs(dx) > 40) {
         if (dx < 0) next(); else prev();
         resetTimer();
       }
+      swipeActive = false;
     }, { signal });
 
     document.addEventListener('visibilitychange', () => {
