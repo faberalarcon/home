@@ -8,6 +8,7 @@ import crypto from 'node:crypto';
 const NGINX_LOG_DIR = '/var/log/nginx';
 const DATA_DIR = '/var/lib/bristoe-stats';
 const DATA_FILE = path.join(DATA_DIR, 'visitors.json');
+const PUBLIC_COUNT_FILE = '/var/www/21bristoe-media/visitor-count.json';
 
 const args = new Set(process.argv.slice(2));
 const DRY_RUN = args.has('--dry-run');
@@ -120,6 +121,17 @@ function writeData(data) {
   const tmp = `${DATA_FILE}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
   fs.renameSync(tmp, DATA_FILE);
+
+  // Write a small public file served at /uploads/visitor-count.json so the
+  // homepage footer can fetch the live count without a full site rebuild.
+  try {
+    const pub = { count: data.count, updatedAt: data.updatedAt };
+    const pubTmp = `${PUBLIC_COUNT_FILE}.tmp`;
+    fs.writeFileSync(pubTmp, JSON.stringify(pub));
+    fs.renameSync(pubTmp, PUBLIC_COUNT_FILE);
+  } catch (err) {
+    console.warn(`[visitors] could not write public count file: ${err.message}`);
+  }
 }
 
 async function main() {

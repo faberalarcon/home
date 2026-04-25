@@ -523,10 +523,15 @@ app.post('/api/visitor-count/reset', apiLimiter, async (req, res, next) => {
   try {
     const now = new Date().toISOString();
     const fresh = { uniqueHashes: [], count: 0, createdAt: now, updatedAt: now };
-    const tmp = VISITOR_STATS_PATH + '.tmp';
     fs.mkdirSync(path.dirname(VISITOR_STATS_PATH), { recursive: true });
+    const tmp = VISITOR_STATS_PATH + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(fresh, null, 2), 'utf8');
     fs.renameSync(tmp, VISITOR_STATS_PATH);
+    // Update public file so homepage footer reflects reset without a rebuild
+    const pubPath = path.join(UPLOADS_DIR, 'visitor-count.json');
+    const pubTmp = pubPath + '.tmp';
+    fs.writeFileSync(pubTmp, JSON.stringify({ count: 0, updatedAt: now }), 'utf8');
+    fs.renameSync(pubTmp, pubPath);
     auditLog('visitor_count_reset', 'count reset to 0', req);
     res.json({ message: 'Visitor count reset' });
   } catch (err) {

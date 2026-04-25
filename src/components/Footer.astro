@@ -45,11 +45,24 @@ try {
       <div class="mt-8 pt-6 border-t border-warm-800 text-center">
         <p class="text-warm-300 text-sm">
           <span aria-hidden="true">👋</span>
-          <span class="tabular-nums font-semibold text-warm-100">{visitorCount.toLocaleString()}</span>
+          <span id="footerVisitorCount" class="tabular-nums font-semibold text-warm-100">{visitorCount.toLocaleString()}</span>
           <span class="text-warm-400">unique visitors so far</span>
         </p>
       </div>
     )}
+
+    <script>
+      // Keep visitor count live without a full rebuild — fetch the public count file
+      // written by parse-visitors.mjs and the admin reset endpoint.
+      document.addEventListener('astro:page-load', () => {
+        const el = document.getElementById('footerVisitorCount');
+        if (!el) return;
+        fetch('/uploads/visitor-count.json')
+          .then(r => r.ok ? r.json() : null)
+          .then(d => { if (d && typeof d.count === 'number') el.textContent = d.count.toLocaleString(); })
+          .catch(() => {});
+      });
+    </script>
 
     <!-- Bottom bar -->
     <div class="mt-8 pt-6 border-t border-warm-800 text-warm-500 text-xs flex flex-col sm:flex-row justify-between gap-2">
