@@ -243,6 +243,8 @@ body {
   opacity: 0;
   transition: opacity 1.2s ease-in-out;
   will-change: opacity;
+  cursor: pointer;
+  display: block;
 }
 
 .bristoe-slide.active {

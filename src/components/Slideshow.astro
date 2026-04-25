@@ -19,8 +19,12 @@
     aria-hidden="true"
   ></div>
 
-  <!-- Image slides injected by JS -->
+  <!-- Image slides injected by JS (each is an <a> pointing to /gallery) -->
   <div id="slideTrack" class="absolute inset-0" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Prev / next arrows (hidden until >1 image loads) -->
+  <button id="slidePrev" class="slide-arrow slide-arrow--prev" aria-label="Previous photo" hidden>&#8249;</button>
+  <button id="slideNext" class="slide-arrow slide-arrow--next" aria-label="Next photo" hidden>&#8250;</button>
 
   <!-- Dot indicators -->
   <div
@@ -29,22 +33,42 @@
     role="tablist"
     aria-label="Slideshow navigation"
   ></div>
-
-  <!-- Gallery link -->
-  <a
-    href="/gallery"
-    class="absolute bottom-6 right-4 z-20 text-white/80 hover:text-white text-xs font-medium tracking-wide transition-colors"
-    aria-label="View full gallery"
-  >Gallery →</a>
 </div>
 
 <style>
-  /* .slideshow itself is a static element — scoped style is fine */
   .slideshow {
     position: absolute;
     inset: 0;
     overflow: hidden;
   }
+
+  .slide-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.35);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+    padding: 0;
+    padding-bottom: 2px;
+  }
+  .slideshow:hover .slide-arrow,
+  .slideshow:focus-within .slide-arrow { opacity: 1; }
+  .slide-arrow:hover { background: rgba(0, 0, 0, 0.6); }
+  .slide-arrow--prev { left: 0.75rem; }
+  .slide-arrow--next { right: 0.75rem; }
 </style>
 
 <script>
@@ -68,11 +92,15 @@
     const INTERVAL_MS = 6000;
     const dotsEl = document.getElementById('slideDots');
     const fallback = document.getElementById('slideFallback');
+    const prevBtn = document.getElementById('slidePrev');
+    const nextBtn = document.getElementById('slideNext');
 
     // Reset containers for a clean re-init
     track.innerHTML = '';
     dotsEl.innerHTML = '';
     if (fallback) fallback.style.display = '';
+    if (prevBtn) prevBtn.hidden = true;
+    if (nextBtn) nextBtn.hidden = true;
 
     let images = [];
     let current = 0;
@@ -90,17 +118,22 @@
 
     if (fallback) fallback.style.display = 'none';
 
+    // Slides are <a> elements — clicking the photo navigates to /gallery
     images.forEach((img, i) => {
       const url = img.url || `/uploads/${img.filename}`;
-      const slide = document.createElement('div');
+      const slide = document.createElement('a');
+      slide.href = '/gallery';
       slide.className = 'bristoe-slide' + (i === 0 ? ' active' : '');
       slide.style.backgroundImage = `url(${JSON.stringify(url)})`;
-      slide.setAttribute('aria-label', `Photo ${i + 1} of ${images.length}`);
-      slide.setAttribute('role', 'img');
+      slide.setAttribute('aria-label', `Photo ${i + 1} of ${images.length} — view gallery`);
+      slide.setAttribute('tabindex', '-1');
       track.appendChild(slide);
     });
 
     if (images.length > 1) {
+      if (prevBtn) prevBtn.hidden = false;
+      if (nextBtn) nextBtn.hidden = false;
+
       images.forEach((_, i) => {
         const dot = document.createElement('button');
         dot.className = 'bristoe-slide-dot' + (i === 0 ? ' active' : '');
@@ -124,15 +157,33 @@
     }
 
     function next() { goTo(current + 1); }
+    function prev() { goTo(current - 1); }
 
     function resetTimer() {
       clearInterval(slideshowTimer);
       slideshowTimer = setInterval(next, INTERVAL_MS);
     }
 
+    if (prevBtn) prevBtn.addEventListener('click', () => { prev(); resetTimer(); }, { signal });
+    if (nextBtn) nextBtn.addEventListener('click', () => { next(); resetTimer(); }, { signal });
+
     const slideshowEl = document.getElementById('heroSlideshow');
     slideshowEl.addEventListener('mouseenter', () => clearInterval(slideshowTimer), { signal });
     slideshowEl.addEventListener('mouseleave', resetTimer, { signal });
+
+    // Touch swipe — prevent click-to-gallery firing when the user swipes
+    let touchStartX = 0;
+    slideshowEl.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+    }, { signal, passive: true });
+    slideshowEl.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) {
+        e.preventDefault();
+        if (dx < 0) next(); else prev();
+        resetTimer();
+      }
+    }, { signal });
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) clearInterval(slideshowTimer);
