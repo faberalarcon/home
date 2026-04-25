@@ -404,7 +404,7 @@ function renderMemberEditor() {
     : DEFAULT_MEMBERS;
 
   container.innerHTML = members.map((m, i) => {
-    const memberKey = (m.name || DEFAULT_MEMBERS[i]?.name || '').toLowerCase();
+    const memberKey = (m.name || DEFAULT_MEMBERS[i]?.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const hasPhoto = !!m.photoFile;
     const photoUrl = hasPhoto ? `${MEDIA_BASE}/uploads/${m.photoFile}?t=${Date.now()}` : null;
     return `

@@ -461,7 +461,7 @@ app.put('/api/site-config', apiLimiter, async (req, res, next) => {
 const MEMBER_NAMES = ['faber', 'kasey', 'limon'];
 
 app.post('/api/member-photo/:member', uploadLimiter, upload.single('image'), async (req, res, next) => {
-  const member = req.params.member.toLowerCase();
+  const member = req.params.member.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   if (!MEMBER_NAMES.includes(member)) return res.status(400).json({ error: 'Unknown member' });
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
@@ -506,7 +506,7 @@ app.post('/api/member-photo/:member', uploadLimiter, upload.single('image'), asy
 });
 
 app.delete('/api/member-photo/:member', apiLimiter, (req, res) => {
-  const member = req.params.member.toLowerCase();
+  const member = req.params.member.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   if (!MEMBER_NAMES.includes(member)) return res.status(400).json({ error: 'Unknown member' });
 
   const filename = `member-${member}.jpg`;
