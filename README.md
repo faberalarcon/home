@@ -2,6 +2,8 @@
 
 Personal family homepage for 21 Bristoe St — Faber, Kasey, and Limón the golden retriever. Located in Meades Crossing, Taneytown, Maryland.
 
+**Status:** Live in production at <https://21bristoe.com>. Admin panel at <https://admin.21bristoe.com>. See [`CLAUDE.md`](./CLAUDE.md) for the change-workflow and operational notes.
+
 ## Tech stack
 
 - [Astro 6](https://astro.build) — static site generator
