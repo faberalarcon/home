@@ -515,7 +515,7 @@ function renderQuickLinksEditor() {
   const total = items.length;
 
   container.innerHTML = items.map((ql, i) => `
-    <div class="tip-row" data-ql-index="${i}">
+    <div class="ql-row" data-ql-index="${i}">
       <div class="field-row tip-fields">
         <input type="text" class="field-input field-emoji ql-icon" value="${escHtml(ql.icon || '')}" placeholder="🔗" data-field="icon" title="Icon (emoji)" />
         <input type="text" class="field-input ql-title" value="${escHtml(ql.title || '')}" placeholder="Title" data-field="title" />
@@ -563,7 +563,7 @@ function renderNeighborhoodEditor() {
   const total = items.length;
 
   container.innerHTML = items.map((nh, i) => `
-    <div class="tip-row" data-nh-index="${i}">
+    <div class="nh-row" data-nh-index="${i}">
       <div class="field-row tip-fields">
         <input type="text" class="field-input field-emoji nh-icon" value="${escHtml(nh.icon || '')}" placeholder="🏘️" data-field="icon" title="Icon (emoji)" />
         <input type="text" class="field-input nh-title" value="${escHtml(nh.title || '')}" placeholder="Title" data-field="title" />
@@ -694,7 +694,7 @@ function getLimonFromEditor() {
 }
 
 function getQuickLinksFromEditor() {
-  const rows = document.querySelectorAll('[data-ql-index]');
+  const rows = document.querySelectorAll('.ql-row');
   return Array.from(rows).map(row => {
     const ql = {};
     row.querySelectorAll('[data-field]').forEach(el => {
@@ -705,7 +705,7 @@ function getQuickLinksFromEditor() {
 }
 
 function getNeighborhoodFromEditor() {
-  const rows = document.querySelectorAll('[data-nh-index]');
+  const rows = document.querySelectorAll('.nh-row');
   return Array.from(rows).map(row => {
     const nh = {};
     row.querySelectorAll('[data-field]').forEach(el => {
