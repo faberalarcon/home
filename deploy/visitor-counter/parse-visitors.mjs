@@ -20,7 +20,9 @@ const ASSET_DIR = /^\/(uploads|assets|_app|_astro|fonts)\//;
 const SKIP_PATH = /^\/(health|api|favicon\.ico|robots\.txt|sitemap\.xml)(\/|$|\?)/;
 // Common WP/exploit probes — not real visitors
 const PROBE_PATH = /^\/(wp-|wordpress|xmlrpc|phpmyadmin|\.env|\.git|admin\.php|setup-config|vendor\/|cgi-bin|actuator|boaform|HNAP1|owa\/|autodiscover)/i;
-const SKIP_HOST = /^(admin\.21bristoe\.com)$/i;
+// Only count visits via the actual domain — blocks raw-IP requests and unrelated hosts.
+const BRISTOE_HOST = /^([a-z0-9-]+\.)?21bristoe\.com$/i;
+const SKIP_HOST = /^admin\.21bristoe\.com$/i;
 
 // Log formats:
 //   legacy:    <ip> <ident> <user> [<time>] "METHOD path HTTP/x" status bytes "referer" "ua"
@@ -51,7 +53,8 @@ function shouldCount(entry) {
   if (!entry) return false;
   if (entry.method !== 'GET') return false;
   if (entry.status < 200 || entry.status >= 400) return false;
-  if (entry.host && SKIP_HOST.test(entry.host)) return false;
+  if (!entry.host || !BRISTOE_HOST.test(entry.host)) return false;
+  if (SKIP_HOST.test(entry.host)) return false;
   if (BOT_UA.test(entry.ua || '')) return false;
   if (!entry.ua || entry.ua === '-' || entry.ua.length < 10) return false;
   const p = entry.path.split('?')[0];
