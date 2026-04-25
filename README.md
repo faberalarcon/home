@@ -4,6 +4,8 @@ Household dashboard for 21 Bristoe Station Rd, Taneytown MD.
 
 A read-only stats dashboard pulling data from Home Assistant, Drink Hub, weather APIs, and generating fun household stats.
 
+**Status:** Live in production at <https://stats.21bristoe.com>. Source: <https://github.com/faberalarcon/stats>.
+
 ## Stack
 
 - SvelteKit + adapter-node (SSR)

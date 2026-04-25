@@ -56,6 +56,7 @@
       <div class="app-footer__links">
         <a href="https://21bristoe.com">21bristoe.com</a>
         <a href="https://drink-hub.21bristoe.com">Drink Hub</a>
+        <a href="https://github.com/faberalarcon/stats" target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
     </div>
     {#if data.visitorCount !== null}
