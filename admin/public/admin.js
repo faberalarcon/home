@@ -438,7 +438,7 @@ function renderHeroEditor() {
   container.innerHTML = `
     <div class="field-row">
       <label>Subtitle</label>
-      <input type="text" class="field-input" id="heroSubtitle" value="${escHtml(hero.subtitle || 'Home of Faber, Kasey &amp; Limón')}" maxlength="120" />
+      <input type="text" class="field-input" id="heroSubtitle" value="${escHtml(hero.subtitle || 'Home of Faber, Kasey & Limón')}" maxlength="120" />
     </div>
     <div class="field-row">
       <label>Location</label>
@@ -523,7 +523,7 @@ function renderLimonEditor() {
     <div class="field-row"><label>Quote</label>
       <textarea class="field-input" id="limonQuote" rows="2" maxlength="300">${escHtml(l.quote || 'She has never met a stranger. She has also never turned down a treat.')}</textarea></div>
     <div class="field-row"><label>Quote by</label>
-      <input type="text" class="field-input" id="limonQuoteAttribution" value="${escHtml(l.quoteAttribution || 'Faber &amp; Kasey')}" maxlength="80" /></div>`;
+      <input type="text" class="field-input" id="limonQuoteAttribution" value="${escHtml(l.quoteAttribution || 'Faber & Kasey')}" maxlength="80" /></div>`;
 }
 
 function renderQuickLinksEditor() {
