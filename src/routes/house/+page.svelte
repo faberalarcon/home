@@ -121,6 +121,7 @@
                 data={data.charts.indoorTemp.map(p => p.value)}
                 label="Indoor °F"
                 unit="°"
+                color="var(--color-chart-temp)"
               />
             </div>
           </figure>
@@ -134,6 +135,7 @@
                 data={data.charts.outdoorTemp.map(p => p.value)}
                 label="Outdoor °F"
                 unit="°"
+                color="var(--color-chart-weather)"
               />
             </div>
           </figure>

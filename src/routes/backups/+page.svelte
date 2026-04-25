@@ -271,10 +271,10 @@
   .archive__tick {
     width: 8px;
     height: 14px;
-    background: var(--color-olive-500);
+    background: var(--color-status-on);
     display: inline-block;
   }
-  .archive__tick--fail { background: var(--color-blood-500); }
+  .archive__tick--fail { background: var(--color-status-error); }
   .archive__error-row td { background: var(--color-paper-200) !important; }
   .archive__error {
     font-family: var(--font-mono);

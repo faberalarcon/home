@@ -551,7 +551,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   background: currentColor;
   box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 20%, transparent);
 }
-.dashboard-status--active { color: var(--color-olive-500); }
+.dashboard-status--active { color: var(--color-status-on); }
 .dashboard-status--active::before { animation: dashboard-pulse 2.2s ease-in-out infinite; }
 .dashboard-status--idle   { color: var(--color-ink-500); }
 .dashboard-status--alert  { color: var(--color-danger-text); }
