@@ -491,7 +491,7 @@ app.post('/api/member-photo/:member', uploadLimiter, upload.single('image'), asy
     if (!Array.isArray(cfg.members)) {
       cfg.members = MEMBER_NAMES.map(n => ({ name: n.charAt(0).toUpperCase() + n.slice(1) }));
     }
-    const idx = cfg.members.findIndex(m => m.name && m.name.toLowerCase() === member);
+    const idx = cfg.members.findIndex(m => m.name && m.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') === member);
     if (idx >= 0) cfg.members[idx].photoFile = filename;
     else cfg.members.push({ name: member.charAt(0).toUpperCase() + member.slice(1), photoFile: filename });
     const tmp = SITE_CONFIG_PATH + '.tmp';
@@ -518,7 +518,7 @@ app.delete('/api/member-photo/:member', apiLimiter, (req, res) => {
   try {
     let cfg = JSON.parse(fs.readFileSync(SITE_CONFIG_PATH, 'utf8'));
     if (Array.isArray(cfg.members)) {
-      const idx = cfg.members.findIndex(m => m.name && m.name.toLowerCase() === member);
+      const idx = cfg.members.findIndex(m => m.name && m.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') === member);
       if (idx >= 0) delete cfg.members[idx].photoFile;
       const tmp = SITE_CONFIG_PATH + '.tmp';
       fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2));
