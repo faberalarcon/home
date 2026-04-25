@@ -51,10 +51,27 @@ async function loadStats() {
     document.getElementById('statDisk').textContent = data.totalBytes != null ? fmtBytes(data.totalBytes) : '—';
     document.getElementById('statUpload').textContent = fmtRelTime(data.lastUpload);
     document.getElementById('statUptime').textContent = data.uptime != null ? fmtUptime(data.uptime) : '—';
+    const vc = data.visitorCount;
+    document.getElementById('statVisitors').textContent = vc != null ? vc.toLocaleString() : '—';
+    document.getElementById('visitorCountDisplay').textContent =
+      vc != null ? `${vc.toLocaleString()} unique visitor${vc !== 1 ? 's' : ''} recorded` : '— unique visitors recorded';
   } catch {
     // stats are non-critical — fail silently
   }
 }
+
+document.getElementById('resetVisitorBtn').addEventListener('click', async () => {
+  if (!confirm('Reset the unique visitor count to zero? This cannot be undone.')) return;
+  try {
+    const res = await fetch(`${API}/api/visitor-count/reset`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Reset failed');
+    showToast('Visitor count reset — rebuild to update footer', 'success');
+    await loadStats();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+});
 
 // --- Load images ---
 async function loadImages() {

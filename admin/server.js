@@ -15,6 +15,7 @@ const UPLOADS_DIR = process.env.UPLOADS_DIR || '/var/www/21bristoe-media';
 const MANIFEST_PATH = path.join(UPLOADS_DIR, 'manifest.json');
 const SITE_CONFIG_PATH = path.join(UPLOADS_DIR, 'site-config.json');
 const DEPLOY_SCRIPT = process.env.DEPLOY_SCRIPT || '/home/faber/projects/home/deploy/deploy.sh';
+const VISITOR_STATS_PATH = '/var/lib/bristoe-stats/visitors.json';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const ADMIN_SHARED_SECRET = process.env.ADMIN_SHARED_SECRET || '';
 
@@ -503,12 +504,34 @@ app.get('/api/stats', apiLimiter, (_req, res) => {
     try { totalBytes += fs.statSync(fp).size; } catch { /* file missing */ }
     if (!lastUpload || img.uploaded > lastUpload) lastUpload = img.uploaded;
   }
+  let visitorCount = null;
+  try {
+    const vRaw = fs.readFileSync(VISITOR_STATS_PATH, 'utf8');
+    const vData = JSON.parse(vRaw);
+    visitorCount = typeof vData.count === 'number' ? vData.count : (Array.isArray(vData.uniqueHashes) ? vData.uniqueHashes.length : null);
+  } catch { /* no stats file yet */ }
   res.json({
     photoCount: manifest.images.length,
     totalBytes,
     lastUpload,
     uptime: Math.round(process.uptime()),
+    visitorCount,
   });
+});
+
+app.post('/api/visitor-count/reset', apiLimiter, async (req, res, next) => {
+  try {
+    const now = new Date().toISOString();
+    const fresh = { uniqueHashes: [], count: 0, createdAt: now, updatedAt: now };
+    const tmp = VISITOR_STATS_PATH + '.tmp';
+    fs.mkdirSync(path.dirname(VISITOR_STATS_PATH), { recursive: true });
+    fs.writeFileSync(tmp, JSON.stringify(fresh, null, 2), 'utf8');
+    fs.renameSync(tmp, VISITOR_STATS_PATH);
+    auditLog('visitor_count_reset', 'count reset to 0', req);
+    res.json({ message: 'Visitor count reset' });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // --- API: site config (A4 / A5) ---

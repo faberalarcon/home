@@ -25,9 +25,22 @@
   <div class="stat-card"><span class="stat-value" id="statDisk">—</span><span class="stat-label">Disk used</span></div>
   <div class="stat-card"><span class="stat-value" id="statUpload">—</span><span class="stat-label">Last upload</span></div>
   <div class="stat-card"><span class="stat-value" id="statUptime">—</span><span class="stat-label">Uptime</span></div>
+  <div class="stat-card"><span class="stat-value" id="statVisitors">—</span><span class="stat-label">Unique visitors</span></div>
 </div>
 
 <div class="container">
+
+  <!-- Visitor counter reset -->
+  <div class="content-card">
+    <h3 class="content-card-title">Visitor Counter</h3>
+    <p class="content-card-desc">Unique visitors shown in the site footer (updated hourly). Reset if inflated by bots.</p>
+    <div class="visitor-reset-row">
+      <span id="visitorCountDisplay">— unique visitors recorded</span>
+      <button class="btn-sm btn-outline-red" id="resetVisitorBtn">Reset count</button>
+    </div>
+  </div>
+
+  <hr class="section-divider" />
 
   <!-- Upload zone -->
   <div class="upload-zone" id="dropZone">

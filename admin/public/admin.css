@@ -564,6 +564,8 @@ header .home-link:hover { background: rgba(255,255,255,0.1); }
 }
 .btn-add-tip:hover { border-color: var(--accent); background: var(--accent-light); }
 .content-actions { margin-top: 1rem; display: flex; justify-content: flex-end; }
+.visitor-reset-row { display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap; }
+.visitor-reset-row span { color: var(--text-secondary); font-size: 0.9rem; }
 .btn-save-content {
   background: var(--accent);
   color: white;
