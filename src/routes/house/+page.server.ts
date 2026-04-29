@@ -1,3 +1,4 @@
+import { env } from '$env/dynamic/private';
 import { getStates, getHistory, ENTITIES } from '$lib/server/home-assistant';
 import { getDailyForecast, getHourlyOutdoorTemps, getCurrentWeather } from '$lib/server/weather';
 import type { PageServerLoad } from './$types';
@@ -17,6 +18,22 @@ type RangeKey = keyof typeof RANGES;
 function parseRange(v: string | null): RangeKey {
   if (v === '1d' || v === '7d' || v === '30d' || v === '90d') return v;
   return '7d';
+}
+
+function parseCostRate(): number {
+  const rate = parseFloat(env.EV_COST_PER_KWH ?? '');
+  return Number.isFinite(rate) && rate >= 0 ? rate : 0.12;
+}
+
+function roundTo(value: number, decimals: number): number {
+  const m = 10 ** decimals;
+  return Math.round(value * m) / m;
+}
+
+function numericState(state: { state: string } | null): number | null {
+  if (!state || state.state === 'unknown' || state.state === 'unavailable') return null;
+  const n = parseFloat(state.state);
+  return Number.isFinite(n) ? n : null;
 }
 
 function localParts(ts: number, tz: string): Record<string, string> {
@@ -99,7 +116,9 @@ export const load: PageServerLoad = async ({ url }) => {
     currentOutdoor,
     bedroomTVHistory,
     livingTVHistory,
-    forecast
+    forecast,
+    wallEnergyHistory,
+    wallPowerHistory
   ] = await Promise.all([
     getStates(Object.values(ENTITIES)).catch(() => new Map()),
     getHistory(ENTITIES.indoorTemp, sevenDaysAgo, new Date(now)).catch(() => []),
@@ -107,7 +126,17 @@ export const load: PageServerLoad = async ({ url }) => {
     getCurrentWeather().catch(() => null),
     getHistory(ENTITIES.bedroomTV, rangeStart, new Date(now)).catch(() => []),
     getHistory(ENTITIES.livingRoomTV, rangeStart, new Date(now)).catch(() => []),
-    getDailyForecast().catch(() => [])
+    getDailyForecast().catch(() => []),
+    getHistory(ENTITIES.wallConnectorEnergy, rangeStart, new Date(now), {
+      minimalResponse: false,
+      noAttributes: true,
+      significantChangesOnly: false
+    }).catch(() => []),
+    getHistory(ENTITIES.wallConnectorTotalPower, rangeStart, new Date(now), {
+      minimalResponse: false,
+      noAttributes: true,
+      significantChangesOnly: false
+    }).catch(() => [])
   ]);
 
   const get = (key: keyof typeof ENTITIES) => {
@@ -147,6 +176,17 @@ export const load: PageServerLoad = async ({ url }) => {
   const fmtDay = new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: 'short', day: 'numeric' });
   const fmtHour = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric' });
 
+  function bucketMeta(i: number): { time: string; key: string } {
+    const edge = bucketEdges[i];
+    const p = localParts(edge, TZ);
+    const time = bucketLabel === 'hour' ? fmtHour.format(edge) : fmtDay.format(edge);
+    const key =
+      bucketLabel === 'hour'
+        ? `${p.year}-${p.month}-${p.day}T${p.hour}`
+        : `${p.year}-${p.month}-${p.day}`;
+    return { time, key };
+  }
+
   function tvOnHoursPerBucket(
     history: { state: string; last_changed: string }[]
   ): { time: string; hours: number; key: string }[] {
@@ -177,14 +217,86 @@ export const load: PageServerLoad = async ({ url }) => {
     }
 
     return slots.map((h, i) => {
-      const edge = bucketEdges[i];
-      const p = localParts(edge, TZ);
-      const time = bucketLabel === 'hour' ? fmtHour.format(edge) : fmtDay.format(edge);
-      const key =
-        bucketLabel === 'hour'
-          ? `${p.year}-${p.month}-${p.day}T${p.hour}`
-          : `${p.year}-${p.month}-${p.day}`;
+      const { time, key } = bucketMeta(i);
       return { time, hours: Math.round(h * 10) / 10, key };
+    });
+  }
+
+  function numericHistory(history: { state: string; last_changed: string }[]) {
+    return history
+      .map((entry) => ({
+        value: parseFloat(entry.state),
+        ts: new Date(entry.last_changed).getTime()
+      }))
+      .filter((entry) => Number.isFinite(entry.value) && Number.isFinite(entry.ts))
+      .sort((a, b) => a.ts - b.ts);
+  }
+
+  function energyPerBucket(
+    history: { state: string; last_changed: string }[],
+    costRate: number
+  ): { time: string; kwh: number; cost: number; key: string }[] {
+    const slots = Array.from({ length: buckets }, () => 0);
+    const rows = numericHistory(history);
+    if (rows.length < 2) return [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const prev = rows[i - 1];
+      const curr = rows[i];
+      const delta = curr.value - prev.value;
+      if (delta <= 0) continue;
+
+      const segStart = Math.max(prev.ts, oldest);
+      const segEnd = Math.min(curr.ts, rightEdge, now);
+      if (segEnd <= segStart) continue;
+
+      const duration = curr.ts - prev.ts;
+      if (duration <= 0) continue;
+
+      let cursor = segStart;
+      while (cursor < segEnd) {
+        const idx = findBucket(bucketEdges, cursor);
+        if (idx < 0 || idx >= buckets) break;
+        const chunkEnd = Math.min(segEnd, bucketEdges[idx + 1]);
+        const share = (chunkEnd - cursor) / duration;
+        slots[idx] += delta * share;
+        cursor = chunkEnd;
+      }
+    }
+
+    return slots.map((kwh, i) => {
+      const { time, key } = bucketMeta(i);
+      const roundedKwh = roundTo(kwh, 2);
+      return {
+        time,
+        kwh: roundedKwh,
+        cost: roundTo(roundedKwh * costRate, 2),
+        key
+      };
+    });
+  }
+
+  function averagePowerPerBucket(
+    history: { state: string; last_changed: string }[]
+  ): { time: string; kw: number; key: string }[] {
+    const slots = Array.from({ length: buckets }, () => ({ sum: 0, count: 0 }));
+    if (!history.length) return [];
+
+    for (const entry of numericHistory(history)) {
+      if (entry.ts < oldest || entry.ts > Math.min(rightEdge, now)) continue;
+      const idx = findBucket(bucketEdges, entry.ts);
+      if (idx < 0 || idx >= buckets) continue;
+      slots[idx].sum += entry.value;
+      slots[idx].count++;
+    }
+
+    return slots.map((slot, i) => {
+      const { time, key } = bucketMeta(i);
+      return {
+        time,
+        kw: slot.count > 0 ? roundTo(slot.sum / slot.count, 2) : 0,
+        key
+      };
     });
   }
 
@@ -202,6 +314,28 @@ export const load: PageServerLoad = async ({ url }) => {
   const indoorBuckets = bucketHourly(indoorHistory, 168);
   const bedroomTVBuckets = tvOnHoursPerBucket(bedroomTVHistory);
   const livingTVBuckets = tvOnHoursPerBucket(livingTVHistory);
+  const costRate = parseCostRate();
+  const wallEnergyBuckets = energyPerBucket(wallEnergyHistory, costRate);
+  const wallPowerBuckets = averagePowerPerBucket(wallPowerHistory);
+  const wallPower = numericState(get('wallConnectorTotalPower'));
+  const wallSessionEnergy = numericState(get('wallConnectorSessionEnergy'));
+  const wallTotalEnergy = numericState(get('wallConnectorEnergy'));
+  const wallGridVoltage = numericState(get('wallConnectorGridVoltage'));
+  const wallCurrents = [
+    numericState(get('wallConnectorPhaseACurrent')),
+    numericState(get('wallConnectorPhaseBCurrent')),
+    numericState(get('wallConnectorPhaseCCurrent'))
+  ].filter((v): v is number => v !== null);
+  const wallLineCurrent = wallCurrents.length ? Math.max(...wallCurrents) : null;
+  const wallConnected = get('wallConnectorVehicleConnected')?.state === 'on';
+  const wallCharging =
+    get('wallConnectorContactorClosed')?.state === 'on' ||
+    get('wallConnectorStatus')?.state === 'charging' ||
+    (wallPower !== null && wallPower > 0.1);
+  const wallRangeKwh = roundTo(
+    wallEnergyBuckets.reduce((sum, bucket) => sum + bucket.kwh, 0),
+    2
+  );
 
   return {
     range,
@@ -225,13 +359,35 @@ export const load: PageServerLoad = async ({ url }) => {
       gamerscore: get('gamerscore'),
       nowPlaying: get('nowPlaying'),
       download: get('downloadSpeed'),
-      upload: get('uploadSpeed')
+      upload: get('uploadSpeed'),
+      wallConnector: {
+        status: get('wallConnectorStatus'),
+        vehicleConnected: get('wallConnectorVehicleConnected'),
+        contactorClosed: get('wallConnectorContactorClosed'),
+        connected: wallConnected,
+        charging: wallCharging,
+        powerKw: wallPower,
+        sessionKwh: wallSessionEnergy,
+        totalKwh: wallTotalEnergy,
+        gridVoltage: wallGridVoltage,
+        lineCurrent: wallLineCurrent,
+        handleTemp: numericState(get('wallConnectorHandleTemp')),
+        pcbTemp: numericState(get('wallConnectorPcbTemp')),
+        mcuTemp: numericState(get('wallConnectorMcuTemp')),
+        costRate,
+        rangeKwh: wallRangeKwh,
+        rangeCost: roundTo(wallRangeKwh * costRate, 2),
+        coverageDays: oldestDataAge(wallEnergyHistory),
+        requestedDays: days
+      }
     },
     charts: {
       indoorTemp: indoorBuckets,
       outdoorTemp: outdoorBuckets,
       bedroomTVHours: bedroomTVBuckets,
-      livingTVHours: livingTVBuckets
+      livingTVHours: livingTVBuckets,
+      wallConnectorEnergy: wallEnergyBuckets,
+      wallConnectorPower: wallPowerBuckets
     },
     forecast
   };

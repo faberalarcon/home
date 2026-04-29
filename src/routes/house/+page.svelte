@@ -37,6 +37,42 @@
     return `${daysAvailable + 1} of ${requested} days (HA retention limit)`;
   }
 
+  function formatNumber(value: number | null, decimals = 1): string {
+    if (value === null || !Number.isFinite(value)) return '—';
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+  }
+
+  function formatMoney(value: number | null): string {
+    if (value === null || !Number.isFinite(value)) return '—';
+    return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  }
+
+  function formatCostRate(value: number): string {
+    return value.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 3
+    });
+  }
+
+  function connectorStatusLabel(c: typeof data.ha.wallConnector): string {
+    if (c.charging) return 'Charging';
+    if (c.connected) return 'Connected';
+    if (c.status?.state) return c.status.state.replace(/_/g, ' ').replace(/\b\w/g, (m: string) => m.toUpperCase());
+    return '—';
+  }
+
+  function connectorDetail(c: typeof data.ha.wallConnector): string {
+    const details = [];
+    if (c.gridVoltage !== null) details.push(`${formatNumber(c.gridVoltage, 0)} V`);
+    if (c.lineCurrent !== null) details.push(`${formatNumber(c.lineCurrent, 1)} A`);
+    return details.join(' / ');
+  }
+
   type WxInfo = { icon: string; color: string };
   function wxInfo(code: number): WxInfo {
     if (code === 0) return { icon: '☀️', color: 'var(--color-weather-sun)' };
@@ -106,6 +142,120 @@
         sublabel={data.ha.upload ? `↑ ${formatSpeed(parseFloat(data.ha.upload.state))}` : ''}
       />
     </div>
+  </section>
+
+  <section class="house__section reveal">
+    <SectionHeader title="Charging" meta="Tesla Wall Connector" />
+    <div class="badges">
+      <StatusBadge
+        label="Vehicle"
+        active={data.ha.wallConnector.connected}
+        activeText="Connected"
+        inactiveText="Not connected"
+      />
+      <StatusBadge
+        label="Charging"
+        active={data.ha.wallConnector.charging}
+        activeText="Active"
+        inactiveText="Idle"
+      />
+    </div>
+    <div class="stat-grid">
+      <StatCard
+        label="Connector"
+        value={connectorStatusLabel(data.ha.wallConnector)}
+        sublabel={data.ha.wallConnector.status?.state ?? ''}
+        accent={data.ha.wallConnector.charging}
+      />
+      <StatCard
+        label="Power"
+        value={formatNumber(data.ha.wallConnector.powerKw, 1)}
+        unit="kW"
+        sublabel={connectorDetail(data.ha.wallConnector)}
+      />
+      <StatCard
+        label="Session energy"
+        value={formatNumber(data.ha.wallConnector.sessionKwh, 1)}
+        unit="kWh"
+        sublabel={data.ha.wallConnector.totalKwh !== null ? `${formatNumber(data.ha.wallConnector.totalKwh, 0)} kWh lifetime` : ''}
+      />
+      <StatCard
+        label="Range energy"
+        value={formatNumber(data.ha.wallConnector.rangeKwh, 1)}
+        unit="kWh"
+        sublabel={rangeLabels[data.range]}
+      />
+      <StatCard
+        label="Est. cost"
+        value={formatMoney(data.ha.wallConnector.rangeCost)}
+        sublabel={`${formatCostRate(data.ha.wallConnector.costRate)}/kWh`}
+      />
+    </div>
+
+    <div class="house__range">
+      <p class="house__range-label">
+        Charging history &mdash; <em>{rangeLabels[data.range]}</em>
+      </p>
+      <div class="house__range-tabs" role="group" aria-label="Charging time range">
+        {#each rangeOptions as opt}
+          <a
+            href="?range={opt.value}"
+            data-sveltekit-noscroll
+            aria-current={data.range === opt.value ? 'page' : undefined}
+            class="house__range-tab"
+            class:house__range-tab--active={data.range === opt.value}
+          >{opt.label}</a>
+        {/each}
+      </div>
+    </div>
+
+    {#if data.charts.wallConnectorEnergy.length > 0 || data.charts.wallConnectorPower.length > 0}
+      <div class="figure-grid">
+        {#if data.charts.wallConnectorEnergy.length > 0}
+          <figure class="chart-panel">
+            <figcaption>Energy added</figcaption>
+            <p class="house__coverage">
+              {coverageNote(data.ha.wallConnector.coverageDays, data.ha.wallConnector.requestedDays)}
+            </p>
+            <div class="chart-panel__body">
+              <BarChart
+                labels={data.charts.wallConnectorEnergy.map(d => d.time)}
+                data={data.charts.wallConnectorEnergy.map(d => d.kwh)}
+                label="kWh"
+                unit=" kWh"
+                colors={data.charts.wallConnectorEnergy.map(() => 'var(--color-chart-charging)')}
+              />
+            </div>
+          </figure>
+        {/if}
+        {#if data.charts.wallConnectorPower.length > 0}
+          <figure class="chart-panel">
+            <figcaption>Average charging power</figcaption>
+            <div class="chart-panel__body">
+              <LineChart
+                labels={data.charts.wallConnectorPower.map(d => d.time)}
+                data={data.charts.wallConnectorPower.map(d => d.kw)}
+                label="kW"
+                unit=" kW"
+                color="var(--color-chart-charging)"
+                beginAtZero
+              />
+            </div>
+          </figure>
+        {/if}
+      </div>
+    {:else}
+      <p class="house__note">Charging history is not available yet. Live Wall Connector values will appear as Home Assistant reports them.</p>
+    {/if}
+
+    {#if data.ha.wallConnector.handleTemp !== null || data.ha.wallConnector.pcbTemp !== null || data.ha.wallConnector.mcuTemp !== null}
+      <p class="house__detail">
+        Temps:
+        {#if data.ha.wallConnector.handleTemp !== null}handle {formatNumber(data.ha.wallConnector.handleTemp, 0)}°F{/if}
+        {#if data.ha.wallConnector.pcbTemp !== null} / PCB {formatNumber(data.ha.wallConnector.pcbTemp, 0)}°F{/if}
+        {#if data.ha.wallConnector.mcuTemp !== null} / MCU {formatNumber(data.ha.wallConnector.mcuTemp, 0)}°F{/if}
+      </p>
+    {/if}
   </section>
 
   {#if data.charts.indoorTemp.length > 0 || data.charts.outdoorTemp.length > 0}
@@ -253,6 +403,12 @@
     margin: 0 0 2rem;
     font-family: var(--font-body);
     font-size: 0.875rem;
+    color: var(--color-ink-500);
+  }
+  .house__detail {
+    margin: 1rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
     color: var(--color-ink-500);
   }
   .house__section { margin: 3rem 0; }

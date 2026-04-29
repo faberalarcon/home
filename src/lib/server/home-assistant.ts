@@ -14,7 +14,14 @@ interface HAHistoryEntry {
   entity_id: string;
   state: string;
   last_changed: string;
-  attributes: Record<string, unknown>;
+  last_updated?: string;
+  attributes?: Record<string, unknown>;
+}
+
+interface HAHistoryOptions {
+  minimalResponse?: boolean;
+  noAttributes?: boolean;
+  significantChangesOnly?: boolean;
 }
 
 function getConfig() {
@@ -57,14 +64,24 @@ export async function getStates(entityIds: string[]): Promise<Map<string, HAStat
 export async function getHistory(
   entityId: string,
   startTime: Date,
-  endTime?: Date
+  endTime?: Date,
+  options: HAHistoryOptions = {}
 ): Promise<HAHistoryEntry[]> {
+  const {
+    minimalResponse = true,
+    noAttributes = true,
+    significantChangesOnly
+  } = options;
   const start = startTime.toISOString();
-  let path = `/api/history/period/${start}?filter_entity_id=${entityId}&minimal_response&no_attributes`;
+  const params = [`filter_entity_id=${encodeURIComponent(entityId)}`];
+  if (minimalResponse) params.push('minimal_response');
+  if (noAttributes) params.push('no_attributes');
+  if (significantChangesOnly === false) params.push('significant_changes_only=0');
   if (endTime) {
-    path += `&end_time=${endTime.toISOString()}`;
+    params.push(`end_time=${encodeURIComponent(endTime.toISOString())}`);
   }
 
+  const path = `/api/history/period/${start}?${params.join('&')}`;
   const data = await haFetch<HAHistoryEntry[][]>(path);
   return data[0] ?? [];
 }
@@ -95,7 +112,20 @@ export const ENTITIES = {
   weather: 'weather.forecast_home',
   sun: 'sun.sun',
   sunrise: 'sensor.sun_next_rising',
-  sunset: 'sensor.sun_next_setting'
+  sunset: 'sensor.sun_next_setting',
+  wallConnectorVehicleConnected: 'binary_sensor.tesla_wall_connector_vehicle_connected',
+  wallConnectorContactorClosed: 'binary_sensor.tesla_wall_connector_contactor_closed',
+  wallConnectorStatus: 'sensor.tesla_wall_connector_status',
+  wallConnectorHandleTemp: 'sensor.tesla_wall_connector_handle_temperature',
+  wallConnectorPcbTemp: 'sensor.tesla_wall_connector_pcb_temperature',
+  wallConnectorMcuTemp: 'sensor.tesla_wall_connector_mcu_temperature',
+  wallConnectorGridVoltage: 'sensor.tesla_wall_connector_grid_voltage',
+  wallConnectorPhaseACurrent: 'sensor.tesla_wall_connector_phase_a_current',
+  wallConnectorPhaseBCurrent: 'sensor.tesla_wall_connector_phase_b_current',
+  wallConnectorPhaseCCurrent: 'sensor.tesla_wall_connector_phase_c_current',
+  wallConnectorTotalPower: 'sensor.tesla_wall_connector_total_power',
+  wallConnectorSessionEnergy: 'sensor.tesla_wall_connector_session_energy',
+  wallConnectorEnergy: 'sensor.tesla_wall_connector_energy'
 } as const;
 
 export type EntityKey = keyof typeof ENTITIES;
