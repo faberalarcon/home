@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { onMount, untrack } from 'svelte';
 
   let {
@@ -26,9 +27,10 @@
     return { num: n, prefix: '', suffix: m[2] };
   }
 
-  const parsed = untrack(() => parseNumeric(value));
-  const target = parsed?.num ?? 0;
-  let display = $state<string>(parsed ? formatNum(0, target) : untrack(() => String(value)));
+  let display = $state<string>(untrack(() => formatValue(value)));
+  let previousNumber: number | null = untrack(() => parseNumeric(value)?.num ?? null);
+  let mounted = false;
+  let raf = 0;
 
   function formatNum(n: number, ref: number): string {
     const decimals = Number.isInteger(ref) ? 0 : Math.min(2, String(ref).split('.')[1]?.length ?? 0);
@@ -39,23 +41,50 @@
     });
   }
 
-  onMount(() => {
-    if (!parsed) return;
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      display = formatNum(target, target) + parsed.suffix;
-      return;
-    }
-    const duration = 800;
+  function formatValue(raw: string | number): string {
+    const parsed = parseNumeric(raw);
+    return parsed ? formatNum(parsed.num, parsed.num) + parsed.suffix : String(raw);
+  }
+
+  function animateValue(from: number, to: number, suffix: string): void {
+    cancelAnimationFrame(raf);
+    const duration = 450;
     const start = performance.now();
-    let raf = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - t, 3);
-      display = formatNum(target * eased, target) + parsed.suffix;
+      display = formatNum(from + (to - from) * eased, to) + suffix;
       if (t < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
+  }
+
+  onMount(() => {
+    mounted = true;
     return () => cancelAnimationFrame(raf);
+  });
+
+  $effect(() => {
+    const parsed = parseNumeric(value);
+    const nextDisplay = formatValue(value);
+
+    if (!browser || !mounted || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      display = nextDisplay;
+      previousNumber = parsed?.num ?? null;
+      return;
+    }
+
+    if (!parsed || previousNumber === null) {
+      cancelAnimationFrame(raf);
+      display = nextDisplay;
+      previousNumber = parsed?.num ?? null;
+      return;
+    }
+
+    if (previousNumber !== parsed.num) {
+      animateValue(previousNumber, parsed.num, parsed.suffix);
+      previousNumber = parsed.num;
+    }
   });
 </script>
 

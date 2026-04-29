@@ -24,6 +24,23 @@ interface HAHistoryOptions {
   significantChangesOnly?: boolean;
 }
 
+export interface HAStatisticPoint {
+  start: string;
+  end: string;
+  state?: number;
+  sum?: number;
+  change?: number;
+  mean?: number;
+  min?: number;
+  max?: number;
+}
+
+interface HAStatisticsResponse {
+  service_response?: {
+    statistics?: Record<string, HAStatisticPoint[]>;
+  };
+}
+
 function getConfig() {
   const baseUrl = env.HA_BASE_URL || 'http://ai.local:8123';
   const token = env.HA_TOKEN || '';
@@ -36,6 +53,27 @@ async function haFetch<T>(path: string): Promise<T> {
 
   const res = await fetch(`${baseUrl}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(HA_TIMEOUT)
+  });
+
+  if (!res.ok) {
+    throw new Error(`HA API ${res.status}: ${res.statusText}`);
+  }
+
+  return res.json() as Promise<T>;
+}
+
+async function haPost<T>(path: string, body: unknown): Promise<T> {
+  const { baseUrl, token } = getConfig();
+  if (!token) throw new Error('HA_TOKEN not configured');
+
+  const res = await fetch(`${baseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body),
     signal: AbortSignal.timeout(HA_TIMEOUT)
   });
 
@@ -84,6 +122,24 @@ export async function getHistory(
   const path = `/api/history/period/${start}?${params.join('&')}`;
   const data = await haFetch<HAHistoryEntry[][]>(path);
   return data[0] ?? [];
+}
+
+export async function getStatistics(
+  entityIds: string[],
+  startTime: Date,
+  endTime: Date,
+  period: '5minute' | 'hour' | 'day' | 'week' | 'month',
+  types: Array<'change' | 'last_reset' | 'max' | 'mean' | 'min' | 'state' | 'sum'>
+): Promise<Record<string, HAStatisticPoint[]>> {
+  const data = await haPost<HAStatisticsResponse>('/api/services/recorder/get_statistics?return_response', {
+    statistic_ids: entityIds,
+    start_time: startTime.toISOString(),
+    end_time: endTime.toISOString(),
+    period,
+    types
+  });
+
+  return data.service_response?.statistics ?? {};
 }
 
 export async function isAvailable(): Promise<boolean> {

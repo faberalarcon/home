@@ -215,7 +215,7 @@
           <figure class="chart-panel">
             <figcaption>Energy added</figcaption>
             <p class="house__coverage">
-              {coverageNote(data.ha.wallConnector.coverageDays, data.ha.wallConnector.requestedDays)}
+              {data.ha.wallConnector.historyLabel}
             </p>
             <div class="chart-panel__body">
               <BarChart

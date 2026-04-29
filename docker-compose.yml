@@ -20,6 +20,7 @@ services:
       - XFF_DEPTH=1
       - HA_BASE_URL=${HA_BASE_URL:-http://ai.local:8123}
       - HA_TOKEN=${HA_TOKEN:-}
+      - EV_COST_PER_KWH=${EV_COST_PER_KWH:-0.12}
       - DRINK_HUB_URL=${DRINK_HUB_URL:-https://drink-hub.21bristoe.com}
       - TZ=${TZ:-America/New_York}
     volumes:

@@ -1,5 +1,6 @@
 import { env } from '$env/dynamic/private';
-import { getStates, getHistory, ENTITIES } from '$lib/server/home-assistant';
+import { getStates, getHistory, getStatistics, ENTITIES } from '$lib/server/home-assistant';
+import type { HAStatisticPoint } from '$lib/server/home-assistant';
 import { getDailyForecast, getHourlyOutdoorTemps, getCurrentWeather } from '$lib/server/weather';
 import type { PageServerLoad } from './$types';
 
@@ -108,6 +109,7 @@ export const load: PageServerLoad = async ({ url }) => {
   const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
   // 24h pad so HA returns the state active at the oldest bucket boundary.
   const rangeStart = new Date(oldest - 24 * 3600000);
+  const statisticsPeriod = bucketLabel === 'hour' ? 'hour' : 'day';
 
   const [
     haStates,
@@ -117,8 +119,7 @@ export const load: PageServerLoad = async ({ url }) => {
     bedroomTVHistory,
     livingTVHistory,
     forecast,
-    wallEnergyHistory,
-    wallPowerHistory
+    wallStatistics
   ] = await Promise.all([
     getStates(Object.values(ENTITIES)).catch(() => new Map()),
     getHistory(ENTITIES.indoorTemp, sevenDaysAgo, new Date(now)).catch(() => []),
@@ -127,16 +128,13 @@ export const load: PageServerLoad = async ({ url }) => {
     getHistory(ENTITIES.bedroomTV, rangeStart, new Date(now)).catch(() => []),
     getHistory(ENTITIES.livingRoomTV, rangeStart, new Date(now)).catch(() => []),
     getDailyForecast().catch(() => []),
-    getHistory(ENTITIES.wallConnectorEnergy, rangeStart, new Date(now), {
-      minimalResponse: false,
-      noAttributes: true,
-      significantChangesOnly: false
-    }).catch(() => []),
-    getHistory(ENTITIES.wallConnectorTotalPower, rangeStart, new Date(now), {
-      minimalResponse: false,
-      noAttributes: true,
-      significantChangesOnly: false
-    }).catch(() => [])
+    getStatistics(
+      [ENTITIES.wallConnectorEnergy, ENTITIES.wallConnectorTotalPower],
+      new Date(oldest),
+      new Date(Math.min(rightEdge, now)),
+      statisticsPeriod,
+      ['change', 'state', 'sum', 'mean', 'min', 'max']
+    ).catch((): Record<string, HAStatisticPoint[]> => ({}))
   ]);
 
   const get = (key: keyof typeof ENTITIES) => {
@@ -222,82 +220,96 @@ export const load: PageServerLoad = async ({ url }) => {
     });
   }
 
-  function numericHistory(history: { state: string; last_changed: string }[]) {
-    return history
-      .map((entry) => ({
-        value: parseFloat(entry.state),
-        ts: new Date(entry.last_changed).getTime()
-      }))
-      .filter((entry) => Number.isFinite(entry.value) && Number.isFinite(entry.ts))
-      .sort((a, b) => a.ts - b.ts);
+  function statisticsKey(start: string): string | null {
+    const ts = new Date(start).getTime();
+    if (!Number.isFinite(ts)) return null;
+    const p = localParts(ts, TZ);
+    return bucketLabel === 'hour'
+      ? `${p.year}-${p.month}-${p.day}T${p.hour}`
+      : `${p.year}-${p.month}-${p.day}`;
   }
 
-  function energyPerBucket(
-    history: { state: string; last_changed: string }[],
+  function energyFromStatistics(
+    statistics: HAStatisticPoint[],
     costRate: number
-  ): { time: string; kwh: number; cost: number; key: string }[] {
-    const slots = Array.from({ length: buckets }, () => 0);
-    const rows = numericHistory(history);
-    if (rows.length < 2) return [];
-
-    for (let i = 1; i < rows.length; i++) {
-      const prev = rows[i - 1];
-      const curr = rows[i];
-      const delta = curr.value - prev.value;
-      if (delta <= 0) continue;
-
-      const segStart = Math.max(prev.ts, oldest);
-      const segEnd = Math.min(curr.ts, rightEdge, now);
-      if (segEnd <= segStart) continue;
-
-      const duration = curr.ts - prev.ts;
-      if (duration <= 0) continue;
-
-      let cursor = segStart;
-      while (cursor < segEnd) {
-        const idx = findBucket(bucketEdges, cursor);
-        if (idx < 0 || idx >= buckets) break;
-        const chunkEnd = Math.min(segEnd, bucketEdges[idx + 1]);
-        const share = (chunkEnd - cursor) / duration;
-        slots[idx] += delta * share;
-        cursor = chunkEnd;
-      }
+  ): {
+    buckets: { time: string; kwh: number; cost: number; key: string }[];
+    totalKwh: number;
+    firstRecorded: string | null;
+  } {
+    if (!statistics.length) {
+      return { buckets: [], totalKwh: 0, firstRecorded: null };
     }
 
-    return slots.map((kwh, i) => {
+    const slots = Array.from({ length: buckets }, () => 0);
+    const indexByKey = new Map<string, number>();
+    for (let i = 0; i < buckets; i++) {
+      indexByKey.set(bucketMeta(i).key, i);
+    }
+
+    let firstRecorded: string | null = null;
+    for (const point of statistics) {
+      if (!firstRecorded) firstRecorded = point.start;
+      const key = statisticsKey(point.start);
+      const idx = key ? indexByKey.get(key) : undefined;
+      const change = point.change ?? 0;
+      if (idx === undefined || !Number.isFinite(change) || change <= 0) {
+        continue;
+      }
+      slots[idx] += change;
+    }
+
+    const totalKwh = slots.reduce((sum, kwh) => sum + kwh, 0);
+    return {
+      buckets: slots.map((kwh, i) => {
+        const { time, key } = bucketMeta(i);
+        const roundedKwh = roundTo(kwh, 2);
+        return {
+          time,
+          kwh: roundedKwh,
+          cost: roundTo(kwh * costRate, 2),
+          key
+        };
+      }),
+      totalKwh,
+      firstRecorded
+    };
+  }
+
+  function powerFromStatistics(
+    statistics: HAStatisticPoint[]
+  ): { time: string; kw: number; key: string }[] {
+    if (!statistics.length) return [];
+
+    const slots = Array.from({ length: buckets }, () => 0);
+    const indexByKey = new Map<string, number>();
+    for (let i = 0; i < buckets; i++) {
+      indexByKey.set(bucketMeta(i).key, i);
+    }
+
+    for (const point of statistics) {
+      const key = statisticsKey(point.start);
+      const idx = key ? indexByKey.get(key) : undefined;
+      const value = point.mean ?? point.max ?? 0;
+      if (idx === undefined || !Number.isFinite(value)) continue;
+      slots[idx] = value;
+    }
+
+    return slots.map((kw, i) => {
       const { time, key } = bucketMeta(i);
-      const roundedKwh = roundTo(kwh, 2);
       return {
         time,
-        kwh: roundedKwh,
-        cost: roundTo(roundedKwh * costRate, 2),
+        kw: roundTo(kw, 2),
         key
       };
     });
   }
 
-  function averagePowerPerBucket(
-    history: { state: string; last_changed: string }[]
-  ): { time: string; kw: number; key: string }[] {
-    const slots = Array.from({ length: buckets }, () => ({ sum: 0, count: 0 }));
-    if (!history.length) return [];
-
-    for (const entry of numericHistory(history)) {
-      if (entry.ts < oldest || entry.ts > Math.min(rightEdge, now)) continue;
-      const idx = findBucket(bucketEdges, entry.ts);
-      if (idx < 0 || idx >= buckets) continue;
-      slots[idx].sum += entry.value;
-      slots[idx].count++;
-    }
-
-    return slots.map((slot, i) => {
-      const { time, key } = bucketMeta(i);
-      return {
-        time,
-        kw: slot.count > 0 ? roundTo(slot.sum / slot.count, 2) : 0,
-        key
-      };
-    });
+  function formatRecordedSince(firstRecorded: string | null): string {
+    if (!firstRecorded) return 'no statistics yet';
+    const ts = new Date(firstRecorded).getTime();
+    if (!Number.isFinite(ts)) return 'statistics available';
+    return `recorded since ${fmtDay.format(ts)}`;
   }
 
   function oldestDataAge(history: { last_changed: string }[]): number | null {
@@ -315,8 +327,11 @@ export const load: PageServerLoad = async ({ url }) => {
   const bedroomTVBuckets = tvOnHoursPerBucket(bedroomTVHistory);
   const livingTVBuckets = tvOnHoursPerBucket(livingTVHistory);
   const costRate = parseCostRate();
-  const wallEnergyBuckets = energyPerBucket(wallEnergyHistory, costRate);
-  const wallPowerBuckets = averagePowerPerBucket(wallPowerHistory);
+  const wallEnergyStats = wallStatistics[ENTITIES.wallConnectorEnergy] ?? [];
+  const wallPowerStats = wallStatistics[ENTITIES.wallConnectorTotalPower] ?? [];
+  const wallEnergy = energyFromStatistics(wallEnergyStats, costRate);
+  const wallEnergyBuckets = wallEnergy.buckets;
+  const wallPowerBuckets = powerFromStatistics(wallPowerStats);
   const wallPower = numericState(get('wallConnectorTotalPower'));
   const wallSessionEnergy = numericState(get('wallConnectorSessionEnergy'));
   const wallTotalEnergy = numericState(get('wallConnectorEnergy'));
@@ -332,10 +347,8 @@ export const load: PageServerLoad = async ({ url }) => {
     get('wallConnectorContactorClosed')?.state === 'on' ||
     get('wallConnectorStatus')?.state === 'charging' ||
     (wallPower !== null && wallPower > 0.1);
-  const wallRangeKwh = roundTo(
-    wallEnergyBuckets.reduce((sum, bucket) => sum + bucket.kwh, 0),
-    2
-  );
+  const wallRangeKwh = roundTo(wallEnergy.totalKwh, 2);
+  const wallRangeCost = roundTo(wallEnergy.totalKwh * costRate, 2);
 
   return {
     range,
@@ -376,8 +389,8 @@ export const load: PageServerLoad = async ({ url }) => {
         mcuTemp: numericState(get('wallConnectorMcuTemp')),
         costRate,
         rangeKwh: wallRangeKwh,
-        rangeCost: roundTo(wallRangeKwh * costRate, 2),
-        coverageDays: oldestDataAge(wallEnergyHistory),
+        rangeCost: wallRangeCost,
+        historyLabel: formatRecordedSince(wallEnergy.firstRecorded),
         requestedDays: days
       }
     },
