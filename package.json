@@ -13,8 +13,10 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.0.0",
+    "@ip-location-db/dbip-city-mmdb": "^2.3.2026040119",
     "@tailwindcss/vite": "^4.0.0",
     "astro": "^6.1.5",
+    "maxmind": "^5.0.6",
     "suncalc": "^1.9.0",
     "tailwindcss": "^4.0.0"
   }
