@@ -1,7 +1,7 @@
 <script lang="ts">
   import SectionHeader from '$lib/components/SectionHeader.svelte';
   import StatCard from '$lib/components/StatCard.svelte';
-  import { TIERS, humanAge, formatBytes, formatDuration } from '$lib/backups';
+  import { TIERS, humanAge, formatBytes, formatDuration, tierNotDueYet, backupAgeLabel } from '$lib/backups';
   import type { BackupTier, TierData, DriveHealth } from '$lib/backups';
 
   let { data } = $props();
@@ -21,7 +21,7 @@
   const used = $derived(pctUsed(drive));
 
   const TIER_META: Record<BackupTier, { label: string; cadence: string }> = {
-    daily:     { label: 'Daily',     cadence: 'every day at 03:00' },
+    daily:     { label: 'Rolling 7-day', cadence: 'retains the latest 7-day snapshot set' },
     weekly:    { label: 'Weekly',    cadence: 'Sundays at 03:30' },
     monthly:   { label: 'Monthly',   cadence: '1st of month at 04:00' },
     quarterly: { label: 'Quarterly', cadence: '1st of Jan/Apr/Jul/Oct at 04:30' }
@@ -32,7 +32,7 @@
   }
 
   function healthyTiers(m: typeof data.manifest): number {
-    return TIERS.filter((t) => m.tiers[t].last?.status === 'success').length;
+    return TIERS.filter((t) => m.tiers[t].last?.status === 'success' || tierNotDueYet(m, t)).length;
   }
 
   function lastOverall(m: typeof data.manifest): string | null {
@@ -115,9 +115,11 @@
           <tr>
             <td data-label="Tier" class="archive__tier-label">{meta.label}</td>
             <td data-label="Cadence"><em class="archive__cadence">{meta.cadence}</em></td>
-            <td data-label="Last run">{humanAge(t.last?.timestamp)}</td>
+            <td data-label="Last run">{backupAgeLabel(tier, t.last)}</td>
             <td data-label="Status">
-              {#if t.last}
+              {#if !t.last && tierNotDueYet(data.manifest, tier)}
+                <span class="dashboard-status dashboard-status--active">not due</span>
+              {:else if t.last}
                 <span
                   class="dashboard-status"
                   class:dashboard-status--active={t.last.status === 'success'}

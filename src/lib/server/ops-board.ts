@@ -4,7 +4,7 @@ import { getCurrentWeather, getDailyForecast, weatherCodeToDescription } from '$
 import { getVisitorLocationStats } from '$lib/server/visitors';
 import { getPiMetrics } from '$lib/server/pi-metrics';
 import { readBackupManifest } from '$lib/server/backups';
-import { TIERS, formatBytes, humanAge, parseTimestamp, staleness } from '$lib/backups';
+import { TIERS, backupAgeLabel, formatBytes, humanAge, staleness, tierNotDueYet } from '$lib/backups';
 import type { BackupManifest, BackupTier } from '$lib/backups';
 import type { DailyWeather } from '$lib/server/weather';
 
@@ -129,14 +129,6 @@ function ageMinutes(ts: number | string | null | undefined): number | null {
   return Math.max(0, Math.round((Date.now() - t) / 60000));
 }
 
-function ageHours(ts: string | null | undefined): number | null {
-  if (!ts) return null;
-  const d = parseTimestamp(ts) ?? new Date(ts);
-  const t = d.getTime();
-  if (!Number.isFinite(t)) return null;
-  return Math.max(0, (Date.now() - t) / 3600000);
-}
-
 function driveUsedPct(manifest: BackupManifest): number {
   const { totalBytes, freeBytes } = manifest.drive;
   if (!totalBytes) return 0;
@@ -154,7 +146,7 @@ function latestBackup(manifest: BackupManifest): string | null {
 
 function tierSeverity(manifest: BackupManifest, tier: BackupTier): Severity {
   const last = manifest.tiers[tier].last;
-  if (!last) return 'watch';
+  if (!last) return tierNotDueYet(manifest, tier) ? 'ok' : 'watch';
   if (last.status !== 'success') return 'attention';
   const stale = staleness(tier, last);
   if (stale === 'overdue') return 'attention';
@@ -168,8 +160,6 @@ function backupSeverity(manifest: BackupManifest): Severity {
   for (const tier of TIERS) {
     severity = highest(severity, tierSeverity(manifest, tier));
   }
-  const dailyAge = ageHours(manifest.tiers.daily.last?.timestamp);
-  if (dailyAge !== null && dailyAge >= 36) severity = highest(severity, 'watch');
   return severity;
 }
 
@@ -260,11 +250,12 @@ export async function getOpsBoard(): Promise<OpsBoard> {
   const backupTiers = TIERS.map((tier) => {
     const last = backups.tiers[tier].last;
     const sev = tierSeverity(backups, tier);
+    const pending = !last && tierNotDueYet(backups, tier);
     return {
       tier,
-      label: tier[0].toUpperCase() + tier.slice(1),
-      status: last?.status ?? 'missing',
-      age: humanAge(last?.timestamp),
+      label: tier === 'daily' ? 'Rolling 7-day' : tier[0].toUpperCase() + tier.slice(1),
+      status: pending ? 'not due' : last?.status ?? 'missing',
+      age: pending ? 'expected later' : backupAgeLabel(tier, last),
       severity: sev
     };
   });

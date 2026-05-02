@@ -54,6 +54,27 @@ export const DEFAULT_RETAIN: Record<BackupTier, number> = {
   quarterly: 4
 };
 
+export const BACKUP_CADENCE_HOURS: Record<BackupTier, number> = {
+  daily: 24 * 7,
+  weekly: 24 * 7,
+  monthly: 24 * 31,
+  quarterly: 24 * 93
+};
+
+export const BACKUP_DUE_GRACE_HOURS: Record<BackupTier, number> = {
+  daily: 24,
+  weekly: 2,
+  monthly: 2,
+  quarterly: 4
+};
+
+export const BACKUP_OVERDUE_GRACE_HOURS: Record<BackupTier, number> = {
+  daily: 48,
+  weekly: 12,
+  monthly: 24,
+  quarterly: 48
+};
+
 export function emptyTier(tier: BackupTier, retain: number): TierData {
   return {
     tier,
@@ -118,14 +139,36 @@ export function staleness(tier: BackupTier, last: BackupEntry | null): 'fresh' |
   const d = parseTimestamp(last.timestamp);
   if (!d) return 'unknown';
   const hoursSince = (Date.now() - d.getTime()) / 3600000;
-  const windows: Record<BackupTier, [number, number]> = {
-    daily: [26, 36],
-    weekly: [24 * 7 + 2, 24 * 7 + 12],
-    monthly: [24 * 31 + 2, 24 * 31 + 24],
-    quarterly: [24 * 93 + 4, 24 * 93 + 48]
-  };
-  const [due, overdue] = windows[tier];
+  const due = BACKUP_CADENCE_HOURS[tier] + BACKUP_DUE_GRACE_HOURS[tier];
+  const overdue = BACKUP_CADENCE_HOURS[tier] + BACKUP_OVERDUE_GRACE_HOURS[tier];
   if (hoursSince >= overdue) return 'overdue';
   if (hoursSince >= due) return 'due';
   return 'fresh';
+}
+
+export function backupAgeLabel(tier: BackupTier, last: BackupEntry | null): string {
+  if (tier === 'daily' && last?.status === 'success' && staleness(tier, last) === 'fresh') {
+    return 'current set';
+  }
+  return humanAge(last?.timestamp);
+}
+
+export function firstBackupTimestamp(manifest: BackupManifest): string | null {
+  let first: string | null = null;
+  for (const tier of TIERS) {
+    for (const entry of manifest.tiers[tier].history) {
+      if (!first || entry.timestamp < first) first = entry.timestamp;
+    }
+  }
+  return first;
+}
+
+export function tierNotDueYet(manifest: BackupManifest, tier: BackupTier): boolean {
+  if (manifest.tiers[tier].last) return false;
+  const first = firstBackupTimestamp(manifest);
+  if (!first) return true;
+  const d = parseTimestamp(first);
+  if (!d) return false;
+  const ageHours = (Date.now() - d.getTime()) / 3600000;
+  return ageHours < BACKUP_CADENCE_HOURS[tier] + BACKUP_OVERDUE_GRACE_HOURS[tier];
 }
