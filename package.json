@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node build/index.js",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "validate": "./deploy/validate.sh",
+    "validate:local": "./deploy/validate.sh --local"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.5.4",

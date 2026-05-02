@@ -27,11 +27,22 @@ npm install
 npm run dev    # http://localhost:5174
 ```
 
+## Validation
+
+```bash
+npm run validate:local  # against http://localhost:5174
+npm run validate        # against https://stats.21bristoe.com
+```
+
+The validation script checks the main dashboard routes, `/api/health` JSON, security headers, and production HTTPS/SSL behavior.
+Set `VALIDATE_BASE=http://127.0.0.1:<port>` when validating a server on a non-default local port.
+
 ## Deploy
 
 ```bash
 docker compose build
 docker compose up -d
+npm run validate
 ```
 
 ## Environment

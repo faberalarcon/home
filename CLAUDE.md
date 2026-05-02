@@ -4,9 +4,9 @@
 
 Every code change in this repo follows this cycle — no exceptions:
 
-1. **Smoke test locally**: `npm run dev` (port 5174) or `npm run build && PORT=5180 node build`. Curl affected routes (`/`, `/house`, `/drinks`, `/house?range=1d|7d|30d|90d`) and grep for markers of the change.
+1. **Smoke test locally**: `npm run dev` (port 5174) or `npm run build && PORT=5180 node build`. Curl affected routes (`/`, `/house`, `/drinks`, `/visitors`, `/backups`, `/pi`, `/house?range=1d|7d|30d|90d`) and grep for markers of the change. Run `npm run validate:local` when a local server is running.
 2. **Rebuild**: `npm run build` — must succeed before any commit. Run `npx svelte-check --tsconfig ./tsconfig.json` and confirm no new errors.
-3. **Redeploy**: `docker compose build && docker compose up -d` — rebuilds the production image and recreates the `21bristoe-stats` container. Verify with `curl -sIk https://stats.21bristoe.com/`.
+3. **Redeploy**: `docker compose build && docker compose up -d` — rebuilds the production image and recreates the `21bristoe-stats` container. Run `npm run validate` and verify with `curl -sIk https://stats.21bristoe.com/`.
 4. **Commit**: stage only files you touched; use a conventional, human-style message (see existing `git log --oneline`). **No Claude / AI attribution** (see Commit attribution section below).
 5. **Push**: `git push origin main`.
 
