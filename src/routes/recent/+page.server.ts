@@ -3,7 +3,7 @@ import { orders, profiles, drinks } from '$lib/server/db/schema';
 import { desc, eq, sql } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
+export function _loadRecentPageData() {
   const rows = db
     .select({
       id: orders.id,
@@ -21,4 +21,8 @@ export const load: PageServerLoad = async () => {
     .limit(50)
     .all();
   return { recent: rows };
+}
+
+export const load: PageServerLoad = async () => {
+  return _loadRecentPageData();
 };

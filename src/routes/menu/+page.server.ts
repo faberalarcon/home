@@ -3,7 +3,7 @@ import { drinks } from '$lib/server/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
+export function _loadMenuPageData() {
   const rows = db
     .select()
     .from(drinks)
@@ -11,4 +11,8 @@ export const load: PageServerLoad = async () => {
     .orderBy(asc(drinks.sortOrder), asc(drinks.name))
     .all();
   return { drinks: rows };
+}
+
+export const load: PageServerLoad = async () => {
+  return _loadMenuPageData();
 };

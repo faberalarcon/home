@@ -1,5 +1,7 @@
 <script lang="ts">
   import '../app.css';
+  import DrinkSwipeEnhancer from '$lib/components/DrinkSwipeEnhancer.svelte';
+  import DrinkTabShell from '$lib/components/DrinkTabShell.svelte';
   import HubNav from '$lib/components/HubNav.svelte';
   import { selectedProfile } from '$lib/profile';
   import { page } from '$app/stores';
@@ -16,6 +18,7 @@
 {#if $page.url.pathname === '/login'}
   {@render children()}
 {:else}
+  <DrinkSwipeEnhancer />
   <div class="drink-shell">
     <header class="drink-shell__masthead">
       <div class="drink-shell__top">
@@ -49,7 +52,9 @@
       </nav>
     </header>
     <main class="drink-shell__main">
-      {@render children()}
+      <DrinkTabShell>
+        {@render children()}
+      </DrinkTabShell>
     </main>
     <footer class="drink-shell__footer">
       <div class="drink-shell__footer-mark" aria-hidden="true">

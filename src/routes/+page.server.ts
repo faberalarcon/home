@@ -3,7 +3,7 @@ import { profiles, orders, drinks } from '$lib/server/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
+export function _loadProfilePageData() {
   const rows = db.select().from(profiles).where(eq(profiles.active, true)).all();
 
   // For each profile: last order and most-ordered drink
@@ -37,4 +37,8 @@ export const load: PageServerLoad = async () => {
   });
 
   return { profiles: profileData };
+}
+
+export const load: PageServerLoad = async () => {
+  return _loadProfilePageData();
 };

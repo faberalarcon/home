@@ -176,6 +176,82 @@ body {
   max-width: 100%;
 }
 
+@media (pointer: coarse) and (max-width: 900px) {
+  body,
+  .drink-shell,
+  .drink-shell__main,
+  .drink-shell__footer {
+    touch-action: pan-y;
+  }
+}
+
+body.drink-swipe-dragging {
+  overflow: hidden;
+}
+
+.drink-swipe-overlay {
+  position: fixed;
+  z-index: 60;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--color-paper-50);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1.25rem 2.5rem rgba(15, 23, 42, 0.16);
+  contain: layout paint style;
+}
+
+.drink-swipe-page {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--color-paper-50);
+  backface-visibility: hidden;
+  contain: paint;
+  will-change: transform;
+}
+
+.drink-swipe-page--current {
+  z-index: 2;
+}
+
+.drink-swipe-page--next {
+  z-index: 1;
+  transform: translate3d(100%, 0, 0);
+}
+
+.drink-swipe-page > .drink-shell__main {
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.drink-swipe-preview-loading {
+  width: 100%;
+  min-height: min(28rem, 70vh);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(
+      110deg,
+      color-mix(in oklab, var(--color-paper-100) 86%, transparent) 8%,
+      color-mix(in oklab, var(--color-paper-200) 74%, transparent) 18%,
+      color-mix(in oklab, var(--color-paper-100) 86%, transparent) 33%
+    );
+  background-size: 280% 100%;
+  animation: drink-swipe-preview-pulse 0.7s ease-out 1;
+}
+
+@keyframes drink-swipe-preview-pulse {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drink-swipe-page,
+  .drink-swipe-preview-loading {
+    animation: none;
+    transition: none !important;
+  }
+}
+
 /* Display & headings */
 h1, h2, h3, h4 {
   font-family: var(--font-display);

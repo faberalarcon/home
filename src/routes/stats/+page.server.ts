@@ -19,7 +19,7 @@ function startOfWeekLocal(): number {
   return Math.floor(monday.getTime() / 1000);
 }
 
-export const load: PageServerLoad = async () => {
+export function _loadStatsPageData() {
   const dayStart = startOfDayLocal();
   const weekStart = startOfWeekLocal();
   const resetAt = getStatsResetAt();
@@ -127,4 +127,8 @@ export const load: PageServerLoad = async () => {
   });
 
   return { totalAllTime, totalToday, totalWeek, leaderAllTime, leaderToday: leaderTodayWithBAC, topDrinks, dowCounts, resetAt };
+}
+
+export const load: PageServerLoad = async () => {
+  return _loadStatsPageData();
 };
