@@ -39,12 +39,22 @@
     cancelIdleCallback?: (handle: number) => void;
   };
   type Point = { x: number; y: number };
+  type SwipeOverlay = {
+    root: HTMLDivElement;
+    current: HTMLDivElement;
+    next: HTMLDivElement;
+    width: number;
+  };
 
   let pendingIdle: number | null = null;
   let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
   let activePointer: { id: number; start: Point } | null = null;
   let activeTouch: { id: number; start: Point } | null = null;
   let lastSwipeAt = 0;
+  let activeOverlay: SwipeOverlay | null = null;
+  let activeTargetHref: string | null = null;
+  let activeDirection: -1 | 1 = -1;
+  const previewCache = new Map<string, string>();
   const sentWarmups = new Set<string>();
 
   function localDate(date: Date): string {
@@ -170,23 +180,154 @@
     activePointer = { id: event.pointerId, start: { x: event.clientX, y: event.clientY } };
   }
 
-  function completeSwipe(start: Point, end: Point) {
+  function targetForDx(dx: number): string | null {
+    const currentIndex = sectionIndexForPath($page.url.pathname);
+    if (currentIndex === -1) return null;
+    const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
+    return statsSections[nextIndex]?.href ?? null;
+  }
+
+  function readMainPreview(html: string): string | null {
+    try {
+      const parsed = new DOMParser().parseFromString(html, 'text/html');
+      return parsed.querySelector('#main-content')?.innerHTML ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function loadPreviewHtml(href: string): Promise<string | null> {
+    if (previewCache.has(href)) return previewCache.get(href) ?? null;
+    try {
+      const response = await fetch(href, { credentials: 'same-origin' });
+      if (!response.ok) return null;
+      const preview = readMainPreview(await response.text());
+      if (preview) previewCache.set(href, preview);
+      return preview;
+    } catch {
+      return null;
+    }
+  }
+
+  function destroyOverlay() {
+    activeOverlay?.root.remove();
+    activeOverlay = null;
+    activeTargetHref = null;
+    document.body.classList.remove('swipe-dragging');
+  }
+
+  function createOverlay(targetHref: string): SwipeOverlay | null {
+    const main = document.getElementById('main-content');
+    if (!main) return null;
+
+    const rect = main.getBoundingClientRect();
+    const root = document.createElement('div');
+    root.className = 'swipe-overlay';
+    root.style.left = `${Math.round(rect.left)}px`;
+    root.style.top = `${Math.round(rect.top)}px`;
+    root.style.width = `${Math.round(rect.width)}px`;
+    root.style.height = `${Math.round(rect.height)}px`;
+
+    const current = document.createElement('div');
+    current.className = 'swipe-page swipe-page--current';
+    current.append(main.cloneNode(true));
+
+    const next = document.createElement('div');
+    next.className = 'swipe-page swipe-page--next';
+    next.innerHTML = '<div class="swipe-preview-loading"></div>';
+
+    root.append(current, next);
+    document.body.append(root);
+
+    void loadPreviewHtml(targetHref).then((preview) => {
+      if (!activeOverlay || activeTargetHref !== targetHref || !preview) return;
+      next.innerHTML = preview;
+    });
+
+    return { root, current, next, width: rect.width };
+  }
+
+  function dragOverlay(dx: number) {
+    if (!activeOverlay) return;
+    const width = Math.max(activeOverlay.width, 1);
+    const direction = dx < 0 ? -1 : 1;
+    const nextStart = direction < 0 ? width : -width;
+    const fade = Math.max(0.74, 1 - Math.min(1, Math.abs(dx) / width) * 0.2);
+
+    activeOverlay.current.style.transform = `translate3d(${dx}px, 0, 0)`;
+    activeOverlay.current.style.opacity = `${fade}`;
+    activeOverlay.next.style.transform = `translate3d(${nextStart + dx}px, 0, 0)`;
+  }
+
+  function animateOverlayCommit(dx: number): Promise<void> {
+    if (!activeOverlay) return Promise.resolve();
+    const width = Math.max(activeOverlay.width, 1);
+    const currentEnd = dx < 0 ? -width : width;
+
+    activeOverlay.current.style.transition = 'transform 200ms ease-out, opacity 200ms ease-out';
+    activeOverlay.next.style.transition = 'transform 200ms ease-out';
+    activeOverlay.current.style.transform = `translate3d(${currentEnd}px, 0, 0)`;
+    activeOverlay.current.style.opacity = '0.8';
+    activeOverlay.next.style.transform = 'translate3d(0, 0, 0)';
+
+    return new Promise((resolve) => setTimeout(resolve, 210));
+  }
+
+  function animateOverlayCancel(): Promise<void> {
+    if (!activeOverlay) return Promise.resolve();
+
+    activeOverlay.current.style.transition = 'transform 170ms ease-out, opacity 170ms ease-out';
+    activeOverlay.next.style.transition = 'transform 170ms ease-out';
+    activeOverlay.current.style.transform = 'translate3d(0, 0, 0)';
+    activeOverlay.current.style.opacity = '1';
+    const offscreen = activeDirection < 0 ? '100%' : '-100%';
+    activeOverlay.next.style.transform = `translate3d(${offscreen}, 0, 0)`;
+    return new Promise((resolve) => setTimeout(resolve, 180));
+  }
+
+  function handleSwipeMove(end: Point, start: Point): boolean {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.05) return false;
+
+    const targetHref = targetForDx(dx);
+    if (!targetHref) return false;
+
+    if (!activeOverlay || activeTargetHref !== targetHref) {
+      destroyOverlay();
+      activeTargetHref = targetHref;
+      activeOverlay = createOverlay(targetHref);
+      if (!activeOverlay) return false;
+      document.body.classList.add('swipe-dragging');
+      activeDirection = dx < 0 ? -1 : 1;
+      activeOverlay.next.style.transform = dx < 0 ? 'translate3d(100%, 0, 0)' : 'translate3d(-100%, 0, 0)';
+    }
+
+    dragOverlay(dx);
+    return true;
+  }
+
+  async function finishSwipe(start: Point, end: Point) {
     const now = Date.now();
-    if (now - lastSwipeAt < SWIPE_DEDUP_MS) return;
+    if (now - lastSwipeAt < SWIPE_DEDUP_MS) {
+      destroyOverlay();
+      return;
+    }
 
     const dx = end.x - start.x;
     const dy = end.y - start.y;
-    if (Math.abs(dx) < SWIPE_MIN_X || Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
+    const isValid = Math.abs(dx) >= SWIPE_MIN_X && Math.abs(dx) >= Math.abs(dy) * SWIPE_RATIO;
+    if (!isValid || !activeTargetHref) {
+      await animateOverlayCancel();
+      destroyOverlay();
+      return;
+    }
 
-    const currentIndex = sectionIndexForPath($page.url.pathname);
-    if (currentIndex === -1) return;
-
-    const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
-    const nextSection = statsSections[nextIndex];
-    if (!nextSection) return;
-
+    const href = activeTargetHref;
     lastSwipeAt = now;
-    void goto(nextSection.href);
+    await animateOverlayCommit(dx);
+    await goto(href).catch(() => undefined);
+    destroyOverlay();
   }
 
   function handlePointerUp(event: PointerEvent) {
@@ -194,11 +335,19 @@
 
     const start = activePointer.start;
     activePointer = null;
-    completeSwipe(start, { x: event.clientX, y: event.clientY });
+    void finishSwipe(start, { x: event.clientX, y: event.clientY });
   }
 
   function handlePointerCancel(event: PointerEvent) {
-    if (activePointer?.id === event.pointerId) activePointer = null;
+    if (activePointer?.id === event.pointerId) {
+      activePointer = null;
+      void animateOverlayCancel().then(destroyOverlay);
+    }
+  }
+
+  function handlePointerMove(event: PointerEvent) {
+    if (!activePointer || activePointer.id !== event.pointerId) return;
+    handleSwipeMove({ x: event.clientX, y: event.clientY }, activePointer.start);
   }
 
   function handleTouchStart(event: TouchEvent) {
@@ -219,13 +368,25 @@
 
     const start = activeTouch.start;
     activeTouch = null;
-    completeSwipe(start, { x: touch.clientX, y: touch.clientY });
+    void finishSwipe(start, { x: touch.clientX, y: touch.clientY });
   }
 
   function handleTouchCancel(event: TouchEvent) {
     if (!activeTouch) return;
     const touch = Array.from(event.changedTouches).find((item) => item.identifier === activeTouch?.id);
-    if (touch) activeTouch = null;
+    if (touch) {
+      activeTouch = null;
+      void animateOverlayCancel().then(destroyOverlay);
+    }
+  }
+
+  function handleTouchMove(event: TouchEvent) {
+    if (!activeTouch) return;
+    const touch = Array.from(event.changedTouches).find((item) => item.identifier === activeTouch?.id);
+    if (!touch) return;
+    if (handleSwipeMove({ x: touch.clientX, y: touch.clientY }, activeTouch.start)) {
+      event.preventDefault();
+    }
   }
 
   $effect(() => {
@@ -238,9 +399,11 @@
 
   onMount(() => {
     document.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    document.addEventListener('pointermove', handlePointerMove, { passive: true });
     document.addEventListener('pointerup', handlePointerUp, { passive: true });
     document.addEventListener('pointercancel', handlePointerCancel, { passive: true });
     document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', handleTouchEnd, { passive: true });
     document.addEventListener('touchcancel', handleTouchCancel, { passive: true });
   });
@@ -249,11 +412,14 @@
     if (!browser) return;
 
     document.removeEventListener('pointerdown', handlePointerDown);
+    document.removeEventListener('pointermove', handlePointerMove);
     document.removeEventListener('pointerup', handlePointerUp);
     document.removeEventListener('pointercancel', handlePointerCancel);
     document.removeEventListener('touchstart', handleTouchStart);
+    document.removeEventListener('touchmove', handleTouchMove);
     document.removeEventListener('touchend', handleTouchEnd);
     document.removeEventListener('touchcancel', handleTouchCancel);
+    destroyOverlay();
 
     const idleWindow = window as IdleWindow;
     if (pendingIdle !== null && idleWindow.cancelIdleCallback) idleWindow.cancelIdleCallback(pendingIdle);
