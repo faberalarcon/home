@@ -93,14 +93,29 @@
   .drink-shell__masthead {
     position: sticky;
     top: 0;
-    z-index: 40;
+    z-index: 50;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-    padding: 0.65rem 1rem 0.5rem;
+    padding: 0.65rem max(1rem, calc((100vw - 50rem) / 2 + 1rem)) 0.5rem;
     border-bottom: 1px solid color-mix(in oklab, var(--color-paper-300) 80%, transparent);
-    background: color-mix(in oklab, var(--color-paper-50) 92%, transparent);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--color-paper-50) 88%, transparent),
+        color-mix(in oklab, var(--color-paper-50) 74%, transparent)
+      );
+    -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
+    box-shadow: 0 1px 0 color-mix(in oklab, var(--color-blood-500) 12%, transparent);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .drink-shell__masthead {
+      background: color-mix(in oklab, var(--color-paper-50) 96%, transparent);
+    }
   }
   .drink-shell__top {
     display: flex;
