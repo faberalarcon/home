@@ -4,9 +4,9 @@
 
 Every code change in this repo follows this cycle — no exceptions:
 
-1. **Smoke test locally**: `npm run dev` (or `npm run build && npm start`), exercise the affected pages, grep for markers of the change.
+1. **Smoke test locally**: `npm run dev` (or `npm run build && npm start`), exercise the affected pages, grep for markers of the change. Run `npm run validate:local` when a local server is running.
 2. **Rebuild**: `npm run build` — must succeed before any commit.
-3. **Redeploy**: `docker compose up -d --build` — rebuilds the container image and restarts the service.
+3. **Redeploy**: `docker compose up -d --build` — rebuilds the container image and restarts the service. Run `npm run validate`.
 4. **Commit**: stage only files you touched; use a conventional, human-style message (see existing `git log --oneline`).
 5. **Push**: `git push origin main`.
 

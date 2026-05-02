@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "start": "node build/index.js",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "validate": "./deploy/validate.sh",
+    "validate:local": "./deploy/validate.sh --local",
     "hash:secret": "node scripts/hash-secret.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/lib/server/db/migrate.ts",

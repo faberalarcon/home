@@ -53,9 +53,13 @@ The SQLite database is written to `./data/drink-hub.db` (override with `DATABASE
 | `npm run build` | Build for production |
 | `npm run start` | Run the production build (`node build/index.js`) |
 | `npm run check` | Type-check with `svelte-check` |
+| `npm run validate:local` | Validate local public routes, auth gates, health JSON, and headers |
+| `npm run validate` | Validate production routes, auth gates, HTTPS, SSL, health, and headers |
 | `npm run db:generate` | Generate a Drizzle migration from schema changes |
 | `npm run db:migrate` | Apply pending migrations |
 | `npm run db:seed` | Seed starter profiles and drinks (idempotent) |
+
+Set `VALIDATE_BASE=http://127.0.0.1:<port>` when validating a server on a non-default local port.
 
 ---
 
@@ -67,6 +71,7 @@ Home Assistant already runs on the Pi as a Docker container, so drink-hub runs a
 cp .env.example .env
 # set SITE_PASSWORD_HASH and CSRF_TRUSTED_ORIGINS
 docker compose up -d --build
+npm run validate
 ```
 
 Then on any device on the LAN, browse to `http://<pi-ip>:5173`.
