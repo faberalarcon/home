@@ -13,6 +13,7 @@
 
   const WARMUP_BATCH_SIZE = 40;
   const PREVIEW_CACHE_LIMIT = 6;
+  const SWIPE_PAGE_OVERLAP_PX = 2;
   const SWIPE_MIN_X = 70;
   const SWIPE_RATIO = 1.5;
   const SWIPE_DEDUP_MS = 500;
@@ -248,7 +249,10 @@
   function readMainPreview(html: string): string | null {
     try {
       const parsed = new DOMParser().parseFromString(html, 'text/html');
-      return parsed.querySelector('#main-content')?.innerHTML ?? null;
+      const main = parsed.querySelector('#main-content');
+      if (!main) return null;
+      main.removeAttribute('id');
+      return main.outerHTML;
     } catch {
       return null;
     }
@@ -295,11 +299,13 @@
 
     const current = document.createElement('div');
     current.className = 'swipe-page swipe-page--current';
-    current.append(main.cloneNode(true));
+    const currentMain = main.cloneNode(true) as HTMLElement;
+    currentMain.removeAttribute('id');
+    current.append(currentMain);
 
     const next = document.createElement('div');
     next.className = 'swipe-page swipe-page--next';
-    next.innerHTML = '<div class="swipe-preview-loading"></div>';
+    next.innerHTML = `<main class="${main.className}"><div class="swipe-preview-loading"></div></main>`;
 
     root.append(current, next);
     document.body.append(root);
@@ -317,17 +323,18 @@
     const width = Math.max(activeOverlay.width, 1);
     const direction = dx < 0 ? -1 : 1;
     const nextStart = direction < 0 ? width : -width;
+    const nextOffset = nextStart + dx + direction * SWIPE_PAGE_OVERLAP_PX;
     const fade = Math.max(0.74, 1 - Math.min(1, Math.abs(dx) / width) * 0.2);
 
     activeOverlay.current.style.transform = `translate3d(${dx}px, 0, 0)`;
     activeOverlay.current.style.opacity = `${fade}`;
-    activeOverlay.next.style.transform = `translate3d(${nextStart + dx}px, 0, 0)`;
+    activeOverlay.next.style.transform = `translate3d(${nextOffset}px, 0, 0)`;
   }
 
   function animateOverlayCommit(dx: number): Promise<void> {
     if (!activeOverlay) return Promise.resolve();
     const width = Math.max(activeOverlay.width, 1);
-    const currentEnd = dx < 0 ? -width : width;
+    const currentEnd = dx < 0 ? -width - SWIPE_PAGE_OVERLAP_PX : width + SWIPE_PAGE_OVERLAP_PX;
 
     activeOverlay.current.style.transition = 'transform 200ms ease-out, opacity 200ms ease-out';
     activeOverlay.next.style.transition = 'transform 200ms ease-out';

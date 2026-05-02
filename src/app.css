@@ -233,10 +233,17 @@ body.swipe-dragging {
   inset: 0;
   overflow: auto;
   background: var(--color-paper-50);
+  backface-visibility: hidden;
+  contain: paint;
   will-change: transform;
 }
 
+.swipe-page--current {
+  z-index: 2;
+}
+
 .swipe-page--next {
+  z-index: 1;
   transform: translate3d(100%, 0, 0);
 }
 
