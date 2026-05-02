@@ -9,6 +9,25 @@
 
   let { children, data } = $props();
   const year = new Date().getFullYear();
+
+  function measureMasthead(node: HTMLElement) {
+    const update = () => {
+      document.documentElement.style.setProperty('--drink-shell-masthead-height', `${node.offsetHeight}px`);
+    };
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+
+    update();
+    observer?.observe(node);
+    window.addEventListener('resize', update);
+
+    return {
+      destroy() {
+        observer?.disconnect();
+        window.removeEventListener('resize', update);
+        document.documentElement.style.removeProperty('--drink-shell-masthead-height');
+      }
+    };
+  }
 </script>
 
 <svelte:head>
@@ -20,7 +39,7 @@
 {:else}
   <DrinkSwipeEnhancer />
   <div class="drink-shell">
-    <header class="drink-shell__masthead">
+    <header class="drink-shell__masthead" use:measureMasthead>
       <div class="drink-shell__top">
         <a href="/menu" class="drink-shell__brand">
           <span aria-hidden="true">21&middot;</span>Bristoe <em>Drink Hub</em>
@@ -91,11 +110,12 @@
       var(--color-paper-50);
   }
   .drink-shell__masthead {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 50;
-    width: 100vw;
-    margin-left: calc(50% - 50vw);
+    width: 100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -172,7 +192,7 @@
   }
   .drink-shell__main {
     flex: 1;
-    padding: 1.25rem 1rem 2.5rem;
+    padding: calc(var(--drink-shell-masthead-height, 5.5rem) + 1.25rem) 1rem 2.5rem;
   }
   .drink-shell__footer {
     background: var(--color-ink-900);
