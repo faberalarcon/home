@@ -47,13 +47,19 @@
 </nav>
 
 <style>
+  .hubnav {
+    max-width: 100%;
+    min-width: 0;
+  }
   .hubnav__list {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 0.4rem;
     list-style: none;
     padding: 0;
     margin: 0;
+    max-width: 100%;
   }
   .hubnav__pill {
     display: inline-block;
@@ -88,7 +94,11 @@
     color: var(--color-ink-900);
   }
   @media (max-width: 520px) {
-    .hubnav__list { gap: 0.35rem; }
-    .hubnav__pill { padding: 0.25rem 0.55rem; letter-spacing: 0.1em; }
+    .hubnav__list { gap: 0.25rem; }
+    .hubnav__pill {
+      padding: 0.24rem 0.48rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+    }
   }
 </style>

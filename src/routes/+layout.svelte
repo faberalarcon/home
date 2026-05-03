@@ -138,10 +138,11 @@
     }
   }
   .drink-shell__top {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    gap: 0.75rem;
+    min-width: 0;
   }
   .drink-shell__brand {
     font-family: var(--font-display);
@@ -150,6 +151,9 @@
     color: var(--color-ink-900);
     text-decoration: none;
     white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .drink-shell__brand em {
     color: var(--color-blood-500);
@@ -284,6 +288,17 @@
     margin-right: 0.25em;
   }
   @media (max-width: 520px) {
+    .drink-shell__top {
+      grid-template-columns: 1fr;
+      gap: 0.45rem;
+    }
+    .drink-shell__top :global(.hubnav) {
+      width: 100%;
+    }
+    .drink-shell__top :global(.hubnav__list) {
+      justify-content: space-between;
+      width: 100%;
+    }
     .drink-shell__nav {
       gap: 0.6rem;
     }
