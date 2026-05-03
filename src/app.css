@@ -231,16 +231,21 @@ body.swipe-dragging {
 .swipe-page {
   position: absolute;
   inset: 0;
-  overflow: auto;
+  overflow: hidden;
   background: var(--color-paper-50);
   backface-visibility: hidden;
-  contain: paint;
   will-change: transform;
 }
 
 .swipe-page__content {
   min-height: 100%;
   will-change: transform;
+}
+
+.swipe-page .reveal {
+  animation: none !important;
+  opacity: 1 !important;
+  translate: 0 0 !important;
 }
 
 .swipe-page--current {
