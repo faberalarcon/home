@@ -114,7 +114,7 @@
     top: 0;
     left: 0;
     right: 0;
-    z-index: 50;
+    z-index: 80;
     width: 100%;
     box-sizing: border-box;
     display: flex;
@@ -175,11 +175,20 @@
     text-transform: uppercase;
     text-decoration: none;
     cursor: pointer;
+    border-radius: var(--radius-sm);
+    padding: 0.22rem 0.35rem;
+    box-shadow: inset 0 0 0 1px transparent;
+    transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
   }
   .drink-shell__nav a:hover,
   .drink-shell__nav a[aria-current="page"],
   .drink-shell__signout:hover {
     color: var(--color-blood-500);
+  }
+  .drink-shell__nav a:hover,
+  .drink-shell__nav a[aria-current="page"] {
+    background: color-mix(in oklab, var(--color-paper-100) 78%, transparent);
+    box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--color-blood-500) 72%, transparent);
   }
   .drink-shell__profile {
     border: 1px solid color-mix(in oklab, var(--profile-color) 70%, var(--color-paper-300));
@@ -277,6 +286,12 @@
   @media (max-width: 520px) {
     .drink-shell__nav {
       gap: 0.6rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .drink-shell__nav a,
+    .drink-shell__signout {
+      transition: none;
     }
   }
 </style>
