@@ -42,7 +42,7 @@
     <header class="drink-shell__masthead" use:measureMasthead>
       <div class="drink-shell__top">
         <a href="/menu" class="drink-shell__brand">
-          <span aria-hidden="true">21&middot;</span>Bristoe <em>Drink Hub</em>
+          <span aria-hidden="true">21&middot;</span>Bristoe <em>Drinks</em>
         </a>
         <HubNav current="drinks" />
       </div>
@@ -289,15 +289,10 @@
   }
   @media (max-width: 520px) {
     .drink-shell__top {
-      grid-template-columns: 1fr;
-      gap: 0.45rem;
+      gap: 0.5rem;
     }
-    .drink-shell__top :global(.hubnav) {
-      width: 100%;
-    }
-    .drink-shell__top :global(.hubnav__list) {
-      justify-content: space-between;
-      width: 100%;
+    .drink-shell__brand {
+      font-size: 0.98rem;
     }
     .drink-shell__nav {
       gap: 0.6rem;

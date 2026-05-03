@@ -55,6 +55,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    flex-wrap: nowrap;
     gap: 0.4rem;
     list-style: none;
     padding: 0;
@@ -94,11 +95,11 @@
     color: var(--color-ink-900);
   }
   @media (max-width: 520px) {
-    .hubnav__list { gap: 0.25rem; }
+    .hubnav__list { gap: 0.18rem; }
     .hubnav__pill {
-      padding: 0.24rem 0.48rem;
-      font-size: 0.68rem;
-      letter-spacing: 0.06em;
+      padding: 0.22rem 0.38rem;
+      font-size: 0.64rem;
+      letter-spacing: 0.04em;
     }
   }
 </style>
