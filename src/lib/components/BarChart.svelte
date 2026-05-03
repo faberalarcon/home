@@ -210,10 +210,10 @@
     vector-effect: non-scaling-stroke;
   }
   :global(.swipe-page) .chart-box canvas {
-    display: none;
+    display: none !important;
   }
   :global(.swipe-page) .chart-fallback {
-    display: block;
+    display: block !important;
   }
   @media (max-width: 520px) {
     .chart-box { height: 220px; }
