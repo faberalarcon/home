@@ -26,7 +26,12 @@
   let chart: Chart;
   const svgWidth = 320;
   const svgHeight = 180;
-  const svgPad = 18;
+  const plotLeft = 42;
+  const plotRight = 10;
+  const plotTop = 14;
+  const plotBottom = 28;
+  const plotWidth = svgWidth - plotLeft - plotRight;
+  const plotHeight = svgHeight - plotTop - plotBottom;
 
   function cssVar(name: string, fallback: string): string {
     if (typeof window === 'undefined') return fallback;
@@ -43,22 +48,53 @@
     return c || fallback;
   }
 
-  const fallbackColor = $derived(rawColor(color, 'var(--color-ink-900)'));
-  const fallbackPoints = $derived.by(() => {
+  function formatAxisValue(value: number): string {
+    const abs = Math.abs(value);
+    const formatted = Number.isInteger(value)
+      ? String(value)
+      : abs < 10
+        ? value.toFixed(1).replace(/\.0$/, '')
+        : value.toFixed(0);
+    return `${formatted}${unit}`;
+  }
+
+  function tickIndexes(count: number, maxTicks: number): number[] {
+    if (count <= 0) return [];
+    if (count <= maxTicks) return Array.from({ length: count }, (_, index) => index);
+
+    const last = count - 1;
+    const indexes = new Set<number>();
+    for (let i = 0; i < maxTicks; i += 1) {
+      indexes.add(Math.round((i / (maxTicks - 1)) * last));
+    }
+    return [...indexes].sort((a, b) => a - b);
+  }
+
+  function labelForAxis(value: string): string {
+    return value.length > 10 ? `${value.slice(0, 9)}…` : value;
+  }
+
+  const fallbackScale = $derived.by(() => {
     const finite = data.filter((value) => Number.isFinite(value));
-    if (data.length === 0 || finite.length === 0) return '';
+    if (data.length === 0 || finite.length === 0) return null;
 
     const minValue = beginAtZero ? Math.min(0, ...finite) : Math.min(...finite);
-    const maxValue = Math.max(...finite);
+    const rawMaxValue = Math.max(...finite);
+    const maxValue = rawMaxValue === minValue ? minValue + 1 : rawMaxValue;
     const range = Math.max(maxValue - minValue, 1);
-    const plotWidth = svgWidth - svgPad * 2;
-    const plotHeight = svgHeight - svgPad * 2;
+
+    return { minValue, maxValue, range };
+  });
+
+  const fallbackColor = $derived(rawColor(color, 'var(--color-ink-900)'));
+  const fallbackPoints = $derived.by(() => {
+    if (!fallbackScale) return '';
 
     return data
       .map((value, index) => {
-        const safeValue = Number.isFinite(value) ? value : minValue;
-        const x = svgPad + (data.length === 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth);
-        const y = svgHeight - svgPad - ((safeValue - minValue) / range) * plotHeight;
+        const safeValue = Number.isFinite(value) ? value : fallbackScale.minValue;
+        const x = plotLeft + (data.length === 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth);
+        const y = plotTop + plotHeight - ((safeValue - fallbackScale.minValue) / fallbackScale.range) * plotHeight;
         return `${x.toFixed(1)},${y.toFixed(1)}`;
       })
       .join(' ');
@@ -67,9 +103,26 @@
   const fallbackArea = $derived.by(() => {
     if (!fill || !fallbackPoints) return '';
     const points = fallbackPoints.split(' ');
-    const firstX = points[0]?.split(',')[0] ?? String(svgPad);
-    const lastX = points[points.length - 1]?.split(',')[0] ?? String(svgWidth - svgPad);
-    return `${firstX},${svgHeight - svgPad} ${fallbackPoints} ${lastX},${svgHeight - svgPad}`;
+    const firstX = points[0]?.split(',')[0] ?? String(plotLeft);
+    const lastX = points[points.length - 1]?.split(',')[0] ?? String(plotLeft + plotWidth);
+    const baseline = plotTop + plotHeight;
+    return `${firstX},${baseline} ${fallbackPoints} ${lastX},${baseline}`;
+  });
+
+  const fallbackYTicks = $derived.by(() => {
+    if (!fallbackScale) return [];
+    return Array.from({ length: 5 }, (_, index) => {
+      const value = fallbackScale.minValue + (fallbackScale.range * index) / 4;
+      const y = plotTop + plotHeight - ((value - fallbackScale.minValue) / fallbackScale.range) * plotHeight;
+      return { value, y, label: formatAxisValue(value) };
+    });
+  });
+
+  const fallbackXTicks = $derived.by(() => {
+    return tickIndexes(labels.length, 7).map((index) => {
+      const x = plotLeft + (labels.length === 1 ? plotWidth / 2 : (index / (labels.length - 1)) * plotWidth);
+      return { x, label: labelForAxis(labels[index] ?? '') };
+    });
   });
 
   onMount(() => {
@@ -164,8 +217,15 @@
     aria-label={label}
     preserveAspectRatio="none"
   >
-    <line x1={svgPad} y1={svgHeight - svgPad} x2={svgWidth - svgPad} y2={svgHeight - svgPad} class="chart-fallback__axis" />
-    <line x1={svgPad} y1={svgPad} x2={svgPad} y2={svgHeight - svgPad} class="chart-fallback__axis" />
+    {#each fallbackYTicks as tick}
+      <line x1={plotLeft} y1={tick.y} x2={plotLeft + plotWidth} y2={tick.y} class="chart-fallback__grid" />
+      <text x={plotLeft - 5} y={tick.y} class="chart-fallback__tick chart-fallback__tick--y" text-anchor="end" dominant-baseline="middle">{tick.label}</text>
+    {/each}
+    {#each fallbackXTicks as tick}
+      <text x={tick.x} y={plotTop + plotHeight + 15} class="chart-fallback__tick chart-fallback__tick--x" text-anchor="middle">{tick.label}</text>
+    {/each}
+    <line x1={plotLeft} y1={plotTop + plotHeight} x2={plotLeft + plotWidth} y2={plotTop + plotHeight} class="chart-fallback__axis" />
+    <line x1={plotLeft} y1={plotTop} x2={plotLeft} y2={plotTop + plotHeight} class="chart-fallback__axis" />
     {#if fallbackArea}
       <polygon points={fallbackArea} fill={fallbackColor} opacity="0.12" />
     {/if}
@@ -191,6 +251,17 @@
     stroke: var(--color-paper-300);
     stroke-width: 1;
     vector-effect: non-scaling-stroke;
+  }
+  .chart-fallback__grid {
+    stroke: var(--color-paper-300);
+    stroke-width: 0.6;
+    stroke-opacity: 0.65;
+    vector-effect: non-scaling-stroke;
+  }
+  .chart-fallback__tick {
+    fill: var(--color-ink-500);
+    font-family: var(--font-mono);
+    font-size: 8px;
   }
   :global(.swipe-page) .chart-box canvas {
     display: none !important;
