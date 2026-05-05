@@ -1,0 +1,85 @@
+server {
+    listen 80;
+    server_name drinks.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name drinks.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/drinks.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/drinks.example.com/privkey.pem;
+
+    client_max_body_size 20m;
+
+    # HSTS must come from nginx since the app doesn't know it's behind HTTPS.
+    # Do NOT duplicate other security headers (CSP, X-Frame-Options, etc.) here —
+    # the app sets them in hooks.server.ts. Sending two CSP headers causes the browser
+    # to apply both simultaneously (most restrictive wins), which blocks SvelteKit's
+    # inline hydration scripts and makes all interactive buttons unresponsive.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    location = /admin {
+        # Only clients connected through this tailnet should reach the admin panel.
+        # Keep DNS for this host pointed at the Pi's Tailscale IP for VPN users.
+        error_page 403 = @admin_tailscale_required;
+        allow 100.64.0.0/10;
+        allow fd7a:115c:a1e0::/48;
+        deny all;
+
+        proxy_pass http://127.0.0.1:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 300;
+        proxy_send_timeout 300;
+    }
+
+    location ^~ /admin/ {
+        # Only clients connected through this tailnet should reach the admin panel.
+        # Keep DNS for this host pointed at the Pi's Tailscale IP for VPN users.
+        error_page 403 = @admin_tailscale_required;
+        allow 100.64.0.0/10;
+        allow fd7a:115c:a1e0::/48;
+        deny all;
+
+        proxy_pass http://127.0.0.1:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 300;
+        proxy_send_timeout 300;
+    }
+
+    location @admin_tailscale_required {
+        internal;
+        default_type text/html;
+        return 403 '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin requires Tailscale</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fafbfc;color:#0f172a;font-family:system-ui,-apple-system,Segoe UI,sans-serif}.panel{max-width:34rem;padding:2rem}h1{font-size:1.8rem;margin:0 0 .75rem}p{font-size:1rem;line-height:1.55;color:#334155;margin:0}</style></head><body><main class="panel"><h1>Admin access requires Tailscale</h1><p>The Drink Hub admin area is only available from the private tailnet. Connect to Tailscale, then reload this page.</p></main></body></html>';
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 300;
+        proxy_send_timeout 300;
+    }
+}
