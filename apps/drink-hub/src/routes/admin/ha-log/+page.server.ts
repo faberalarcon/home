@@ -2,6 +2,7 @@ import { db } from '$lib/server/db';
 import { haEventsLog } from '$lib/server/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { redirect } from '@sveltejs/kit';
+import { appPath } from '$lib/app-paths';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -18,6 +19,6 @@ export const load: PageServerLoad = async ({ url }) => {
 export const actions: Actions = {
   clear: async () => {
     db.delete(haEventsLog).run();
-    redirect(303, '/admin/ha-log');
+    redirect(303, appPath('/admin/ha-log'));
   }
 };

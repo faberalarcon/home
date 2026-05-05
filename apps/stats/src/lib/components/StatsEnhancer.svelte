@@ -9,6 +9,7 @@
     sectionIndexForPath,
     statsSections
   } from '$lib/stats-sections';
+  import { appPath, routePath } from '$lib/app-paths';
   import { onDestroy, onMount, tick } from 'svelte';
 
   const WARMUP_BATCH_SIZE = 40;
@@ -79,13 +80,14 @@
   }
 
   function currentVariantHref(url: URL): string {
-    if (url.pathname === '/house') {
+    const pathname = routePath(url.pathname);
+    if (pathname === '/house') {
       return `/house?range=${url.searchParams.get('range') ?? '7d'}`;
     }
-    if (url.pathname === '/pi') {
+    if (pathname === '/pi') {
       return `/pi?range=${url.searchParams.get('range') ?? '1d'}`;
     }
-    return `${url.pathname}${url.search}`;
+    return `${pathname}${url.search}`;
   }
 
   function datePresetHrefs(): string[] {
@@ -136,14 +138,15 @@
 
   function buildWarmupHrefs(url: URL, data: Record<string, unknown>): string[] {
     let hrefs: string[] = [];
-    if (url.pathname === '/') hrefs = defaultStatsPreloadHrefs;
-    else if (url.pathname === '/house') hrefs = houseRangeHrefs;
-    else if (url.pathname === '/pi') hrefs = piRangeHrefs;
-    else if (url.pathname === '/drinks') hrefs = buildDrinkWarmups(data);
+    const pathname = routePath(url.pathname);
+    if (pathname === '/') hrefs = defaultStatsPreloadHrefs;
+    else if (pathname === '/house') hrefs = houseRangeHrefs;
+    else if (pathname === '/pi') hrefs = piRangeHrefs;
+    else if (pathname === '/drinks') hrefs = buildDrinkWarmups(data);
 
     const current = currentVariantHref(url);
     return [...new Set(hrefs)]
-      .filter((href) => href !== current && href !== `${url.pathname}${url.search}`);
+      .filter((href) => href !== current && href !== `${pathname}${url.search}`);
   }
 
   function canWarmup(): boolean {
@@ -155,7 +158,7 @@
   async function postWarmup(hrefs: string[]) {
     if (!hrefs.length || !canWarmup()) return;
     for (let i = 0; i < hrefs.length; i += WARMUP_BATCH_SIZE) {
-      await fetch('/api/preload', {
+      await fetch(appPath('/api/preload'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hrefs: hrefs.slice(i, i + WARMUP_BATCH_SIZE) })
@@ -219,14 +222,14 @@
   }
 
   function targetForDx(dx: number): string | null {
-    const currentIndex = sectionIndexForPath($page.url.pathname);
+    const currentIndex = sectionIndexForPath(routePath($page.url.pathname));
     if (currentIndex === -1) return null;
     const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
     return statsSections[nextIndex]?.href ?? null;
   }
 
   function adjacentSectionHrefs(): string[] {
-    const currentIndex = sectionIndexForPath($page.url.pathname);
+    const currentIndex = sectionIndexForPath(routePath($page.url.pathname));
     if (currentIndex === -1) return [];
     return [statsSections[currentIndex - 1]?.href, statsSections[currentIndex + 1]?.href].filter(
       (href): href is string => Boolean(href)
@@ -251,7 +254,7 @@
     if (pending) return pending;
 
     const request = (async () => {
-      const response = await fetch(href, { credentials: 'same-origin' });
+      const response = await fetch(appPath(href), { credentials: 'same-origin' });
       if (!response.ok) return null;
       const preview = readMainPreview(await response.text());
       if (preview) {
@@ -452,7 +455,7 @@
       }
     }
 
-    const navigation = goto(href, { noScroll: true, keepFocus: true });
+    const navigation = goto(appPath(href), { noScroll: true, keepFocus: true });
     const [navigationResult] = await Promise.allSettled([navigation, animation]);
 
     if (navigationResult.status === 'rejected') {

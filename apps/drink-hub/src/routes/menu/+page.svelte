@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { appPath, assetPath } from '$lib/app-paths';
   import { selectedProfile } from '$lib/profile';
   import { setTitle } from '$lib/stores/title';
   import { onMount } from 'svelte';
@@ -17,7 +18,7 @@
   let showCart = $state(false);
 
   onMount(() => {
-    if (!$selectedProfile) goto('/');
+    if (!$selectedProfile) goto(appPath('/'));
   });
 
   const filtered = $derived(
@@ -58,7 +59,7 @@
     if (!cart.length || !$selectedProfile) return;
     submitting = true;
     try {
-      const res = await fetch('/api/orders', {
+      const res = await fetch(appPath('/api/orders'), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ profileId: $selectedProfile.id, drinkIds: cart.map((d) => d.id) })
@@ -109,7 +110,7 @@
             onclick={() => (expanded = expanded === d.id ? null : d.id)}
           >
             {#if d.imageUrl}
-              <img src={d.imageUrl} alt={d.name} class="w-full aspect-square object-cover" />
+              <img src={assetPath(d.imageUrl)} alt={d.name} class="w-full aspect-square object-cover" />
             {:else}
               {@const emoji = ({food:'🍽️',snack:'🍿',dessert:'🍰','non-alcoholic':'🥤',beer:'🍺',wine:'🍷',spirit:'🥃',cocktail:'🍸'} as Record<string,string>)[d.category] ?? '🍽️'}
               <div class="w-full aspect-square fallback-art flex items-center justify-center text-4xl">

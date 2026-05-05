@@ -3,13 +3,17 @@
 /// <reference lib="esnext" />
 /// <reference lib="webworker" />
 
-import { build, files, version } from '$service-worker';
+import { base, build, files, version } from '$service-worker';
 
 declare const self: ServiceWorkerGlobalScope;
 
 const CACHE = `drink-hub-${version}`;
 // Static assets to pre-cache on install
 const PRECACHE = [...build, ...files];
+
+function scoped(path: string) {
+  return `${base}${path}`;
+}
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -33,7 +37,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(request.url);
 
   // SSE and API: always network, never cache
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/')) {
+  if (url.pathname.startsWith(scoped('/api/')) || url.pathname.startsWith(scoped('/admin/'))) {
     e.respondWith(
       fetch(request).catch(() => new Response('{"error":"offline"}', { status: 503, headers: { 'content-type': 'application/json' } }))
     );
@@ -41,7 +45,7 @@ self.addEventListener('fetch', (e) => {
   }
 
   // Immutable build assets: cache-first
-  if (url.pathname.startsWith('/_app/immutable/')) {
+  if (url.pathname.startsWith(scoped('/_app/immutable/'))) {
     e.respondWith(caches.match(request).then((cached) => cached ?? fetch(request)));
     return;
   }

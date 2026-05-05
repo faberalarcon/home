@@ -6,6 +6,7 @@ import {
   verifyAdminPassword
 } from '$lib/server/admin-password';
 import { isSecureRequest } from '$lib/server/site-access';
+import { appPath } from '$lib/app-paths';
 import {
   checkAdminLoginGlobal,
   checkRateLimit,
@@ -55,7 +56,7 @@ export const actions: Actions = {
     clearAdminLoginFailures();
 
     cookies.set('admin_session', makeSessionToken('admin'), {
-      path: '/',
+      path: appPath('/'),
       httpOnly: true,
       secure: isSecureRequest(url, request.headers.get('x-forwarded-proto')),
       maxAge: 24 * 60 * 60,
@@ -63,13 +64,13 @@ export const actions: Actions = {
     });
 
     if (isAdminPasswordMustReset()) {
-      throw redirect(303, '/admin/settings?force_change=1');
+      throw redirect(303, `${appPath('/admin/settings')}?force_change=1`);
     }
-    throw redirect(303, '/admin');
+    throw redirect(303, appPath('/admin'));
   },
 
   logout: async ({ cookies }) => {
-    cookies.delete('admin_session', { path: '/' });
-    throw redirect(303, '/admin/login');
+    cookies.delete('admin_session', { path: appPath('/') });
+    throw redirect(303, appPath('/admin/login'));
   }
 };

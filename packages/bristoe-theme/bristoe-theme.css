@@ -1,0 +1,173 @@
+/* 21 Bristoe shared theme.
+   Canonical values match the physical house: cool white, door blue,
+   stainless steel neutrals, deep slate text, and amber warnings.
+   Token aliases are kept so the Astro home app and SvelteKit apps can
+   converge without rewriting every existing component class at once. */
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/fraunces-wght.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/fraunces-wght-italic.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter Tight';
+  src: url('/fonts/inter-tight-wght.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter Tight';
+  src: url('/fonts/inter-tight-wght-italic.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono-wght.woff2') format('woff2-variations');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  /* Canonical app tokens */
+  --color-paper-50:  #fafbfc;
+  --color-paper-100: #f1f4f7;
+  --color-paper-200: #e3e8ee;
+  --color-paper-300: #c9d2dc;
+
+  --color-ink-900: #0f172a;
+  --color-ink-700: #334155;
+  --color-ink-500: #64748b;
+  --color-ink-300: #94a3b8;
+
+  --color-blood-300: #a8c8e8;
+  --color-blood-500: #6fa8dc;
+  --color-blood-600: #4a90d0;
+
+  --color-olive-300: #b8c4d0;
+  --color-olive-500: #94a3b8;
+  --color-olive-700: #64748b;
+
+  --color-leaf-300: #e6c97a;
+  --color-leaf-500: #c49a2e;
+
+  /* Astro home aliases */
+  --color-warm-50:  #fafbfc;
+  --color-warm-100: #f1f4f7;
+  --color-warm-200: #e3e8ee;
+  --color-warm-300: #c9d2dc;
+  --color-warm-400: #8bb8e0;
+  --color-warm-500: #6fa8dc;
+  --color-warm-600: #4a90d0;
+  --color-warm-700: #334155;
+  --color-warm-800: #1e293b;
+  --color-warm-900: #0f172a;
+
+  --color-sage-50:  #f4f6f9;
+  --color-sage-100: #e6ebf1;
+  --color-sage-200: #d0d8e2;
+  --color-sage-300: #b8c4d0;
+  --color-sage-400: #a1adbb;
+  --color-sage-500: #94a3b8;
+  --color-sage-600: #7f8ea4;
+  --color-sage-700: #64748b;
+  --color-sage-800: #3f4959;
+  --color-sage-900: #232a36;
+
+  --font-display: 'Fraunces', 'Georgia', 'Times New Roman', serif;
+  --font-body:    'Inter Tight', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --measure-text: 68ch;
+  --measure-wide: 88ch;
+  --measure-full: 120ch;
+}
+
+:root {
+  color-scheme: light;
+  --color-success-bg:   #dce6f0;
+  --color-success-text: #1e3a5f;
+  --color-warning-bg:   #f5e6c0;
+  --color-warning-text: #6a4a10;
+  --color-danger-bg:    #fce5dd;
+  --color-danger-text:  #8b2020;
+
+  --radius:    1rem;
+  --radius-sm: 0.375rem;
+  --rule: 1px solid var(--color-paper-300);
+  --rule-ink: 1px solid var(--color-ink-700);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --color-paper-50:  #0f1419;
+    --color-paper-100: #161b22;
+    --color-paper-200: #1f2630;
+    --color-paper-300: #30384a;
+
+    --color-ink-900: #f0f4f8;
+    --color-ink-700: #c9d2dc;
+    --color-ink-500: #94a3b8;
+    --color-ink-300: #64748b;
+
+    --color-blood-500: #8bb8e0;
+    --color-blood-300: #b8d4ec;
+    --color-blood-600: #6fa8dc;
+
+    --color-olive-500: #a1adbb;
+    --color-olive-700: #c9d2dc;
+    --color-olive-300: #7f8ea4;
+
+    --color-leaf-500: #d4b060;
+    --color-leaf-300: #e8c880;
+
+    --color-warm-50:  #0f1419;
+    --color-warm-100: #161b22;
+    --color-warm-200: #1f2630;
+    --color-warm-300: #30384a;
+    --color-warm-400: #6fa8dc;
+    --color-warm-600: #8bb8e0;
+    --color-warm-700: #c9d2dc;
+    --color-warm-800: #e3e8ee;
+    --color-warm-900: #05080c;
+
+    --color-sage-50:  #0f141a;
+    --color-sage-100: #171d26;
+    --color-sage-200: #232a36;
+    --color-sage-300: #3f4959;
+    --color-sage-400: #64748b;
+    --color-sage-500: #94a3b8;
+    --color-sage-600: #a1adbb;
+    --color-sage-700: #c9d2dc;
+    --color-sage-800: #e3e8ee;
+    --color-sage-900: #f0f4f8;
+
+    --color-success-bg:   #1a2638;
+    --color-success-text: #b8d4ec;
+    --color-warning-bg:   #2a2010;
+    --color-warning-text: #d4a030;
+    --color-danger-bg:    #2a1010;
+    --color-danger-text:  #d48080;
+
+    --rule: 1px solid var(--color-paper-300);
+    --rule-ink: 1px solid var(--color-ink-700);
+
+    --color-gray-600: #94a3b8;
+    --color-gray-500: #7f8ea4;
+    --color-gray-400: #64748b;
+  }
+}

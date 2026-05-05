@@ -2,17 +2,17 @@
 # validate.sh - Endpoint, auth, SSL, and header validation for Drink Hub
 #
 # Usage: ./deploy/validate.sh [--local]
-#   --local  Run against http://localhost:5173 instead of production
+#   --local  Run against http://localhost:5173/drinks instead of production
 
 set -euo pipefail
 
 MODE="${1:-}"
 if [[ "$MODE" == "--local" ]]; then
-    BASE="${VALIDATE_BASE:-http://localhost:5173}"
+    BASE="${VALIDATE_BASE:-http://localhost:5173/drinks}"
     echo "==> Validating LOCAL Drink Hub app at $BASE"
     echo "    Make sure 'npm run dev' or 'npm run start' is running first."
 elif [[ -z "$MODE" ]]; then
-    BASE="https://drink-hub.21bristoe.com"
+    BASE="https://21bristoe.com/drinks"
     echo "==> Validating PRODUCTION Drink Hub app at $BASE"
 else
     echo "Usage: $0 [--local]"
@@ -229,10 +229,10 @@ if [[ "$MODE" != "--local" ]]; then
     else
         fail "HTTP redirects to HTTPS" "Expected 301 redirect."
     fi
-    if printf '%s' "$HTTP_HEADERS" | grep -iq "location: https://drink-hub.21bristoe.com"; then
-        pass "HTTP redirect location is canonical"
+    if printf '%s' "$HTTP_HEADERS" | grep -iq "location: https://21bristoe.com/drinks/"; then
+        pass "HTTP redirect location is canonical path"
     else
-        fail "HTTP redirect location is canonical" "Expected Location: https://drink-hub.21bristoe.com"
+        fail "HTTP redirect location is canonical path" "Expected Location: https://21bristoe.com/drinks/"
     fi
 
     echo ""

@@ -4,6 +4,7 @@
   import { page } from '$app/stores';
   import { statsSections, sectionIndexForPath } from '$lib/stats-sections';
   import { afterNavigate } from '$app/navigation';
+  import { appPath, routePath } from '$lib/app-paths';
   import { onDestroy, onMount, tick } from 'svelte';
   import OverviewPage from '../../routes/+page.svelte';
   import BackupsPage from '../../routes/backups/+page.svelte';
@@ -50,13 +51,14 @@
   const ActivePage = $derived(activeHref ? PAGE_COMPONENTS[activeHref] : null);
 
   function canonicalStatsHref(url: URL): PageHref | null {
+    const pathname = routePath(url.pathname);
     if (url.search) return null;
-    if (url.pathname === '/house') return '/house';
-    if (url.pathname === '/drinks') return '/drinks';
-    if (url.pathname === '/visitors') return '/visitors';
-    if (url.pathname === '/backups') return '/backups';
-    if (url.pathname === '/pi') return '/pi';
-    if (url.pathname === '/') return '/';
+    if (pathname === '/house') return '/house';
+    if (pathname === '/drinks') return '/drinks';
+    if (pathname === '/visitors') return '/visitors';
+    if (pathname === '/backups') return '/backups';
+    if (pathname === '/pi') return '/pi';
+    if (pathname === '/') return '/';
     return null;
   }
 
@@ -92,7 +94,7 @@
   }
 
   async function fetchPageData(href: PageHref): Promise<PageData> {
-    const response = await fetch(`/api/page-data?href=${encodeURIComponent(href)}`, {
+    const response = await fetch(`${appPath('/api/page-data')}?href=${encodeURIComponent(href)}`, {
       credentials: 'same-origin'
     });
     if (!response.ok) throw new Error(`Failed to load ${href}`);
@@ -155,7 +157,7 @@
   async function syncRouteUrl(href: PageHref, scrollY: number) {
     shellNavigationActive = true;
     try {
-      await goto(href, { noScroll: true, keepFocus: true });
+      await goto(appPath(href), { noScroll: true, keepFocus: true });
       await tick();
       restoreScrollY(scrollY);
       activeHref = null;
@@ -205,7 +207,7 @@
 
     event.preventDefault();
     void activateStatsPage(href).catch(() => {
-      void goto(href, { noScroll: true, keepFocus: true });
+      void goto(appPath(href), { noScroll: true, keepFocus: true });
     });
   }
 

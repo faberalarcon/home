@@ -13,6 +13,7 @@ import {
   verifyAdminPassword
 } from '$lib/server/admin-password';
 import { makeSessionToken } from '$lib/server/auth';
+import { appPath } from '$lib/app-paths';
 import { validateOutboundUrl } from '$lib/server/url-allowlist';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -131,7 +132,7 @@ export const actions: Actions = {
     // setAdminPassword bumped the session epoch, which invalidated every admin
     // session (including ours). Re-mint a cookie for the calling user.
     cookies.set('admin_session', makeSessionToken('admin'), {
-      path: '/',
+      path: appPath('/'),
       httpOnly: true,
       secure: isSecureRequest(url, request.headers.get('x-forwarded-proto')),
       maxAge: 24 * 60 * 60,
@@ -160,12 +161,12 @@ export const actions: Actions = {
     console.log('');
     console.log('==============================================================');
     console.log('[drink-hub] ADMIN PASSWORD RESET. New temporary password: ' + temp);
-    console.log('[drink-hub] Log in at /admin/login and change it immediately.');
+    console.log(`[drink-hub] Log in at ${appPath('/admin/login')} and change it immediately.`);
     console.log('==============================================================');
     console.log('');
 
     // resetAdminPassword bumped the session epoch too → log this user out.
-    cookies.delete('admin_session', { path: '/' });
+    cookies.delete('admin_session', { path: appPath('/') });
 
     return { resetTemp: temp };
   }

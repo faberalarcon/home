@@ -4,7 +4,7 @@ Household dashboard for 21 Bristoe Station Rd, Taneytown MD.
 
 A read-only stats dashboard pulling data from Home Assistant, Drink Hub, weather APIs, and generating fun household stats.
 
-**Status:** Live in production at <https://stats.21bristoe.com>. Source: <https://github.com/faberalarcon/stats>.
+**Status:** Live in production at <https://21bristoe.com/stats/> from the unified `home` repo. The legacy `stats.21bristoe.com` host redirects here.
 
 ## Stack
 
@@ -24,25 +24,26 @@ A read-only stats dashboard pulling data from Home Assistant, Drink Hub, weather
 
 ```bash
 npm install
-npm run dev    # http://localhost:5174
+npm run dev    # http://localhost:5174/stats/
 ```
+
+The SvelteKit base path defaults to `/stats`; override with `BASE_PATH` only for unusual local testing.
 
 ## Validation
 
 ```bash
-npm run validate:local  # against http://localhost:5174
-npm run validate        # against https://stats.21bristoe.com
+npm run validate:local  # against http://localhost:5174/stats
+npm run validate        # against https://21bristoe.com/stats
 ```
 
 The validation script checks the main dashboard routes, `/api/health` JSON, security headers, and production HTTPS/SSL behavior.
-Set `VALIDATE_BASE=http://127.0.0.1:<port>` when validating a server on a non-default local port.
+Set `VALIDATE_BASE=http://127.0.0.1:<port>/stats` when validating a server on a non-default local port.
 
 ## Deploy
 
 ```bash
-docker compose build
-docker compose up -d
-npm run validate
+cd /home/faber/projects/home
+./deploy/deploy.sh
 ```
 
 ## Environment

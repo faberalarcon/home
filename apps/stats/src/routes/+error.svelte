@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import { appPath } from '$lib/app-paths';
 </script>
 
 <svelte:head>
@@ -14,7 +15,7 @@
     {$page.status === 404 ? 'Page not found.' : 'Something went wrong.'}
   </h1>
   <p class="errata__body">{$page.error?.message ?? 'An unexpected error occurred.'}</p>
-  <a href="/" class="dashboard-button dashboard-button--accent">Return to Overview</a>
+  <a href={appPath('/')} class="dashboard-button dashboard-button--accent">Return to Overview</a>
 </article>
 
 <style>

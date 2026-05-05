@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# validate.sh - Endpoint, SSL, and header validation for stats.21bristoe.com
+# validate.sh - Endpoint, SSL, redirect, and header validation for 21bristoe Stats
 #
 # Usage: ./deploy/validate.sh [--local]
-#   --local  Run against http://localhost:5174 instead of production
+#   --local  Run against http://localhost:5174/stats instead of production
 
 set -euo pipefail
 
 MODE="${1:-}"
 if [[ "$MODE" == "--local" ]]; then
-    BASE="${VALIDATE_BASE:-http://localhost:5174}"
+    BASE="${VALIDATE_BASE:-http://localhost:5174/stats}"
     echo "==> Validating LOCAL stats app at $BASE"
     echo "    Make sure 'npm run dev' or 'npm run start' is running first."
 elif [[ -z "$MODE" ]]; then
-    BASE="https://stats.21bristoe.com"
+    BASE="https://21bristoe.com/stats"
     echo "==> Validating PRODUCTION stats app at $BASE"
 else
     echo "Usage: $0 [--local]"
@@ -146,10 +146,10 @@ if [[ "$MODE" != "--local" ]]; then
     else
         fail "HTTP redirects to HTTPS" "Expected 301 redirect."
     fi
-    if printf '%s' "$HTTP_HEADERS" | grep -iq "location: https://stats.21bristoe.com"; then
-        pass "HTTP redirect location is canonical"
+    if printf '%s' "$HTTP_HEADERS" | grep -iq "location: https://21bristoe.com/stats/"; then
+        pass "HTTP redirect location is canonical path"
     else
-        fail "HTTP redirect location is canonical" "Expected Location: https://stats.21bristoe.com"
+        fail "HTTP redirect location is canonical path" "Expected Location: https://21bristoe.com/stats/"
     fi
 
     echo ""

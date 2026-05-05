@@ -6,9 +6,11 @@
   import { selectedProfile } from '$lib/profile';
   import { page } from '$app/stores';
   import { pageTitle } from '$lib/stores/title';
+  import { appAction, appPath, routePath } from '$lib/app-paths';
 
   let { children, data } = $props();
   const year = new Date().getFullYear();
+  const currentPath = $derived(routePath($page.url.pathname));
 
   function measureMasthead(node: HTMLElement) {
     const update = () => {
@@ -34,23 +36,23 @@
   <title>{$pageTitle}</title>
 </svelte:head>
 
-{#if $page.url.pathname === '/login'}
+{#if currentPath === '/login'}
   {@render children()}
 {:else}
   <DrinkSwipeEnhancer />
   <div class="drink-shell">
     <header class="drink-shell__masthead" use:measureMasthead>
       <div class="drink-shell__top">
-        <a href="/menu" class="drink-shell__brand">
+        <a href={appPath('/menu')} class="drink-shell__brand">
           <span aria-hidden="true">21&middot;</span>Bristoe <em>Drinks</em>
         </a>
         <HubNav current="drinks" />
       </div>
       <nav class="drink-shell__nav" aria-label="Drink Hub">
-        <a href="/menu" aria-current={$page.url.pathname === '/menu' ? 'page' : undefined}>Menu</a>
-        <a href="/recent" aria-current={$page.url.pathname === '/recent' ? 'page' : undefined}>Recent</a>
-        <a href="/stats" aria-current={$page.url.pathname === '/stats' ? 'page' : undefined}>Leaderboard</a>
-        <a href="/admin" aria-current={$page.url.pathname.startsWith('/admin') ? 'page' : undefined}>Admin</a>
+        <a href={appPath('/menu')} aria-current={currentPath === '/menu' ? 'page' : undefined}>Menu</a>
+        <a href={appPath('/recent')} aria-current={currentPath === '/recent' ? 'page' : undefined}>Recent</a>
+        <a href={appPath('/stats')} aria-current={currentPath === '/stats' ? 'page' : undefined}>Leaderboard</a>
+        <a href={appPath('/admin')} aria-current={currentPath.startsWith('/admin') ? 'page' : undefined}>Admin</a>
         {#if $selectedProfile}
           <button
             class="drink-shell__profile"
@@ -61,10 +63,10 @@
             {$selectedProfile.name}
           </button>
         {:else}
-          <a href="/">Pick profile</a>
+          <a href={appPath('/')}>Pick profile</a>
         {/if}
         {#if data.sitePasswordEnabled && data.siteAuthenticated}
-          <form method="POST" action="/login?/logout">
+          <form method="POST" action={appAction('/login', 'logout')}>
             <button type="submit" class="drink-shell__signout">Sign out</button>
           </form>
         {/if}
@@ -85,7 +87,7 @@
         <p>&copy; {year} &middot; 21 Bristoe Station Rd, Taneytown, Md.</p>
         <div class="drink-shell__footer-links">
           <a href="https://21bristoe.com" target="_blank" rel="noopener noreferrer">Home</a>
-          <a href="https://stats.21bristoe.com" target="_blank" rel="noopener noreferrer">Stats</a>
+          <a href="https://21bristoe.com/stats/">Stats</a>
         </div>
       </div>
       {#if data.visitorCount !== null}

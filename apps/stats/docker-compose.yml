@@ -1,6 +1,10 @@
 services:
   stats:
-    build: .
+    build:
+      context: ../..
+      dockerfile: apps/stats/Dockerfile
+      args:
+        - BASE_PATH=${BASE_PATH:-/stats}
     container_name: 21bristoe-stats
     restart: unless-stopped
     ports:
@@ -13,7 +17,8 @@ services:
     cap_drop:
       - ALL
     environment:
-      - ORIGIN=${ORIGIN:-https://stats.21bristoe.com}
+      - BASE_PATH=${BASE_PATH:-/stats}
+      - ORIGIN=${ORIGIN:-https://21bristoe.com}
       - PROTOCOL_HEADER=x-forwarded-proto
       - HOST_HEADER=x-forwarded-host
       - ADDRESS_HEADER=x-forwarded-for
@@ -21,7 +26,7 @@ services:
       - HA_BASE_URL=${HA_BASE_URL:-http://ai.local:8123}
       - HA_TOKEN=${HA_TOKEN:-}
       - EV_COST_PER_KWH=${EV_COST_PER_KWH:-0.12}
-      - DRINK_HUB_URL=${DRINK_HUB_URL:-https://drink-hub.21bristoe.com}
+      - DRINK_HUB_URL=${DRINK_HUB_URL:-http://drink-hub:3000/drinks}
       - TZ=${TZ:-America/New_York}
     volumes:
       - /var/lib/bristoe-backup:/var/lib/bristoe-backup:ro

@@ -5,7 +5,7 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async () => {
   const [ha, drinkHub] = await Promise.all([
     isHaAvailable().catch(() => false),
-    fetch(`${process.env.DRINK_HUB_URL ?? 'https://drink-hub.21bristoe.com'}/api/health`, {
+    fetch(`${process.env.DRINK_HUB_URL ?? 'https://21bristoe.com/drinks'}/api/health`, {
       signal: AbortSignal.timeout(4000)
     }).then((r) => r.ok).catch(() => false)
   ]);

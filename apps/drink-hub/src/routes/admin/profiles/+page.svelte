@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { appPath, assetPath, thumbPath } from '$lib/app-paths';
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -13,7 +14,7 @@
 
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-semibold">Profiles</h1>
-  <a href="/admin/profiles" class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New profile</a>
+  <a href={appPath('/admin/profiles')} class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New profile</a>
 </div>
 
 {#if form?.error}
@@ -44,7 +45,7 @@
           <td class="px-4 py-3">
             <div class="flex items-center gap-2">
               {#if p.avatarUrl}
-                <img src={p.avatarUrl.replace('.webp', '-thumb.webp')} alt="" class="w-8 h-8 rounded-full object-cover" />
+                <img src={thumbPath(p.avatarUrl)} alt="" class="w-8 h-8 rounded-full object-cover" />
               {:else}
                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-slate-950" style="background-color:{p.color}">
                   {p.name[0]}
@@ -61,7 +62,7 @@
           </td>
           <td class="px-4 py-3 text-center">{p.active ? '✓' : '–'}</td>
           <td class="px-4 py-3 text-right">
-            <a href="/admin/profiles?edit={p.id}" class="text-slate-400 hover:text-white text-xs mr-3">Edit</a>
+            <a href={`${appPath('/admin/profiles')}?edit=${p.id}`} class="text-slate-400 hover:text-white text-xs mr-3">Edit</a>
             <form method="POST" action="?/delete" class="inline" onsubmit={(e) => { if (!confirm(`Delete ${p.name}?`)) e.preventDefault(); }}>
               <input type="hidden" name="id" value={p.id} />
               <button type="submit" class="text-red-500 hover:text-red-400 text-xs">Delete</button>
@@ -82,7 +83,7 @@
     <div class="bg-slate-900 border rounded-xl p-4 {data.editing?.id === p.id ? 'border-orange-700/60 bg-slate-800/40' : !p.active ? 'opacity-60 border-slate-800' : 'border-slate-800'}">
       <div class="flex items-center gap-3 mb-3">
         {#if p.avatarUrl}
-          <img src={p.avatarUrl.replace('.webp', '-thumb.webp')} alt="" class="w-10 h-10 rounded-full object-cover shrink-0" />
+          <img src={thumbPath(p.avatarUrl)} alt="" class="w-10 h-10 rounded-full object-cover shrink-0" />
         {:else}
           <div class="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-slate-950 shrink-0" style="background-color:{p.color}">
             {p.name[0]}
@@ -98,7 +99,7 @@
         </div>
       </div>
       <div class="flex flex-wrap gap-2">
-        <a href="/admin/profiles?edit={p.id}" class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700">Edit</a>
+        <a href={`${appPath('/admin/profiles')}?edit=${p.id}`} class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700">Edit</a>
         <form method="POST" action="?/delete" class="contents" onsubmit={(e) => { if (!confirm(`Delete ${p.name}?`)) e.preventDefault(); }}>
           <input type="hidden" name="id" value={p.id} />
           <button type="submit" class="text-sm px-3 py-2 rounded-lg bg-red-950/60 border border-red-800 text-red-300 hover:bg-red-900/60">Delete</button>
@@ -177,7 +178,7 @@
         Avatar {data.editing?.avatarUrl ? '(leave blank to keep current)' : '(optional)'}
       </label>
       {#if data.editing?.avatarUrl}
-        <img src={data.editing.avatarUrl} alt="" class="w-16 h-16 rounded-full object-cover mb-2" />
+        <img src={assetPath(data.editing.avatarUrl)} alt="" class="w-16 h-16 rounded-full object-cover mb-2" />
       {/if}
       <input
         id="avatar" name="avatar" type="file"
@@ -203,7 +204,7 @@
         {data.editing ? 'Save changes' : 'Create profile'}
       </button>
       {#if data.editing}
-        <a href="/admin/profiles" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">
+        <a href={appPath('/admin/profiles')} class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">
           Cancel
         </a>
       {/if}

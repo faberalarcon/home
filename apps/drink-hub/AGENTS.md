@@ -2,23 +2,23 @@
 
 ## Project Structure & Module Organization
 
-`drink-hub` is a SvelteKit 2 / Svelte 5 app for drink ordering. Application code lives in `src/`: routes in `src/routes/`, reusable client code in `src/lib/`, and server-only logic in `src/lib/server/`. Database schema and migrations are in `src/lib/server/db/`, `drizzle/`, and `drizzle.config.ts`. Static assets are in `static/`; deployment and nginx examples are in `deploy/`; operational notes live in `docs/`. Runtime SQLite data and uploads live under `data/` and should not be committed.
+`apps/drink-hub` is a SvelteKit 2 / Svelte 5 app for drink ordering inside the unified `home` repo. It is served at `/drinks/` on `21bristoe.com`. Application code lives in `src/`: routes in `src/routes/`, reusable client code in `src/lib/`, and server-only logic in `src/lib/server/`. Database schema and migrations are in `src/lib/server/db/`, `drizzle/`, and `drizzle.config.ts`. Static assets are in `static/`; operational notes live in `docs/`. Shared styling comes from `../../packages/bristoe-theme/`. Runtime SQLite data and uploads live under `data/` locally and `/var/lib/21bristoe/drink-hub` in production, and should not be committed.
 
 ## Build, Test, and Development Commands
 
 - `npm install` installs npm dependencies from `package-lock.json`.
-- `npm run dev` starts Vite on `0.0.0.0:5173`.
+- `npm run dev` starts Vite on `0.0.0.0:5173` with base path `/drinks`.
 - `npm run check` runs `svelte-kit sync` and `svelte-check`.
 - `npm run build` builds the production app.
 - `npm run start` runs `node build/index.js`.
 - `npm run db:generate`, `npm run db:migrate`, and `npm run db:seed` manage Drizzle migrations and seed data.
 - `npm run validate:local` validates local public routes, auth gates, health JSON, and headers.
 - `npm run validate` validates production routes, auth gates, HTTPS, SSL, health, and headers.
-- `docker compose up -d --build` rebuilds and restarts the production-style container.
+- From the repo root, `docker compose up -d --build drink-hub` rebuilds and restarts the production-style container.
 
 ## Coding Style & Naming Conventions
 
-Use TypeScript, Svelte components, and two-space indentation. Keep server-only code under `src/lib/server/`; expose route handlers through SvelteKit `+server.ts` and page data through `+page.server.ts`. Match existing CSS custom properties and Tailwind utility usage in `src/app.css` and components. Name routes with SvelteKit file conventions and helper modules with clear kebab-case or lower-case names.
+Use TypeScript, Svelte components, and two-space indentation. Keep server-only code under `src/lib/server/`; expose route handlers through SvelteKit `+server.ts` and page data through `+page.server.ts`. Use `src/lib/app-paths.ts` for internal links, actions, uploads, redirects, and fetches that need the `/drinks` base path. Match shared CSS custom properties from `packages/bristoe-theme` and local Tailwind utility usage in components. Name routes with SvelteKit file conventions and helper modules with clear kebab-case or lower-case names.
 
 ## Testing Guidelines
 
@@ -26,7 +26,7 @@ There is no dedicated test runner. After any code or config change, run `npm run
 
 ## Required Post-Change Workflow
 
-For every code or config change, rebuild and verify before publishing: run the checks above, smoke test the changed behavior, redeploy with `docker compose up -d --build`, run `npm run validate`, commit only touched files, and push with `git push origin main`. If any step fails, fix the root cause and repeat the workflow.
+For every code or config change, rebuild and verify before publishing: run the checks above, smoke test the changed behavior under `/drinks/`, redeploy from the repo root with `./deploy/deploy.sh`, run validation, commit only touched files, and push with `git push origin main`. If any step fails, fix the root cause and repeat the workflow.
 
 ## Commit & Pull Request Guidelines
 

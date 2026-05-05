@@ -2,7 +2,7 @@
 
 A tiny, self-hosted drink ordering site for the house. Runs on the Raspberry Pi alongside Home Assistant, serves a mobile-friendly menu on the local network, tracks orders per person, and dispatches fun automations through HA — speaker announcements, milestone light flashes, whatever you can wire up.
 
-> **Status:** Live in production at <https://drink-hub.21bristoe.com>. Phases 1–11 complete. Phase 8 polish partially shipped — see [docs/future-phases.md](./docs/future-phases.md) for remaining items.
+> **Status:** Live in production at <https://21bristoe.com/drinks/> from the unified `home` repo. The legacy `drink-hub.21bristoe.com` host redirects here. Phases 1–11 complete. Phase 8 polish partially shipped — see [docs/future-phases.md](./docs/future-phases.md) for remaining items.
 
 ---
 
@@ -40,10 +40,11 @@ npm install
 npx drizzle-kit generate     # only if schema changed
 npm run db:migrate
 npm run db:seed
-npm run dev                  # http://localhost:5173
+npm run dev                  # http://localhost:5173/drinks/
 ```
 
 The SQLite database is written to `./data/drink-hub.db` (override with `DATABASE_PATH`).
+The SvelteKit base path defaults to `/drinks`; override with `BASE_PATH` only for unusual local testing.
 
 ### Useful scripts
 
@@ -59,24 +60,20 @@ The SQLite database is written to `./data/drink-hub.db` (override with `DATABASE
 | `npm run db:migrate` | Apply pending migrations |
 | `npm run db:seed` | Seed starter profiles and drinks (idempotent) |
 
-Set `VALIDATE_BASE=http://127.0.0.1:<port>` when validating a server on a non-default local port.
+Set `VALIDATE_BASE=http://127.0.0.1:<port>/drinks` when validating a server on a non-default local port.
 
 ---
 
 ## Deployment (Raspberry Pi, Docker)
 
-Home Assistant already runs on the Pi as a Docker container, so drink-hub runs as a sibling container.
+Home Assistant already runs on the Pi as a Docker container, so Drink Hub runs as a sibling container from the root `home` Compose file.
 
 ```bash
-cp .env.example .env
-# set SITE_PASSWORD_HASH and CSRF_TRUSTED_ORIGINS
-docker compose up -d --build
-npm run validate
+cd /home/faber/projects/home
+./deploy/deploy.sh
 ```
 
-Then on any device on the LAN, browse to `http://<pi-ip>:5173`.
-
-The `./data` directory is mounted as a volume so the SQLite database and uploaded images persist across rebuilds.
+The production data directory is `/var/lib/21bristoe/drink-hub`. During the unified deploy, `deploy/deploy.sh` copies legacy data from `/home/faber/projects/drink-hub/data` only if the new production database does not already exist.
 
 ### House password (shared)
 
@@ -89,11 +86,11 @@ Admin access now uses a real password managed inside the database, separate from
 ```
 ==============================================================
 [drink-hub] INITIAL ADMIN PASSWORD: xxxxxxxxxxxxxxxx
-[drink-hub] Log in at /admin/login and change it immediately.
+[drink-hub] Log in at /drinks/admin/login and change it immediately.
 ==============================================================
 ```
 
-Log in at `/admin/login`, go to **Settings → Change admin password**, and set something you'll remember. If you lose the admin password, the **Reset admin password** action on the same page will generate a new temporary one — it requires re-entering the house password and prints the new temp to the server logs.
+Log in at `/drinks/admin/login`, go to **Settings → Change admin password**, and set something you'll remember. If you lose the admin password, the **Reset admin password** action on the same page will generate a new temporary one — it requires re-entering the house password and prints the new temp to the server logs.
 
 To seed the admin password from the environment instead (e.g. for provisioning), set `ADMIN_PASSWORD=...` before first boot. The legacy `ADMIN_PIN` / `ADMIN_PIN_HASH` variables are deprecated and now ignored with a warning — 4-digit PINs are no longer supported.
 
@@ -103,7 +100,7 @@ For session signing, `SESSION_SECRET` may be set (≥32 chars); otherwise a rand
 
 The admin settings page accepts a Home Assistant base URL that the server uses to send bearer-authenticated requests. Incoming URLs are validated and loopback/metadata targets (127/8, ::1, 169.254/16) are always refused. Private LAN ranges are allowed by default (the typical Home Assistant case); set `HA_STRICT_PUBLIC=1` on cloud deployments to also refuse private IPs.
 
-Set `CSRF_TRUSTED_ORIGINS` to the public HTTPS origin served by nginx, for example `https://drinks.example.com`. This is used at build time so cross-site form posts are blocked while same-origin requests still work behind the reverse proxy.
+Set `CSRF_TRUSTED_ORIGINS` to the public HTTPS origin served by nginx, for example `https://21bristoe.com`. This is used at build time so cross-site form posts are blocked while same-origin requests still work behind the reverse proxy.
 
 An example hardened nginx config lives at [`deploy/nginx/drink-hub.conf.example`](./deploy/nginx/drink-hub.conf.example).
 

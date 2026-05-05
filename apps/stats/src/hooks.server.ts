@@ -1,4 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
+import { routePath } from '$lib/app-paths';
 
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Frame-Options': 'DENY',
@@ -29,7 +30,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   // Cache static pages briefly
-  const path = event.url.pathname;
+  const path = routePath(event.url.pathname);
   if (path === '/' || path === '/drinks' || path === '/house') {
     response.headers.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
   }

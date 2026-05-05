@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { afterNavigate } from '$app/navigation';
+  import { appPath, routePath } from '$lib/app-paths';
   import type { LayoutData } from './$types';
 
   let { children, data }: { children: any; data: LayoutData } = $props();
@@ -16,8 +17,9 @@
   ];
 
   function active(href: string) {
-    if (href === '/admin') return $page.url.pathname === '/admin';
-    return $page.url.pathname.startsWith(href);
+    const pathname = routePath($page.url.pathname);
+    if (href === '/admin') return pathname === '/admin';
+    return pathname.startsWith(href);
   }
 
   let drawerOpen = $state(false);
@@ -42,7 +44,7 @@
     <div class="bg-red-950/50 border-b border-red-800/60 px-4 py-2 text-xs text-red-300 flex items-center gap-2">
       <span>⚠ HA:</span>
       <span>{data.haWarning}</span>
-      <a href="/admin/settings" class="underline ml-1 hover:text-red-200">Fix in Settings →</a>
+      <a href={appPath('/admin/settings')} class="underline ml-1 hover:text-red-200">Fix in Settings →</a>
     </div>
   {/if}
 
@@ -60,7 +62,7 @@
         <line x1="3" y1="18" x2="21" y2="18" />
       </svg>
     </button>
-    <a href="/" class="text-lg font-semibold tracking-tight">🍹 drink-hub</a>
+    <a href={appPath('/')} class="text-lg font-semibold tracking-tight">🍹 drink-hub</a>
     <span class="text-slate-600 select-none">/</span>
     <span class="text-sm text-slate-300 font-medium">Admin</span>
   </header>
@@ -70,7 +72,7 @@
     <nav class="hidden md:flex w-40 shrink-0 border-r border-slate-800 py-4 flex-col gap-0.5 px-2">
       {#each links as link}
         <a
-          href={link.href}
+          href={appPath(link.href)}
           class="px-3 py-2 rounded-lg text-sm transition {active(link.href)
             ? 'bg-slate-800 text-white'
             : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}"
@@ -104,7 +106,7 @@
       </div>
       {#each links as link}
         <a
-          href={link.href}
+          href={appPath(link.href)}
           class="px-3 py-3 rounded-lg text-base transition {active(link.href)
             ? 'bg-slate-800 text-white'
             : 'text-slate-300 hover:text-white hover:bg-slate-800/60'}"

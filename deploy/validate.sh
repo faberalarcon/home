@@ -66,6 +66,8 @@ if [[ "$MODE" != "--local" ]]; then
     check "www HTTPS -> non-www redirect" "$(curl -sI https://www.21bristoe.com | head -5)" "301"
     check "www HTTPS location" "$(curl -sI https://www.21bristoe.com | grep -i location)" "https://21bristoe.com"
     check "HTTP www -> HTTPS" "$(curl -sI http://www.21bristoe.com | head -5)" "301"
+    check "drink-hub subdomain redirects to /drinks" "$(curl -sI http://drink-hub.21bristoe.com/ | grep -i location)" "https://21bristoe.com/drinks/"
+    check "stats subdomain redirects to /stats" "$(curl -sI http://stats.21bristoe.com/ | grep -i location)" "https://21bristoe.com/stats/"
 
     echo ""
     echo "--- SSL checks ---"
@@ -100,14 +102,34 @@ if [[ "$MODE" != "--local" ]]; then
     check "Admin service is active" "$ADMIN_SERVICE" "active"
 
     echo ""
-    echo "--- drink-hub still works ---"
-    DH_CODE=$(curl -so /dev/null -w '%{http_code}' https://drink-hub.21bristoe.com 2>/dev/null || echo "error")
-    if [[ "$DH_CODE" == "200" || "$DH_CODE" == "401" ]]; then
-        echo "  PASS  drink-hub.21bristoe.com ($DH_CODE)"
+    echo "--- Path app checks ---"
+    DH_CODE=$(curl -so /dev/null -w '%{http_code}' "$BASE/drinks/login" 2>/dev/null || echo "error")
+    if [[ "$DH_CODE" == "200" || "$DH_CODE" == "303" ]]; then
+        echo "  PASS  /drinks/login reachable ($DH_CODE)"
         ((PASS++)) || true
     else
-        echo "  WARN  drink-hub.21bristoe.com returned $DH_CODE (may need investigation)"
+        echo "  FAIL  /drinks/login reachable"
+        echo "        Expected: 200 or 303"
+        echo "        Got:      $DH_CODE"
+        ((FAIL++)) || true
     fi
+
+    DH_HEALTH=$(curl -s "$BASE/drinks/api/health" 2>/dev/null || echo "")
+    check "Drink Hub health JSON" "$(echo "$DH_HEALTH" | python3 -c 'import sys,json; json.load(sys.stdin); print("valid")' 2>/dev/null || echo "invalid")" "valid"
+
+    STATS_CODE=$(curl -so /dev/null -w '%{http_code}' "$BASE/stats/" 2>/dev/null || echo "error")
+    if [[ "$STATS_CODE" == "200" ]]; then
+        echo "  PASS  /stats/ reachable ($STATS_CODE)"
+        ((PASS++)) || true
+    else
+        echo "  FAIL  /stats/ reachable"
+        echo "        Expected: 200"
+        echo "        Got:      $STATS_CODE"
+        ((FAIL++)) || true
+    fi
+
+    STATS_HEALTH=$(curl -s "$BASE/stats/api/health" 2>/dev/null || echo "")
+    check "Stats health JSON" "$(echo "$STATS_HEALTH" | python3 -c 'import sys,json; json.load(sys.stdin); print("valid")' 2>/dev/null || echo "invalid")" "valid"
 fi
 
 echo ""

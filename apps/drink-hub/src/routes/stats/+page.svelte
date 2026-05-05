@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { appPath } from '$lib/app-paths';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -37,7 +38,7 @@
   });
 
   onMount(() => {
-    source = new EventSource('/api/stream');
+    source = new EventSource(appPath('/api/stream'));
     source.addEventListener('order', (e) => {
       const ev = JSON.parse(e.data);
       totalAllTime = ev.counts.allTime;

@@ -3,6 +3,7 @@ import { drinks } from '$lib/server/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import { saveImage } from '$lib/server/uploads';
+import { appPath } from '$lib/app-paths';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -74,7 +75,7 @@ export const actions: Actions = {
       }
     }
 
-    redirect(303, '/admin/drinks');
+    redirect(303, appPath('/admin/drinks'));
   },
 
   toggleActive: async ({ request }) => {
@@ -85,7 +86,7 @@ export const actions: Actions = {
     if (!drink) return fail(404, { error: 'Drink not found' });
     db.update(drinks).set({ active: !drink.active }).where(eq(drinks.id, id)).run();
     const params = !drink.active ? '' : '?inactive=1'; // if we just hid it, stay on current view
-    redirect(303, `/admin/drinks${params}`);
+    redirect(303, `${appPath('/admin/drinks')}${params}`);
   },
 
   delete: async ({ request }) => {
@@ -98,6 +99,6 @@ export const actions: Actions = {
       // FK constraint — drink has orders; deactivate instead
       db.update(drinks).set({ active: false }).where(eq(drinks.id, id)).run();
     }
-    redirect(303, '/admin/drinks');
+    redirect(303, appPath('/admin/drinks'));
   }
 };

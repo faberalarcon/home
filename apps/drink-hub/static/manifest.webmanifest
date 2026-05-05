@@ -2,20 +2,21 @@
   "name": "drink-hub",
   "short_name": "drinks",
   "description": "House drink ordering — track what everyone's having",
-  "start_url": "/",
+  "start_url": "/drinks/",
+  "scope": "/drinks/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "orientation": "any",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/drinks/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/drinks/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

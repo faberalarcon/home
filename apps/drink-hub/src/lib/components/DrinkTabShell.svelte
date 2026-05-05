@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { afterNavigate } from '$app/navigation';
+  import { appPath, routePath } from '$lib/app-paths';
   import { drinkSections, sectionIndexForPath } from '$lib/drink-sections';
   import { onDestroy, onMount, tick } from 'svelte';
   import ProfilesPage from '../../routes/+page.svelte';
@@ -44,11 +45,12 @@
   const ActivePage = $derived(activeHref ? PAGE_COMPONENTS[activeHref] : null);
 
   function canonicalDrinkHref(url: URL): PageHref | null {
+    const pathname = routePath(url.pathname);
     if (url.search) return null;
-    if (url.pathname === '/') return '/';
-    if (url.pathname === '/menu') return '/menu';
-    if (url.pathname === '/recent') return '/recent';
-    if (url.pathname === '/stats') return '/stats';
+    if (pathname === '/') return '/';
+    if (pathname === '/menu') return '/menu';
+    if (pathname === '/recent') return '/recent';
+    if (pathname === '/stats') return '/stats';
     return null;
   }
 
@@ -81,7 +83,7 @@
   }
 
   async function fetchPageData(href: PageHref): Promise<any> {
-    const response = await fetch(`/api/page-data?href=${encodeURIComponent(href)}`, {
+    const response = await fetch(`${appPath('/api/page-data')}?href=${encodeURIComponent(href)}`, {
       credentials: 'same-origin'
     });
     if (!response.ok) throw new Error(`Failed to load ${href}`);
@@ -139,7 +141,7 @@
   async function syncRouteUrl(href: PageHref, scrollY: number) {
     shellNavigationActive = true;
     try {
-      await goto(href, { noScroll: true, keepFocus: true });
+      await goto(appPath(href), { noScroll: true, keepFocus: true });
       await tick();
       restoreScrollY(scrollY);
       activeHref = null;
@@ -185,7 +187,7 @@
 
     event.preventDefault();
     void activatePage(href).catch(() => {
-      void goto(href, { noScroll: true, keepFocus: true });
+      void goto(appPath(href), { noScroll: true, keepFocus: true });
     });
   }
 

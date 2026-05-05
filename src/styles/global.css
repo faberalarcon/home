@@ -1,82 +1,5 @@
-/* Token-name vs value mapping (palette swapped 2026-04-23):
-   --color-warm-*  = door-blue primary accent (warm-500 = #6fa8dc, the front door).
-   --color-sage-*  = stainless-steel neutral ramp (sage-500 = #94a3b8); no green.
-   Names retained so every `bg-warm-*` / `text-sage-*` utility across the site
-   keeps working — only the hex values were swapped to match the physical house.
-   Red remains red for danger. See CLAUDE.md "Design tokens" for the full story. */
-
-/* --- Self-hosted fonts (variable woff2) --- */
-@font-face {
-  font-family: 'Fraunces';
-  src: url('/fonts/fraunces-wght.woff2') format('woff2-variations');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Fraunces';
-  src: url('/fonts/fraunces-wght-italic.woff2') format('woff2-variations');
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Inter Tight';
-  src: url('/fonts/inter-tight-wght.woff2') format('woff2-variations');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Inter Tight';
-  src: url('/fonts/inter-tight-wght-italic.woff2') format('woff2-variations');
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  src: url('/fonts/jetbrains-mono-wght.woff2') format('woff2-variations');
-  font-weight: 100 800;
-  font-style: normal;
-  font-display: swap;
-}
-
 @import "tailwindcss";
-
-/* Custom design tokens for 21 Bristoe */
-@theme {
-  /* House palette — cool white + door blue + stainless steel.
-     Token names retained (warm/sage) to avoid renaming every utility;
-     values map to the physical house colors. */
-  --color-warm-50:  #fafbfc;
-  --color-warm-100: #f1f4f7;
-  --color-warm-200: #e3e8ee;
-  --color-warm-300: #c9d2dc;
-  --color-warm-400: #8bb8e0;
-  --color-warm-500: #6fa8dc;
-  --color-warm-600: #4a90d0;
-  --color-warm-700: #334155;
-  --color-warm-800: #1e293b;
-  --color-warm-900: #0f172a;
-
-  /* Stainless-steel neutrals (sage token retained; values are gray now) */
-  --color-sage-50:  #f4f6f9;
-  --color-sage-100: #e6ebf1;
-  --color-sage-200: #d0d8e2;
-  --color-sage-300: #b8c4d0;
-  --color-sage-400: #a1adbb;
-  --color-sage-500: #94a3b8;
-  --color-sage-600: #7f8ea4;
-  --color-sage-700: #64748b;
-  --color-sage-800: #3f4959;
-  --color-sage-900: #232a36;
-
-  /* Typography — matches drink-hub and stats (self-hosted variable fonts) */
-  --font-display: 'Fraunces', 'Georgia', 'Times New Roman', serif;
-  --font-body:    'Inter Tight', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
-  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-}
+@import "../../packages/bristoe-theme/bristoe-theme.css";
 
 /* Base styles */
 html {
@@ -181,35 +104,6 @@ body {
    their light text colours are preserved with explicit overrides.
    ============================================================ */
 @media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-
-    /* Surface backgrounds: deep slate */
-    --color-warm-50:  #0f1419;
-    --color-warm-100: #161b22;
-    --color-warm-200: #1f2630;
-    --color-warm-300: #30384a;
-    --color-warm-400: #6fa8dc;
-    /* warm-500 door-blue accent preserved as highlight */
-    --color-warm-600: #8bb8e0;
-    --color-warm-700: #c9d2dc;
-    /* Heading text: light cool */
-    --color-warm-800: #e3e8ee;
-    /* Footer bg: near black slate */
-    --color-warm-900: #05080c;
-
-    /* Sage surface backgrounds (steel dark) */
-    --color-sage-50:  #0f141a;
-    --color-sage-100: #171d26;
-    --color-sage-200: #232a36;
-    --color-sage-300: #3f4959;
-
-    /* Tailwind's built-in gray scale (used in paragraph text) */
-    --color-gray-600: #94a3b8;
-    --color-gray-500: #7f8ea4;
-    --color-gray-400: #64748b;
-  }
-
   body { color: #c9d2dc; }
 
   .bg-white { background-color: #0f1419; }

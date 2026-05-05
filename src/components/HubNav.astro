@@ -18,12 +18,12 @@ const pills = [
   {
     key: 'drinks' as const,
     label: 'Drinks',
-    href: 'https://drink-hub.21bristoe.com',
+    href: '/drinks/',
   },
   {
     key: 'stats' as const,
     label: 'Stats',
-    href: 'https://stats.21bristoe.com',
+    href: '/stats/',
   },
 ];
 
@@ -47,12 +47,7 @@ const inactiveClasses =
                 {pill.label}
               </a>
             ) : (
-              <a
-                href={pill.href}
-                class={classes}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={pill.href} class={classes}>
                 {pill.label}
               </a>
             )}

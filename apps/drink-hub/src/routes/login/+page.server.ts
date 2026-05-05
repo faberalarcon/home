@@ -2,17 +2,18 @@ import { fail, redirect } from '@sveltejs/kit';
 import { hashSitePassword, makeSessionToken } from '$lib/server/auth';
 import { getConfiguredSitePasswordHash, isSecureRequest, normalizeNextPath } from '$lib/server/site-access';
 import { checkRateLimit } from '$lib/server/ratelimit';
+import { appPath } from '$lib/app-paths';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
   const next = normalizeNextPath(url.searchParams.get('next'));
 
   if (!locals.sitePasswordEnabled) {
-    throw redirect(303, next);
+    throw redirect(303, appPath(next));
   }
 
   if (locals.siteAuthenticated) {
-    throw redirect(303, next);
+    throw redirect(303, appPath(next));
   }
 
   return { next };
@@ -46,18 +47,18 @@ export const actions: Actions = {
     }
 
     cookies.set('site_session', makeSessionToken('site'), {
-      path: '/',
+      path: appPath('/'),
       httpOnly: true,
       secure: isSecureRequest(url, request.headers.get('x-forwarded-proto')),
       maxAge: 24 * 60 * 60,
       sameSite: 'strict'
     });
 
-    throw redirect(303, next);
+    throw redirect(303, appPath(next));
   },
 
   logout: async ({ cookies }) => {
-    cookies.delete('site_session', { path: '/' });
-    throw redirect(303, '/login');
+    cookies.delete('site_session', { path: appPath('/') });
+    throw redirect(303, appPath('/login'));
   }
 };

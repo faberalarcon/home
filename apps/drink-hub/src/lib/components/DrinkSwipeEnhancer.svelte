@@ -2,6 +2,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { appPath, routePath } from '$lib/app-paths';
   import { drinkSections, sectionIndexForPath } from '$lib/drink-sections';
   import { onDestroy, onMount, tick } from 'svelte';
 
@@ -58,7 +59,7 @@
   }
 
   function targetForDx(dx: number): string | null {
-    const currentIndex = sectionIndexForPath($page.url.pathname);
+    const currentIndex = sectionIndexForPath(routePath($page.url.pathname));
     if (currentIndex === -1) return null;
     const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
     return drinkSections[nextIndex]?.href ?? null;
@@ -79,7 +80,7 @@
   async function loadPreviewHtml(href: string): Promise<string | null> {
     if (previewCache.has(href)) return previewCache.get(href) ?? null;
     try {
-      const response = await fetch(href, { credentials: 'same-origin' });
+      const response = await fetch(appPath(href), { credentials: 'same-origin' });
       if (!response.ok) return null;
       const preview = readMainPreview(await response.text());
       if (preview) previewCache.set(href, preview);
@@ -235,7 +236,7 @@
       }
     }
 
-    const navigation = goto(href, { noScroll: true, keepFocus: true });
+    const navigation = goto(appPath(href), { noScroll: true, keepFocus: true });
     const [navigationResult] = await Promise.allSettled([navigation, animation]);
     if (navigationResult.status === 'fulfilled') {
       await tick();

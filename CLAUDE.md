@@ -4,9 +4,9 @@
 
 Every code change in this repo follows this cycle — no exceptions:
 
-1. **Smoke test locally**: `npm run dev` (or `npm run build && npx astro preview`), curl the affected pages, grep for markers of the change.
-2. **Rebuild**: `npm run build` — must succeed before any commit.
-3. **Redeploy**: `./deploy/deploy.sh` — runs the 31-check validation suite as a gate.
+1. **Smoke test locally**: `npm run dev`, `npm run dev:drink-hub`, or `npm run dev:stats` depending on the changed surface. The SvelteKit apps run under `/drinks/` and `/stats/` locally and in production.
+2. **Rebuild**: `npm run build` and `npm run check` — both must succeed before any commit when app code changed.
+3. **Redeploy**: `./deploy/deploy.sh` — builds the static site, rebuilds the app containers, installs nginx config, and runs validation as a gate.
 4. **Commit**: stage only files you touched; use a conventional, human-style message (see existing `git log --oneline`).
 5. **Push**: `git push origin main`.
 
@@ -16,16 +16,18 @@ If any step fails, fix the root cause and restart the cycle. Do not skip steps o
 
 
 ## What this is
-Static homepage for the household at 21 Bristoe Station Rd, Meades Crossing, Taneytown MD.
-Built with Astro 6 + Tailwind CSS 4, deployed as static HTML via nginx on a Raspberry Pi.
+Unified repo for the household sites at 21 Bristoe Station Rd, Meades Crossing, Taneytown MD.
+The homepage is Astro 6 + Tailwind CSS 4, deployed as static HTML via nginx on a Raspberry Pi. Drink Hub and Stats are SvelteKit apps deployed as local Docker containers behind the same nginx vhost.
 
 ## The household
 - **Faber** and **Kasey** (the humans)
 - **Limón** — golden retriever
 
 ## Stack
-- Astro 6 (static output, zero client JS)
+- Astro 6 (static homepage output)
+- SvelteKit apps under `apps/drink-hub/` and `apps/stats/`
 - Tailwind CSS 4 (via @tailwindcss/vite)
+- Shared theme package: `packages/bristoe-theme`
 - @astrojs/sitemap
 - suncalc — build-time sun/moon calculations for SkyStrip
 - Admin panel: Node/Express at `admin/` (image uploads, port 3001)
@@ -40,27 +42,37 @@ Built with Astro 6 + Tailwind CSS 4, deployed as static HTML via nginx on a Rasp
   - `src/components/WeatherCard.astro` — live weather widget (build-time fetch, Open-Meteo)
   - `src/components/VisitorGuide.astro` — collapsible visitor tips (HTML details/summary, zero JS)
   - `src/assets/images/` — local images (optimized at build time by Astro)
-  - `src/styles/global.css` — Tailwind + custom design tokens
+  - `src/styles/global.css` — imports shared Tailwind theme and homepage-specific styles
+- Drink Hub: `apps/drink-hub/` — SvelteKit ordering app, canonical URL `/drinks/`
+- Stats: `apps/stats/` — SvelteKit dashboard, canonical URL `/stats/`
+- Shared theme: `packages/bristoe-theme/bristoe-theme.css`
 - Build output: `dist/` (gitignored, built on server)
 - Nginx config: `deploy/nginx/21bristoe.com.ssl.conf`
 - Deploy script: `deploy/deploy.sh`
-- Validation script: `deploy/validate.sh` (31 checks including admin panel)
+- Validation script: `deploy/validate.sh` (homepage, app prefixes, redirects, admin panel, SSL, and headers)
 - Public assets: `public/` (copied to dist/ as-is)
 - Uploaded photos: `/var/www/21bristoe-media/` (served at `/uploads/`, never wiped by deploy)
 
 ## Build & Deploy
 ```bash
 npm run dev           # local dev server at localhost:4321
-npm run build         # produces dist/
-./deploy/deploy.sh    # build + backup + rsync + reload nginx
-./deploy/validate.sh  # run 28-check validation suite
+npm run dev:drink-hub # local Drink Hub at localhost:5173/drinks/
+npm run dev:stats     # local Stats at localhost:5174/stats/
+npm run build         # builds homepage, Drink Hub, and Stats
+npm run check         # Svelte checks for Drink Hub and Stats
+./deploy/deploy.sh    # build + backup + rsync + app containers + unified nginx reload
+./deploy/validate.sh  # run production validation suite
 ```
 
 ## Server
 - Raspberry Pi (ARM64) at 192.168.1.177, public IP 24.170.229.234
 - nginx 1.26.3 serving static files from /var/www/21bristoe.com
 - SSL via certbot (Let's Encrypt), auto-renewing
-- Existing subdomain: drink-hub.21bristoe.com (separate config, don't touch)
+- Canonical app URLs: `https://21bristoe.com/drinks/` and `https://21bristoe.com/stats/`
+- Legacy subdomains `drink-hub.21bristoe.com` and `stats.21bristoe.com` should redirect to the canonical path URLs.
+- Deploy creates an untracked root `.env` from selected legacy app env keys if one does not already exist; it intentionally pins `ORIGIN` and `CSRF_TRUSTED_ORIGINS` to `https://21bristoe.com`.
+- Deploy removes known legacy app containers (`drink-hub`, `21bristoe-stats`) unless they are already owned by the root `home` Compose project.
+- Deploy retires enabled legacy vhost entries for those subdomains into timestamped backups before `nginx -t`.
 
 ## Canonical URL
 https://21bristoe.com (www redirects to non-www)
@@ -68,7 +80,7 @@ https://21bristoe.com (www redirects to non-www)
 ## Design tokens
 Palette was swapped on 2026-04-23 to match the physical house (cool white + door blue + stainless steel). The original `warm-*` / `sage-*` token names are **intentionally retained** — every Tailwind utility across the site (`bg-warm-500`, `text-sage-600`, `border-warm-200`, etc.) references them, so renaming would mean touching every template. Values were swapped in place; names are now semantic-in-retrospect, not literal.
 
-Canonical source: `src/styles/global.css` (under `@theme`).
+Canonical source: `packages/bristoe-theme/bristoe-theme.css` (under `@theme`).
 
 - `--color-warm-*` — **door-blue primary accent.** `warm-500` is `#6fa8dc` (the front door). Scale ramps cool-white (`warm-50` `#fafbfc`) through slate-navy (`warm-900` `#0f172a`). Ignore the "warm" in the name.
 - `--color-sage-*` — **stainless-steel neutrals.** `sage-500` is `#94a3b8` (appliance gray). Scale is a cool gray ramp, no green anywhere. Ignore the "sage" in the name.
@@ -139,8 +151,10 @@ The weather widget, sky strip, and seasonal greeting are computed at build time:
 
 ## Site is LIVE
 - https://21bristoe.com — serving the homepage
+- https://21bristoe.com/drinks/ — serving Drink Hub
+- https://21bristoe.com/stats/ — serving Stats
 - SSL cert: Let's Encrypt, valid until 2026-07-11, auto-renews
-- All 31 endpoint/SSL/security/redirect checks passing
+- Endpoint/SSL/security/redirect checks passing after deployment
 
 ## Deploy
 ```bash

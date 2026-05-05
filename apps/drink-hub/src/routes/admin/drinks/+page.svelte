@@ -1,5 +1,6 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
+  import { appPath, assetPath, thumbPath } from '$lib/app-paths';
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -30,14 +31,14 @@
     <h1 class="text-2xl font-semibold">Menu Items</h1>
     {#if data.inactiveCount > 0}
       <a
-        href="/admin/drinks?{data.showInactive ? '' : 'inactive=1'}"
+        href={`${appPath('/admin/drinks')}${data.showInactive ? '' : '?inactive=1'}`}
         class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400 hover:text-slate-200 transition"
       >
         {data.showInactive ? 'Hide inactive' : `+${data.inactiveCount} hidden`}
       </a>
     {/if}
   </div>
-  <a href="/admin/drinks" class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New item</a>
+  <a href={appPath('/admin/drinks')} class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New item</a>
 </div>
 
 {#if form?.error}
@@ -70,7 +71,7 @@
             <td class="px-4 py-3">
               <div class="flex items-center gap-2">
                 {#if d.imageUrl}
-                  <img src={d.imageUrl.replace('.webp', '-thumb.webp')} alt="" class="w-8 h-8 rounded object-cover shrink-0" />
+                  <img src={thumbPath(d.imageUrl)} alt="" class="w-8 h-8 rounded object-cover shrink-0" />
                 {:else}
                   <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-base shrink-0">🍽️</div>
                 {/if}
@@ -83,7 +84,7 @@
             <td class="px-4 py-3 text-right">
               <div class="flex items-center justify-end gap-3">
                 <a
-                  href="/admin/drinks?edit={d.id}{data.showInactive ? '&inactive=1' : ''}"
+                  href={`${appPath('/admin/drinks')}?edit=${d.id}${data.showInactive ? '&inactive=1' : ''}`}
                   class="text-slate-400 hover:text-white text-xs"
                 >Edit</a>
                 <form method="POST" action="?/toggleActive" class="contents">
@@ -116,7 +117,7 @@
     <div class="bg-slate-900 border rounded-xl p-4 {data.editing?.id === d.id ? 'border-orange-700/60 bg-slate-800/40' : !d.active ? 'opacity-60 border-slate-800' : 'border-slate-800'}">
       <div class="flex items-start gap-3 mb-3">
         {#if d.imageUrl}
-          <img src={d.imageUrl.replace('.webp', '-thumb.webp')} alt="" class="w-12 h-12 rounded object-cover shrink-0" />
+          <img src={thumbPath(d.imageUrl)} alt="" class="w-12 h-12 rounded object-cover shrink-0" />
         {:else}
           <div class="w-12 h-12 rounded bg-slate-800 flex items-center justify-center text-xl shrink-0">🍽️</div>
         {/if}
@@ -130,7 +131,7 @@
       {/if}
       <div class="flex flex-wrap gap-2">
         <a
-          href="/admin/drinks?edit={d.id}{data.showInactive ? '&inactive=1' : ''}"
+          href={`${appPath('/admin/drinks')}?edit=${d.id}${data.showInactive ? '&inactive=1' : ''}`}
           class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700"
         >Edit</a>
         <form method="POST" action="?/toggleActive" class="contents">
@@ -261,7 +262,7 @@
         Image {data.editing?.imageUrl ? '(leave blank to keep current, max 10 MB)' : '(optional, max 10 MB)'}
       </label>
       {#if data.editing?.imageUrl}
-        <img src={data.editing.imageUrl} alt="" class="w-16 h-16 rounded-lg object-cover mb-2" />
+        <img src={assetPath(data.editing.imageUrl)} alt="" class="w-16 h-16 rounded-lg object-cover mb-2" />
       {/if}
       <input
         id="image" name="image" type="file"
@@ -287,7 +288,7 @@
         {data.editing ? 'Save changes' : 'Create item'}
       </button>
       {#if data.editing}
-        <a href="/admin/drinks" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">
+        <a href={appPath('/admin/drinks')} class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">
           Cancel
         </a>
       {/if}

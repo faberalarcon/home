@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { appPath } from '$lib/app-paths';
+
   // HubNav — three-pill ecosystem navigation shared across home / drink-hub / stats.
   // Matches the visual/semantic pattern of home repo's HubNav.astro, translated
   // to drink-hub's scoped-style idiom (raw CSS variables on class names).
@@ -10,11 +12,11 @@
 
   type Pill = { key: 'home' | 'drinks' | 'stats'; label: string; href: string; external: boolean };
 
-  // Stats is same-origin on stats — points at the root path, not the subdomain.
+  // Stats is same-origin on 21bristoe.com — points at the canonical path, not the subdomain.
   const pills: Pill[] = [
-    { key: 'home',   label: 'Home',   href: 'https://21bristoe.com',           external: true  },
-    { key: 'drinks', label: 'Drinks', href: 'https://drink-hub.21bristoe.com', external: true  },
-    { key: 'stats',  label: 'Stats',  href: '/',                                external: false }
+    { key: 'home',   label: 'Home',   href: 'https://21bristoe.com',         external: false },
+    { key: 'drinks', label: 'Drinks', href: 'https://21bristoe.com/drinks/', external: false },
+    { key: 'stats',  label: 'Stats',  href: appPath('/'),                    external: false }
   ];
 </script>
 
@@ -35,8 +37,8 @@
           <a
             href={pill.href}
             class="hubnav__pill hubnav__pill--inactive"
-            target="_blank"
-            rel="noopener noreferrer"
+            target={pill.external ? '_blank' : undefined}
+            rel={pill.external ? 'noopener noreferrer' : undefined}
           >
             {pill.label}
           </a>

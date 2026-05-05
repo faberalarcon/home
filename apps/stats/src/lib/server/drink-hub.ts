@@ -55,7 +55,7 @@ export interface DrinkEntry {
 }
 
 export async function fetchDrinkHubStats(params?: URLSearchParams): Promise<DrinkHubStats | null> {
-  const baseUrl = env.DRINK_HUB_URL || 'http://127.0.0.1:5173';
+  const baseUrl = env.DRINK_HUB_URL || 'http://127.0.0.1:5173/drinks';
   let url = `${baseUrl}/api/stats`;
   if (params && params.toString()) {
     url += `?${params.toString()}`;

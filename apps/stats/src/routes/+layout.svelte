@@ -4,12 +4,14 @@
   import HubNav from '$lib/components/HubNav.svelte';
   import StatsEnhancer from '$lib/components/StatsEnhancer.svelte';
   import StatsTabShell from '$lib/components/StatsTabShell.svelte';
+  import { appPath, routePath } from '$lib/app-paths';
   import { statsSections } from '$lib/stats-sections';
 
   let { children, data } = $props();
 
   const now = new Date();
   const buildYear = now.getFullYear();
+  const currentPath = $derived(routePath($page.url.pathname));
 
   function measureHeader(node: HTMLElement) {
     const update = () => {
@@ -44,8 +46,8 @@
     <nav class="app-header__nav" aria-label="Stats sections">
       {#each statsSections as link}
         <a
-          href={link.href}
-          aria-current={$page.url.pathname === link.href ? 'page' : undefined}
+          href={appPath(link.href)}
+          aria-current={currentPath === link.href ? 'page' : undefined}
         >
           {link.label}
         </a>
@@ -73,8 +75,8 @@
       <p>&copy; {buildYear} &middot; 21 Bristoe Station Rd, Taneytown, Md.</p>
       <div class="app-footer__links">
         <a href="https://21bristoe.com">21bristoe.com</a>
-        <a href="https://drink-hub.21bristoe.com">Drink Hub</a>
-        <a href="https://github.com/faberalarcon/stats" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://21bristoe.com/drinks/">Drink Hub</a>
+        <a href="https://github.com/faberalarcon/home" target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
     </div>
     {#if data.visitorCount !== null}

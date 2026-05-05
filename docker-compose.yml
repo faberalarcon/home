@@ -1,0 +1,74 @@
+services:
+  drink-hub:
+    build:
+      context: .
+      dockerfile: apps/drink-hub/Dockerfile
+      args:
+        BASE_PATH: /drinks
+        CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-https://21bristoe.com}
+    container_name: drink-hub
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5173:3000"
+    volumes:
+      - ${DRINK_HUB_DATA_DIR:-/var/lib/21bristoe/drink-hub}:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      - BASE_PATH=/drinks
+      - DATABASE_PATH=/app/data/drink-hub.db
+      - BODY_SIZE_LIMIT=10485760
+      - ORIGIN=${ORIGIN:-https://21bristoe.com}
+      - PROTOCOL_HEADER=x-forwarded-proto
+      - HOST_HEADER=x-forwarded-host
+      - ADDRESS_HEADER=x-forwarded-for
+      - XFF_DEPTH=1
+      - SITE_PASSWORD=${SITE_PASSWORD:-}
+      - SITE_PASSWORD_HASH=${SITE_PASSWORD_HASH:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      - HA_STRICT_PUBLIC=${HA_STRICT_PUBLIC:-}
+      - TZ=${TZ:-America/New_York}
+    extra_hosts:
+      - "ai.local:host-gateway"
+
+  stats:
+    build:
+      context: .
+      dockerfile: apps/stats/Dockerfile
+      args:
+        BASE_PATH: /stats
+    container_name: 21bristoe-stats
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5174:3000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      - BASE_PATH=/stats
+      - ORIGIN=${ORIGIN:-https://21bristoe.com}
+      - PROTOCOL_HEADER=x-forwarded-proto
+      - HOST_HEADER=x-forwarded-host
+      - ADDRESS_HEADER=x-forwarded-for
+      - XFF_DEPTH=1
+      - HA_BASE_URL=${HA_BASE_URL:-http://ai.local:8123}
+      - HA_TOKEN=${HA_TOKEN:-}
+      - EV_COST_PER_KWH=${EV_COST_PER_KWH:-0.12}
+      - DRINK_HUB_URL=${DRINK_HUB_URL:-http://drink-hub:3000/drinks}
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - /var/lib/bristoe-backup:/var/lib/bristoe-backup:ro
+      - /var/lib/bristoe-stats:/var/lib/bristoe-stats:ro
+      - /mnt/usbbackup:/mnt/usbbackup:ro
+    extra_hosts:
+      - "ai.local:host-gateway"

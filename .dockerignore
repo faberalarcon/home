@@ -1,0 +1,11 @@
+**/node_modules
+**/build
+**/dist
+**/.svelte-kit
+**/.astro
+**/.git
+**/.env
+**/.env.*
+apps/drink-hub/data
+*.log
+.DS_Store

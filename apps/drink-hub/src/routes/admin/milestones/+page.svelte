@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { appPath } from '$lib/app-paths';
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -20,7 +21,7 @@
 
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-semibold">Milestones</h1>
-  <a href="/admin/milestones" class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New milestone</a>
+  <a href={appPath('/admin/milestones')} class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New milestone</a>
 </div>
 
 <p class="text-sm text-slate-400 mb-6">
@@ -63,7 +64,7 @@
               <input type="hidden" name="id" value={m.id} />
               <button type="submit" class="text-sky-500 hover:text-sky-400 text-xs">Test TTS</button>
             </form>
-            <a href="/admin/milestones?edit={m.id}" class="text-slate-400 hover:text-white text-xs">Edit</a>
+            <a href={`${appPath('/admin/milestones')}?edit=${m.id}`} class="text-slate-400 hover:text-white text-xs">Edit</a>
             <form method="POST" action="?/delete" class="inline" onsubmit={(e) => { if (!confirm(`Delete ${m.name}?`)) e.preventDefault(); }}>
               <input type="hidden" name="id" value={m.id} />
               <button type="submit" class="text-red-500 hover:text-red-400 text-xs">Delete</button>
@@ -97,7 +98,7 @@
           <input type="hidden" name="id" value={m.id} />
           <button type="submit" class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-sky-400 hover:bg-slate-700">Test TTS</button>
         </form>
-        <a href="/admin/milestones?edit={m.id}" class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700">Edit</a>
+        <a href={`${appPath('/admin/milestones')}?edit=${m.id}`} class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700">Edit</a>
         <form method="POST" action="?/delete" class="contents" onsubmit={(e) => { if (!confirm(`Delete ${m.name}?`)) e.preventDefault(); }}>
           <input type="hidden" name="id" value={m.id} />
           <button type="submit" class="text-sm px-3 py-2 rounded-lg bg-red-950/60 border border-red-800 text-red-300 hover:bg-red-900/60">Delete</button>
@@ -212,7 +213,7 @@
         {data.editing ? 'Save changes' : 'Create milestone'}
       </button>
       {#if data.editing}
-        <a href="/admin/milestones" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">
+        <a href={appPath('/admin/milestones')} class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">
           Cancel
         </a>
       {/if}

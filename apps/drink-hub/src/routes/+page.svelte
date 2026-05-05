@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { appPath, thumbPath } from '$lib/app-paths';
   import { selectedProfile } from '$lib/profile';
   import type { PageData } from './$types';
 
@@ -9,19 +10,19 @@
 
   function pick(p: Profile) {
     selectedProfile.set({ id: p.id, name: p.name, color: p.color });
-    goto('/menu');
+    goto(appPath('/menu'));
   }
 
   async function orderUsual(e: MouseEvent, p: Profile) {
     e.stopPropagation();
     if (!p.usualDrinkId) return;
     selectedProfile.set({ id: p.id, name: p.name, color: p.color });
-    await fetch('/api/orders', {
+    await fetch(appPath('/api/orders'), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ profileId: p.id, drinkId: p.usualDrinkId })
     });
-    goto('/recent');
+    goto(appPath('/recent'));
   }
 
   function timeAgo(date: Date | null): string {
@@ -54,7 +55,7 @@
       >
         {#if p.avatarUrl}
           <img
-            src={p.avatarUrl.replace('.webp', '-thumb.webp')}
+            src={thumbPath(p.avatarUrl)}
             alt={p.name}
             class="profile-avatar mb-2 object-cover"
           />

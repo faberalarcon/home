@@ -1,9 +1,11 @@
 services:
   drink-hub:
     build:
-      context: .
+      context: ../..
+      dockerfile: apps/drink-hub/Dockerfile
       args:
-        - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+        - BASE_PATH=${BASE_PATH:-/drinks}
+        - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-https://21bristoe.com}
     container_name: drink-hub
     restart: unless-stopped
     ports:
@@ -11,7 +13,7 @@ services:
       # The app is not meant to be reachable directly from the public internet.
       - "127.0.0.1:5173:3000"
     volumes:
-      - ./data:/app/data
+      - ${DRINK_HUB_DATA_DIR:-/var/lib/21bristoe/drink-hub}:/app/data
     read_only: true
     tmpfs:
       - /tmp:size=32m,mode=1777
@@ -22,7 +24,8 @@ services:
     environment:
       - DATABASE_PATH=/app/data/drink-hub.db
       - BODY_SIZE_LIMIT=10485760
-      - ORIGIN=${ORIGIN:-https://drink-hub.21bristoe.com}
+      - BASE_PATH=${BASE_PATH:-/drinks}
+      - ORIGIN=${ORIGIN:-https://21bristoe.com}
       - PROTOCOL_HEADER=x-forwarded-proto
       - HOST_HEADER=x-forwarded-host
       - ADDRESS_HEADER=x-forwarded-for

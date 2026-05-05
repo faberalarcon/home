@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { appPath } from '$lib/app-paths';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -35,7 +36,7 @@
     }, 30_000);
 
     try {
-      await fetch(`/api/orders/${row.id}`, { method: 'DELETE' });
+      await fetch(appPath(`/api/orders/${row.id}`), { method: 'DELETE' });
     } catch {
       // Revert on failure
       rows = [row, ...rows].sort((a, b) =>
@@ -52,7 +53,7 @@
     if (undoTimer) clearTimeout(undoTimer);
 
     try {
-      await fetch(`/api/orders/${item.id}`, { method: 'PUT' });
+      await fetch(appPath(`/api/orders/${item.id}`), { method: 'PUT' });
       rows = [item, ...rows].sort((a, b) =>
         (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0)
       );

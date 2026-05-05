@@ -2,13 +2,28 @@
   "name": "21bristoe-home",
   "type": "module",
   "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "dev:drink-hub": "npm --prefix apps/drink-hub run dev",
+    "dev:stats": "npm --prefix apps/stats run dev",
+    "build": "npm run build:home && npm run build:drink-hub && npm run build:stats",
+    "build:home": "astro build",
+    "build:drink-hub": "npm --prefix apps/drink-hub run build",
+    "build:stats": "npm --prefix apps/stats run build",
+    "check": "npm run check:drink-hub && npm run check:stats",
+    "check:drink-hub": "npm --prefix apps/drink-hub run check",
+    "check:stats": "npm --prefix apps/stats run check",
     "preview": "astro preview",
+    "validate:drink-hub": "npm --prefix apps/drink-hub run validate:local",
+    "validate:stats": "npm --prefix apps/stats run validate:local",
     "astro": "astro"
   },
   "dependencies": {

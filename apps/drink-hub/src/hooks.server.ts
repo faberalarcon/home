@@ -4,6 +4,7 @@ import { bootstrapSettings } from '$lib/server/db/settings';
 import { verifySessionToken } from '$lib/server/auth';
 import { bootstrapAdminPassword, isAdminPasswordConfigured } from '$lib/server/admin-password';
 import { getConfiguredSitePasswordHash } from '$lib/server/site-access';
+import { base } from '$app/paths';
 import { json, redirect, type Handle } from '@sveltejs/kit';
 
 let migrated = false;
@@ -30,7 +31,7 @@ if (adminBootstrap.generatedPassword) {
   console.log('');
   console.log('==============================================================');
   console.log('[drink-hub] INITIAL ADMIN PASSWORD: ' + adminBootstrap.generatedPassword);
-  console.log('[drink-hub] Log in at /admin/login and change it immediately.');
+  console.log(`[drink-hub] Log in at ${withBase('/admin/login')} and change it immediately.`);
   console.log('==============================================================');
   console.log('');
 } else if (adminBootstrap.source === 'env') {
@@ -41,7 +42,7 @@ if (process.env.ADMIN_PIN || process.env.ADMIN_PIN_HASH) {
   console.warn(
     '[drink-hub] ADMIN_PIN / ADMIN_PIN_HASH are deprecated and ignored. ' +
     'Use ADMIN_PASSWORD (or let the server generate a temp password) and ' +
-    'manage the credential from /admin/settings.'
+    `manage the credential from ${withBase('/admin/settings')}.`
   );
 }
 
@@ -57,6 +58,19 @@ function isPublicPath(path: string): boolean {
     path === '/manifest.webmanifest' ||
     path === '/service-worker.js'
   );
+}
+
+function routePath(pathname: string): string {
+  if (!base) return pathname;
+  if (pathname === base) return '/';
+  if (pathname.startsWith(`${base}/`)) return pathname.slice(base.length);
+  return pathname;
+}
+
+function withBase(path: string): string {
+  if (!base) return path;
+  if (path === '/') return base;
+  return `${base}${path}`;
 }
 
 const SECURITY_HEADERS: Record<string, string> = {
@@ -82,7 +96,7 @@ const SECURITY_HEADERS: Record<string, string> = {
 };
 
 export const handle: Handle = async ({ event, resolve }) => {
-  const path = event.url.pathname;
+  const path = routePath(event.url.pathname);
   const sitePasswordHash = getConfiguredSitePasswordHash();
   const siteToken = event.cookies.get('site_session');
   const adminToken = event.cookies.get('admin_session');
@@ -105,12 +119,12 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
 
     const next = `${path}${event.url.search}`;
-    throw redirect(303, `/login?next=${encodeURIComponent(next)}`);
+    throw redirect(303, `${withBase('/login')}?next=${encodeURIComponent(next)}`);
   }
 
   if (path.startsWith('/admin') && path !== '/admin/login') {
     if (!event.locals.adminAuthenticated) {
-      throw redirect(303, '/admin/login');
+      throw redirect(303, withBase('/admin/login'));
     }
   }
 

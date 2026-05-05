@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { appPath } from '$lib/app-paths';
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -14,7 +15,7 @@
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-semibold">Orders</h1>
   <a
-    href="/admin/orders/export?format=csv"
+    href={`${appPath('/admin/orders/export')}?format=csv`}
     class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition"
     download
   >Export CSV</a>
@@ -123,9 +124,9 @@
 
 <div class="flex gap-3">
   {#if data.before}
-    <a href="/admin/orders" class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">← Newer</a>
+    <a href={appPath('/admin/orders')} class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">← Newer</a>
   {/if}
   {#if data.hasMore && data.nextBefore}
-    <a href="/admin/orders?before={data.nextBefore}" class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">Older →</a>
+    <a href={`${appPath('/admin/orders')}?before=${data.nextBefore}`} class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">Older →</a>
   {/if}
 </div>

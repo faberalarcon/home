@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { appPath } from '$lib/app-paths';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -51,7 +52,7 @@
     clockTimer = setInterval(updateClock, 10_000);
     burnTimer = setInterval(() => { bgOffset = (bgOffset + 1) % 20; }, 30_000);
 
-    source = new EventSource('/api/stream');
+    source = new EventSource(appPath('/api/stream'));
     source.addEventListener('order', (e) => {
       const ev = JSON.parse(e.data);
       todayTotal = ev.counts.today;
