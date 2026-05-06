@@ -4,35 +4,45 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "apps/*",
     "packages/*"
   ],
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "astro dev",
-    "dev:drink-hub": "npm --prefix apps/drink-hub run dev",
-    "dev:stats": "npm --prefix apps/stats run dev",
-    "build": "npm run build:home && npm run build:drink-hub && npm run build:stats",
-    "build:home": "astro build",
-    "build:drink-hub": "npm --prefix apps/drink-hub run build",
-    "build:stats": "npm --prefix apps/stats run build",
-    "check": "npm run check:drink-hub && npm run check:stats",
-    "check:drink-hub": "npm --prefix apps/drink-hub run check",
-    "check:stats": "npm --prefix apps/stats run check",
-    "preview": "astro preview",
-    "validate:drink-hub": "npm --prefix apps/drink-hub run validate:local",
-    "validate:stats": "npm --prefix apps/stats run validate:local",
-    "astro": "astro"
+    "dev": "vite dev --host 0.0.0.0",
+    "build": "svelte-kit sync && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "start": "node build/index.js",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/lib/drinks/server/db/migrate.ts",
+    "db:seed": "tsx src/lib/drinks/server/db/seed.ts",
+    "hash:secret": "node scripts/hash-secret.mjs"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.0.0",
     "@ip-location-db/dbip-city-mmdb": "^2.3.2026040119",
-    "@tailwindcss/vite": "^4.0.0",
-    "astro": "^6.1.5",
+    "better-sqlite3": "^11.8.1",
+    "chart.js": "^4.4.8",
+    "drizzle-orm": "^0.45.2",
     "maxmind": "^5.0.6",
+    "sharp": "^0.34.5",
     "suncalc": "^1.9.0",
-    "tailwindcss": "^4.0.0"
+    "svelte-chartjs": "^4.0.1"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-node": "^5.5.4",
+    "@sveltejs/kit": "^2.57.1",
+    "@sveltejs/vite-plugin-svelte": "^5.1.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^25.6.0",
+    "drizzle-kit": "^0.31.10",
+    "svelte": "^5.55.3",
+    "svelte-check": "^4.4.6",
+    "tailwindcss": "^4.2.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vite": "^6.4.2"
   }
 }

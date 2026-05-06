@@ -1,68 +1,59 @@
 # 21bristoe.com
 
-Unified site repo for 21 Bristoe St — Faber, Kasey, and Limón. The homepage, Drink Hub, and Stats are maintained here and served from one `21bristoe.com` domain.
+Unified SvelteKit repo for the 21 Bristoe household site. Home, Drink Hub, Stats, and the protected Admin panel now run from this repo and one Docker container.
 
-**Status:** Live in production at <https://21bristoe.com>. Drink Hub is served at <https://21bristoe.com/drinks/> and Stats at <https://21bristoe.com/stats/>. Admin panel remains at <https://admin.21bristoe.com>. See [`CLAUDE.md`](./CLAUDE.md) for the change-workflow and operational notes.
+**Canonical repo:** <https://github.com/faberalarcon/home>
 
-## Tech stack
+## Live URLs
 
-- [Astro 6](https://astro.build) — static homepage
-- [SvelteKit](https://svelte.dev/docs/kit/introduction) — Drink Hub and Stats apps
-- [Tailwind CSS 4](https://tailwindcss.com) — styling
-- Docker Compose — app containers
-- nginx — web server (Raspberry Pi)
-- Let's Encrypt — SSL
+- Home: <https://21bristoe.com>
+- Drink Hub: <https://21bristoe.com/drinks/>
+- Stats: <https://21bristoe.com/stats/>
+- Admin: <https://admin.21bristoe.com/admin/>
 
-## Local development
+Legacy `drink-hub.21bristoe.com` and `stats.21bristoe.com` redirect to the canonical path URLs.
+
+## Stack
+
+- SvelteKit + Svelte 5
+- Tailwind CSS 4
+- Shared theme package: `packages/bristoe-theme`
+- SQLite + Drizzle for Drink Hub
+- Docker Compose, nginx, Let's Encrypt
+
+## Development
 
 ```bash
 npm install
-npm run dev             # homepage at http://localhost:4321
-npm run dev:drink-hub  # Drink Hub at http://localhost:5173/drinks/
-npm run dev:stats      # Stats at http://localhost:5174/stats/
+npm run dev
 ```
 
-The root package uses npm workspaces for `apps/*` and `packages/*`.
+Local routes:
 
-## Building
+- `http://localhost:5173/`
+- `http://localhost:5173/drinks/`
+- `http://localhost:5173/stats/`
+- `http://localhost:5173/admin/`
+
+## Build And Validate
 
 ```bash
-npm run build
 npm run check
+npm run build
+npm run preview
+VALIDATE_BASE=http://localhost:4173 ./deploy/validate.sh --local
 ```
 
-Homepage output goes to `dist/`; app output goes to each app's `build/`.
-
 ## Deployment
-
-Run the deploy script from the server:
 
 ```bash
 ./deploy/deploy.sh
 ```
 
-This will:
-1. Build the homepage, Drink Hub, and Stats (`npm run build`)
-2. Create a timestamped backup of the current deployment
-3. Sync `dist/` to `/var/www/21bristoe.com/`
-4. Create an untracked root `.env` from selected legacy app secrets if one does not already exist
-5. Retire legacy Drink Hub and Stats containers, then rebuild them with root Docker Compose
-6. Retire the old enabled Drink Hub and Stats vhosts into timestamped backups
-7. Install the unified nginx config, reload nginx, and run validation
+The deploy script builds the unified SvelteKit app, prepares existing data directories, rebuilds the `21bristoe-site` container, installs nginx configs, retires legacy app containers/admin service, reloads nginx, and runs validation.
 
-## Rollback
+Production data remains outside the repo:
 
-```bash
-LATEST_BACKUP=$(ls -td /var/www/21bristoe.com.bak-* | head -1)
-sudo rm -rf /var/www/21bristoe.com
-sudo mv "$LATEST_BACKUP" /var/www/21bristoe.com
-sudo systemctl reload nginx
-```
-
-## Production
-
-- URL: https://21bristoe.com
-- Drink Hub: https://21bristoe.com/drinks/
-- Stats: https://21bristoe.com/stats/
-- Server: Raspberry Pi at 192.168.1.177
-- SSL: Let's Encrypt, auto-renewing via certbot
+- Drink Hub SQLite/uploads: `/var/lib/21bristoe/drink-hub`
+- Home/Admin media: `/var/www/21bristoe-media`
+- Stats host data: `/var/lib/bristoe-stats`, `/var/lib/bristoe-backup`, `/mnt/usbbackup`

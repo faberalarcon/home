@@ -1,170 +1,78 @@
-# 21bristoe.com — Family Homepage
+# 21bristoe.com — Unified Site
 
-## Change workflow (always)
+## Change workflow
 
-Every code change in this repo follows this cycle — no exceptions:
+Every code/config change follows this cycle:
 
-1. **Smoke test locally**: `npm run dev`, `npm run dev:drink-hub`, or `npm run dev:stats` depending on the changed surface. The SvelteKit apps run under `/drinks/` and `/stats/` locally and in production.
-2. **Rebuild**: `npm run build` and `npm run check` — both must succeed before any commit when app code changed.
-3. **Redeploy**: `./deploy/deploy.sh` — builds the static site, rebuilds the app containers, installs nginx config, and runs validation as a gate.
-4. **Commit**: stage only files you touched; use a conventional, human-style message (see existing `git log --oneline`).
-5. **Push**: `git push origin main`.
+1. Smoke test locally with `npm run dev`.
+2. Run `npm run check` and `npm run build`.
+3. Deploy with `./deploy/deploy.sh` when production behavior changes.
+4. Commit only touched files and push `main`.
 
-If any step fails, fix the root cause and restart the cycle. Do not skip steps or batch changes across cycles.
-
----
-
+If any step fails, fix the root cause and repeat.
 
 ## What this is
-Unified repo for the household sites at 21 Bristoe Station Rd, Meades Crossing, Taneytown MD.
-The homepage is Astro 6 + Tailwind CSS 4, deployed as static HTML via nginx on a Raspberry Pi. Drink Hub and Stats are SvelteKit apps deployed as local Docker containers behind the same nginx vhost.
 
-## The household
-- **Faber** and **Kasey** (the humans)
-- **Limón** — golden retriever
+`home` is the single repo and runtime for 21 Bristoe:
+
+- Home: `/`
+- Gallery: `/gallery`
+- Drink Hub: `/drinks/`
+- Stats: `/stats/`
+- Admin: `/admin/` behind `admin.21bristoe.com`
+
+Canonical GitHub repo: <https://github.com/faberalarcon/home>
 
 ## Stack
-- Astro 6 (static homepage output)
-- SvelteKit apps under `apps/drink-hub/` and `apps/stats/`
-- Tailwind CSS 4 (via @tailwindcss/vite)
-- Shared theme package: `packages/bristoe-theme`
-- @astrojs/sitemap
-- suncalc — build-time sun/moon calculations for SkyStrip
-- Admin panel: Node/Express at `admin/` (image uploads, port 3001)
+
+- SvelteKit + Svelte 5 + adapter-node
+- Tailwind CSS 4
+- Shared theme: `packages/bristoe-theme`
+- Drink Hub data: SQLite + Drizzle
+- Admin image processing: `sharp`
+- Stats integrations: Home Assistant, backup manifests, visitor stats
+- Docker Compose + nginx + Let's Encrypt
 
 ## Key paths
-- Source: `src/`
-  - `src/layouts/` — shared HTML layouts
-  - `src/pages/` — routes (file = URL)
-  - `src/components/` — reusable Astro components
-  - `src/components/Slideshow.astro` — hero slideshow (reads `/uploads/manifest.json` at runtime)
-  - `src/components/SkyStrip.astro` — sunrise/sunset/moon phase bar (build-time, suncalc)
-  - `src/components/WeatherCard.astro` — live weather widget (build-time fetch, Open-Meteo)
-  - `src/components/VisitorGuide.astro` — collapsible visitor tips (HTML details/summary, zero JS)
-  - `src/assets/images/` — local images (optimized at build time by Astro)
-  - `src/styles/global.css` — imports shared Tailwind theme and homepage-specific styles
-- Drink Hub: `apps/drink-hub/` — SvelteKit ordering app, canonical URL `/drinks/`
-- Stats: `apps/stats/` — SvelteKit dashboard, canonical URL `/stats/`
-- Shared theme: `packages/bristoe-theme/bristoe-theme.css`
-- Build output: `dist/` (gitignored, built on server)
-- Nginx config: `deploy/nginx/21bristoe.com.ssl.conf`
-- Deploy script: `deploy/deploy.sh`
-- Validation script: `deploy/validate.sh` (homepage, app prefixes, redirects, admin panel, SSL, and headers)
-- Public assets: `public/` (copied to dist/ as-is)
-- Uploaded photos: `/var/www/21bristoe-media/` (served at `/uploads/`, never wiped by deploy)
 
-## Build & Deploy
+- `src/routes/` — unified route tree
+- `src/lib/home/` — Home content/UI helpers
+- `src/lib/drinks/` — Drink Hub client/server modules
+- `src/lib/stats/` — Stats client/server modules
+- `src/lib/admin/` — Admin UI client and server helpers
+- `src/styles/` — global, Drink Hub, and Stats CSS
+- `packages/bristoe-theme/bristoe-theme.css` — canonical tokens
+- `drizzle/` — Drink Hub migrations
+- `public/` — static assets
+- `deploy/` — nginx, deploy, validation, timers
+
+## Commands
+
 ```bash
-npm run dev           # local dev server at localhost:4321
-npm run dev:drink-hub # local Drink Hub at localhost:5173/drinks/
-npm run dev:stats     # local Stats at localhost:5174/stats/
-npm run build         # builds homepage, Drink Hub, and Stats
-npm run check         # Svelte checks for Drink Hub and Stats
-./deploy/deploy.sh    # build + backup + rsync + app containers + unified nginx reload
-./deploy/validate.sh  # run production validation suite
+npm run dev
+npm run check
+npm run build
+npm run preview
+./deploy/validate.sh
+./deploy/deploy.sh
 ```
 
 ## Server
-- Raspberry Pi (ARM64) at 192.168.1.177, public IP 24.170.229.234
-- nginx 1.26.3 serving static files from /var/www/21bristoe.com
-- SSL via certbot (Let's Encrypt), auto-renewing
-- Canonical app URLs: `https://21bristoe.com/drinks/` and `https://21bristoe.com/stats/`
-- Legacy subdomains `drink-hub.21bristoe.com` and `stats.21bristoe.com` should redirect to the canonical path URLs.
-- Deploy creates an untracked root `.env` from selected legacy app env keys if one does not already exist; it intentionally pins `ORIGIN` and `CSRF_TRUSTED_ORIGINS` to `https://21bristoe.com`.
-- Deploy removes known legacy app containers (`drink-hub`, `21bristoe-stats`) unless they are already owned by the root `home` Compose project.
-- Deploy retires enabled legacy vhost entries for those subdomains into timestamped backups before `nginx -t`.
 
-## Canonical URL
-https://21bristoe.com (www redirects to non-www)
+- Raspberry Pi at `192.168.1.177`
+- Public site container: `21bristoe-site`
+- Local container port: `127.0.0.1:6173`
+- nginx proxies public routes and admin routes to the unified SvelteKit app.
+- Admin remains protected by Tailscale, nginx basic auth, and `X-Admin-Auth`.
+
+## Production data
+
+- Drink Hub SQLite/uploads: `/var/lib/21bristoe/drink-hub`
+- Home/Admin media: `/var/www/21bristoe-media`
+- Stats: `/var/lib/bristoe-stats`, `/var/lib/bristoe-backup`, `/mnt/usbbackup`
+
+Do not commit production secrets, uploaded media, generated output, or runtime data.
 
 ## Design tokens
-Palette was swapped on 2026-04-23 to match the physical house (cool white + door blue + stainless steel). The original `warm-*` / `sage-*` token names are **intentionally retained** — every Tailwind utility across the site (`bg-warm-500`, `text-sage-600`, `border-warm-200`, etc.) references them, so renaming would mean touching every template. Values were swapped in place; names are now semantic-in-retrospect, not literal.
 
-Canonical source: `packages/bristoe-theme/bristoe-theme.css` (under `@theme`).
-
-- `--color-warm-*` — **door-blue primary accent.** `warm-500` is `#6fa8dc` (the front door). Scale ramps cool-white (`warm-50` `#fafbfc`) through slate-navy (`warm-900` `#0f172a`). Ignore the "warm" in the name.
-- `--color-sage-*` — **stainless-steel neutrals.** `sage-500` is `#94a3b8` (appliance gray). Scale is a cool gray ramp, no green anywhere. Ignore the "sage" in the name.
-- Red stays red for danger states (no token swap).
-- Typography unchanged for now: Georgia/serif for headings (`--font-display`), system sans for body (`--font-body`). A typography migration is a later tier.
-
-## Current implementation status
-See plan: `docs/improvement-plan.md`
-
-## Phase progress
-- [x] Phase 0: Git setup ✓
-- [x] Phase 1: Astro scaffolding ✓
-- [x] Phase 2: Homepage UI build ✓ (all 7 sections + 404)
-- [x] Phase 3: Content & personalization ✓ (placeholder assets; real photos TBD)
-- [x] Phase 4: Infrastructure & SSL ✓
-- [x] Phase 5: Endpoint validation & launch ✓ (28/28 checks passing)
-- [x] Phase 6: Image admin panel + slideshow ✓
-- [x] Phase 7: Admin panel security hardening ✓
-- [x] Phase 8: Manifest safety & error handling ✓
-- [x] Phase 9: Health check + expanded validation ✓ (31/31 checks)
-- [x] Phase 10: Deploy script improvements ✓
-- [x] Phase 11: CSP tightening + admin JS extraction ✓
-- [x] Phase 12: SEO & structured data ✓
-- [x] Phase A: Content enhancements ✓ (weather widget, sky strip, seasonal greetings, household cards, visitor guide)
-
-## Image assets status
-Placeholder images are in place (solid color PNGs). Replace with real photos:
-- `public/og-image.png` → replace with a 1200×630 lifestyle/home photo
-- `public/apple-touch-icon.png` → replace with real icon art
-- `public/icon-192.png`, `public/icon-512.png` → replace with real icon art
-- See `src/assets/images/IMAGES.md` for the full list of component images needed
-
-## Image admin panel
-- URL: `https://admin.21bristoe.com` ✓ SSL live
-- Login: `faber` / (saved separately — change with: `sudo htpasswd /etc/nginx/.htpasswd-admin faber`)
-- Service: `sudo systemctl status 21bristoe-admin`
-- Uploads saved to: `/var/www/21bristoe-media/` (never wiped by `deploy.sh`)
-- Served at: `https://21bristoe.com/uploads/`
-- Features: drag-and-drop upload, reorder, delete — changes appear on homepage immediately
-- Security (Phase 7): rate limiting (30 uploads/min, 60 API/min), shared-secret proxy auth
-  (X-Admin-Auth must match ADMIN_SHARED_SECRET — anything that bypasses nginx is rejected,
-  including local processes that try to spoof X-Forwarded-Proto), magic byte validation,
-  global error handler, audit logging to journalctl
-- View audit log: `sudo journalctl -u 21bristoe-admin --since "1 hour ago" | grep AUDIT`
-
-### Provisioning the admin shared secret (one-time, per host)
-```bash
-SECRET=$(openssl rand -hex 32)
-# 1. Express side — env file loaded by the systemd unit
-echo "ADMIN_SHARED_SECRET=$SECRET" | sudo tee /etc/21bristoe-admin.env
-sudo chmod 600 /etc/21bristoe-admin.env
-sudo chown faber:faber /etc/21bristoe-admin.env
-# 2. nginx side — included from admin.21bristoe.com.conf
-printf 'proxy_set_header X-Admin-Auth "%s";\n' "$SECRET" | sudo tee /etc/nginx/admin-secret.conf
-sudo chmod 600 /etc/nginx/admin-secret.conf
-# 3. Reload both
-sudo systemctl restart 21bristoe-admin && sudo nginx -t && sudo systemctl reload nginx
-```
-The admin server refuses to start in production without `ADMIN_SHARED_SECRET`.
-
-## Build-time content (refreshed nightly)
-The weather widget, sky strip, and seasonal greeting are computed at build time:
-- **Weather**: Open-Meteo API (free, no key) — `src/components/WeatherCard.astro`
-- **Sun/moon**: suncalc library, lat/lon 39.6576, -77.1763 — `src/components/SkyStrip.astro`
-- **Seasonal note**: month-based logic in `src/components/Welcome.astro`
-- **Nightly rebuild**: `sudo systemctl status 21bristoe-rebuild.timer` (fires 6am daily)
-  - Install: `sudo cp deploy/21bristoe-rebuild.{service,timer} /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now 21bristoe-rebuild.timer`
-
-## Site is LIVE
-- https://21bristoe.com — serving the homepage
-- https://21bristoe.com/drinks/ — serving Drink Hub
-- https://21bristoe.com/stats/ — serving Stats
-- SSL cert: Let's Encrypt, valid until 2026-07-11, auto-renews
-- Endpoint/SSL/security/redirect checks passing after deployment
-
-## Deploy
-```bash
-./deploy/deploy.sh          # build + backup + rsync + reload nginx
-./deploy/validate.sh        # run full validation suite
-```
-
-## SSL cert renewal
-Managed automatically by certbot timer. Manual check:
-```bash
-sudo certbot renew --dry-run
-sudo certbot certificates
-```
+The theme source is `packages/bristoe-theme/bristoe-theme.css`. Existing `warm-*` and `sage-*` aliases are retained for compatibility, but new UI should prefer the canonical semantic tokens where practical.

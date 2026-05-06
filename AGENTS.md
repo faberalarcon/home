@@ -2,29 +2,25 @@
 
 ## Project Structure & Module Organization
 
-`home` is the unified repo for the `21bristoe.com` domain. The Astro 6 homepage lives in `src/`: pages in `src/pages/`, shared layouts in `src/layouts/`, Astro components in `src/components/`, scripts in `src/scripts/`, and global styles in `src/styles/`. Drink Hub lives in `apps/drink-hub/` and is served at `/drinks/`. Stats lives in `apps/stats/` and is served at `/stats/`. Shared styling lives in `packages/bristoe-theme/`. Static files copied as-is live in `public/`. The upload admin app is in `admin/` with Express server code and public assets. Deployment scripts, nginx config, and systemd units are in `deploy/`; generated output is `dist/`, `apps/*/build/`, and `apps/*/.svelte-kit/`.
+`home` is the unified repo for the `21bristoe.com` domain. Home, Drink Hub, Stats, and Admin run from one root SvelteKit app in `src/`. Routes live in `src/routes/`: Home at `/`, Drink Hub under `/drinks/`, Stats under `/stats/`, and Admin under `/admin/`. Shared UI and server modules live in `src/lib/`, with app-specific modules under `src/lib/home`, `src/lib/drinks`, `src/lib/stats`, and `src/lib/admin`. Shared styling lives in `packages/bristoe-theme/` and `src/styles/`. Static files copied as-is live in `public/`. Deployment scripts and nginx config live in `deploy/`; generated output is `build/` and `.svelte-kit/`.
 
 ## Build, Test, and Development Commands
 
 - `npm install` installs root workspace dependencies.
-- `npm run dev` starts the Astro homepage locally at `http://localhost:4321`.
-- `npm run dev:drink-hub` starts Drink Hub locally at `http://localhost:5173/drinks/`.
-- `npm run dev:stats` starts Stats locally at `http://localhost:5174/stats/`.
-- `npm run build` builds the homepage, Drink Hub, and Stats.
-- `npm run check` runs Svelte checks for Drink Hub and Stats.
+- `npm run dev` starts the unified SvelteKit app locally at `http://localhost:5173`.
+- `npm run build` builds Home, Drink Hub, Stats, and Admin together.
+- `npm run check` runs Svelte checks for the unified app.
 - `npm run preview` previews the built site.
-- `cd admin && npm install` installs admin app dependencies.
-- `cd admin && npm run dev` runs the admin server with `node --watch`.
 - `./deploy/validate.sh` runs production validation checks.
-- `./deploy/deploy.sh` builds all three public apps, backs up, syncs, rebuilds app containers, validates, and reloads nginx.
+- `./deploy/deploy.sh` builds the unified app, rebuilds the `21bristoe-site` container, validates, and reloads nginx.
 
 ## Coding Style & Naming Conventions
 
-Use Astro/Svelte components with two-space indentation and TypeScript where scripts already use it. Keep page files route-oriented in `src/pages/` or `apps/*/src/routes/` and reusable UI in `src/components/` or `apps/*/src/lib/components/`. Follow the shared Tailwind 4 tokens in `packages/bristoe-theme/bristoe-theme.css`; names like `warm-*` and `sage-*` are semantic aliases and should not be renamed casually.
+Use Svelte components with two-space indentation and TypeScript where scripts already use it. Keep page files route-oriented in `src/routes/` and reusable UI in `src/lib/`. Follow the shared Tailwind 4 tokens in `packages/bristoe-theme/bristoe-theme.css`; names like `warm-*` and `sage-*` are semantic aliases and should not be renamed casually.
 
 ## Testing Guidelines
 
-There is no unit test suite. After any code or config change, run `npm run build`, resolve every error, then smoke test affected pages locally with `npm run dev`, `npm run dev:drink-hub`, `npm run dev:stats`, or `npm run preview`. Run `npm run check` when changing either SvelteKit app. Run `./deploy/validate.sh` when deployment behavior, nginx config, admin behavior, or public routes change.
+There is no unit test suite. After any code or config change, run `npm run check` and `npm run build`, resolve every error, then smoke test affected pages locally with `npm run dev` or `npm run preview`. Run `./deploy/validate.sh` when deployment behavior, nginx config, admin behavior, or public routes change.
 
 ## Required Post-Change Workflow
 
@@ -36,4 +32,4 @@ Recent commits use short, human-style messages with prefixes like `fix:`, `feat:
 
 ## Security & Configuration Tips
 
-Never commit production secrets, uploaded media, or generated `dist/`. The admin panel relies on nginx proxy auth, rate limiting, upload validation, and `ADMIN_SHARED_SECRET`; treat `admin/` and `deploy/nginx/` edits as security-sensitive.
+Never commit production secrets, uploaded media, or generated `build/`. The admin panel relies on nginx proxy auth, rate limiting, upload validation, and `ADMIN_SHARED_SECRET`; treat `src/lib/admin/`, `src/routes/admin/`, and `deploy/nginx/` edits as security-sensitive.

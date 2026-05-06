@@ -1,6 +1,10 @@
 node_modules/
+build/
 dist/
 .astro/
+.svelte-kit/
+.vite/
+data/
 .env
 .env.*
 !.env.example

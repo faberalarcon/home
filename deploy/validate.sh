@@ -9,7 +9,7 @@ set -euo pipefail
 
 MODE="${1:-}"
 if [[ "$MODE" == "--local" ]]; then
-    BASE="http://localhost:4321"
+    BASE="${VALIDATE_BASE:-http://localhost:5173}"
     echo "==> Validating LOCAL dev server at $BASE"
     echo "    Make sure 'npm run dev' is running first."
 else
@@ -92,14 +92,14 @@ if [[ "$MODE" != "--local" ]]; then
 
     echo ""
     echo "--- Admin panel checks ---"
-    ADMIN_CODE=$(curl -so /dev/null -w '%{http_code}' https://admin.21bristoe.com 2>/dev/null || echo "error")
+    ADMIN_CODE=$(curl -so /dev/null -w '%{http_code}' https://admin.21bristoe.com/admin/ 2>/dev/null || echo "error")
     check "Admin requires auth (401)" "$ADMIN_CODE" "401"
 
     MANIFEST=$(curl -s https://21bristoe.com/uploads/manifest.json 2>/dev/null || echo "")
     check "Uploads manifest is valid JSON" "$(echo "$MANIFEST" | python3 -c 'import sys,json; json.load(sys.stdin); print("valid")' 2>/dev/null || echo "invalid")" "valid"
 
-    ADMIN_SERVICE=$(systemctl is-active 21bristoe-admin 2>/dev/null || echo "inactive")
-    check "Admin service is active" "$ADMIN_SERVICE" "active"
+    SITE_CONTAINER=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -x '21bristoe-site' || true)
+    check "Unified site container is running" "$SITE_CONTAINER" "21bristoe-site"
 
     echo ""
     echo "--- Path app checks ---"
