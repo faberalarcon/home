@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SiteBrand from '$lib/site/SiteBrand.svelte';
   import SiteFooter from '$lib/site/SiteFooter.svelte';
   import SiteNav from '$lib/site/SiteNav.svelte';
   import type { ActionData, PageData } from './$types';
@@ -11,11 +12,9 @@
 </svelte:head>
 
 <div class="min-h-screen flex flex-col bg-slate-950">
-  <header class="w-full border-b border-warm-200/60 bg-gradient-to-b from-warm-50/95 to-warm-50/82 px-4 py-3 shadow-[0_1px_0_theme(colors.warm.500/12%)] backdrop-blur-md">
+  <header class="site-login-header">
     <nav class="mx-auto flex max-w-5xl items-center justify-between gap-3" aria-label="Main navigation">
-      <a href="/drinks/" class="min-w-0 truncate font-display text-base font-bold tracking-tight text-warm-800 no-underline sm:text-lg">
-        21 Bristoe <em class="font-normal italic" style="color: var(--color-blood-500)">Drinks</em>
-      </a>
+      <SiteBrand site="drinks" href="/drinks/" />
       <SiteNav current="drinks" />
     </nav>
   </header>
@@ -57,3 +56,20 @@
 
   <SiteFooter visitorCount={data.visitorCount} />
 </div>
+
+<style>
+  .site-login-header {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(241, 244, 247, 0.12);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(15, 23, 42, 0.94),
+        rgba(15, 23, 42, 0.9)
+      );
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 1px 0 rgba(111, 168, 220, 0.28);
+  }
+</style>

@@ -66,10 +66,10 @@
     justify-content: center;
     min-height: 2rem;
     padding: 0.28rem 0.68rem;
-    border: 1px solid color-mix(in oklab, var(--color-paper-300) 80%, transparent);
+    border: 1px solid rgba(241, 244, 247, 0.22);
     border-radius: var(--radius-sm, 0.5rem);
     background: transparent;
-    color: var(--color-ink-700);
+    color: rgba(241, 244, 247, 0.78);
     font-family: var(--font-body);
     font-size: 0.72rem;
     font-weight: 700;
@@ -82,8 +82,9 @@
   }
 
   .site-nav__pill:hover {
-    background: var(--color-paper-100);
-    color: var(--color-ink-900);
+    border-color: rgba(241, 244, 247, 0.38);
+    background: rgba(241, 244, 247, 0.08);
+    color: #fff;
   }
 
   .site-nav__pill--active,

@@ -1,6 +1,7 @@
 <script lang="ts">
   import DrinkSwipeEnhancer from '$lib/drinks/components/DrinkSwipeEnhancer.svelte';
   import DrinkTabShell from '$lib/drinks/components/DrinkTabShell.svelte';
+  import SiteBrand from '$lib/site/SiteBrand.svelte';
   import SiteFooter from '$lib/site/SiteFooter.svelte';
   import SiteNav from '$lib/site/SiteNav.svelte';
   import { selectedProfile } from '$lib/drinks/profile';
@@ -42,9 +43,7 @@
   <div class="drink-shell">
     <header class="drink-shell__masthead" use:measureMasthead>
       <div class="drink-shell__top">
-        <a href={appPath('/menu')} class="drink-shell__brand">
-          <span aria-hidden="true">21&middot;</span>Bristoe <em>Drinks</em>
-        </a>
+        <SiteBrand site="drinks" href={appPath('/menu')} />
         <SiteNav current="drinks" />
       </div>
       <nav class="drink-shell__nav" aria-label="Drink Hub">
@@ -103,20 +102,20 @@
     flex-direction: column;
     gap: 0.3rem;
     padding: 0.65rem max(1rem, calc((100vw - 50rem) / 2 + 1rem)) 0.5rem;
-    border-bottom: 1px solid color-mix(in oklab, var(--color-paper-300) 80%, transparent);
+    border-bottom: 1px solid rgba(241, 244, 247, 0.12);
     background:
       linear-gradient(
         180deg,
-        color-mix(in oklab, var(--color-paper-50) 88%, transparent),
-        color-mix(in oklab, var(--color-paper-50) 74%, transparent)
+        rgba(15, 23, 42, 0.94),
+        rgba(15, 23, 42, 0.9)
       );
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
-    box-shadow: 0 1px 0 color-mix(in oklab, var(--color-blood-500) 12%, transparent);
+    box-shadow: 0 1px 0 rgba(111, 168, 220, 0.28);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .drink-shell__masthead {
-      background: color-mix(in oklab, var(--color-paper-50) 96%, transparent);
+      background: #0f172a;
     }
   }
   .drink-shell__top {
@@ -125,22 +124,6 @@
     align-items: center;
     gap: 0.75rem;
     min-width: 0;
-  }
-  .drink-shell__brand {
-    font-family: var(--font-display);
-    font-size: clamp(1.05rem, 2.2vw, 1.35rem);
-    font-weight: 650;
-    color: var(--color-ink-900);
-    text-decoration: none;
-    white-space: nowrap;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .drink-shell__brand em {
-    color: var(--color-blood-500);
-    font-style: italic;
-    font-weight: 450;
   }
   .drink-shell__nav {
     display: flex;
@@ -153,7 +136,7 @@
   .drink-shell__signout {
     border: 0;
     background: transparent;
-    color: var(--color-ink-500);
+    color: rgba(241, 244, 247, 0.68);
     font-family: var(--font-body);
     font-size: 0.72rem;
     font-weight: 700;
@@ -169,12 +152,12 @@
   .drink-shell__nav a:hover,
   .drink-shell__nav a[aria-current="page"],
   .drink-shell__signout:hover {
-    color: var(--color-blood-500);
+    color: #fff;
   }
   .drink-shell__nav a:hover,
   .drink-shell__nav a[aria-current="page"] {
-    background: color-mix(in oklab, var(--color-paper-100) 78%, transparent);
-    box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--color-blood-500) 72%, transparent);
+    background: rgba(241, 244, 247, 0.08);
+    box-shadow: inset 0 -2px 0 rgba(111, 168, 220, 0.82);
   }
   .drink-shell__profile {
     border: 1px solid color-mix(in oklab, var(--profile-color) 70%, var(--color-paper-300));
@@ -192,9 +175,6 @@
   @media (max-width: 520px) {
     .drink-shell__top {
       gap: 0.5rem;
-    }
-    .drink-shell__brand {
-      font-size: 0.98rem;
     }
     .drink-shell__nav {
       gap: 0.6rem;

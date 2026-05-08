@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import SiteBrand from '$lib/site/SiteBrand.svelte';
   import SiteFooter from '$lib/site/SiteFooter.svelte';
   import SiteNav from '$lib/site/SiteNav.svelte';
   import StatsEnhancer from '$lib/stats/components/StatsEnhancer.svelte';
@@ -36,9 +37,7 @@
 <header class="app-header" use:measureHeader>
   <div class="app-header__inner">
     <div class="app-header__top">
-      <a class="app-header__brand" href={appPath('/')}>
-        21 Bristoe <em>Stats</em>
-      </a>
+      <SiteBrand site="stats" href={appPath('/')} />
       <SiteNav current="stats" />
     </div>
     <nav class="app-header__nav" aria-label="Stats sections">

@@ -1,20 +1,11 @@
 <script lang="ts">
+  import SiteBrand from '$lib/site/SiteBrand.svelte';
   import SiteNav from '$lib/site/SiteNav.svelte';
 </script>
 
-<header class="w-full py-3 sm:py-4 px-4 sm:px-6 bg-gradient-to-b from-warm-50/85 to-warm-50/70 backdrop-blur-md border-b border-warm-200/60 sticky top-0 z-50 shadow-[0_1px_0_theme(colors.warm.500/12%)]">
+<header class="w-full py-3 sm:py-4 px-4 sm:px-6 bg-slate-950/92 backdrop-blur-md border-b border-white/10 sticky top-0 z-50 shadow-[0_1px_0_rgba(111,168,220,0.28)]">
   <nav class="max-w-5xl mx-auto flex items-center justify-between gap-3" aria-label="Main navigation">
-    <a
-      href="/"
-      class="flex items-center gap-2 text-warm-700 hover:text-warm-500 transition-colors focus-visible:outline-warm-500 flex-shrink-0"
-      aria-label="21 Bristoe — home"
-    >
-      <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M12 2L2 10.5h2V21h6v-6h4v6h6V10.5h2L12 2z"/>
-      </svg>
-      <span class="font-bold text-base sm:text-lg tracking-tight font-display">21 Bristoe</span>
-    </a>
-
+    <SiteBrand />
     <SiteNav />
   </nav>
 </header>

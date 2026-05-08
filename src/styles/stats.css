@@ -192,10 +192,10 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   background:
     linear-gradient(
       180deg,
-      color-mix(in oklab, var(--color-paper-50) 88%, transparent),
-      color-mix(in oklab, var(--color-paper-50) 74%, transparent)
+      rgba(15, 23, 42, 0.94),
+      rgba(15, 23, 42, 0.9)
     );
-  border-bottom: 1px solid color-mix(in oklab, var(--color-paper-300) 82%, transparent);
+  border-bottom: 1px solid rgba(241, 244, 247, 0.12);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   position: fixed;
@@ -203,11 +203,11 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   left: 0;
   right: 0;
   z-index: 80;
-  box-shadow: 0 1px 0 color-mix(in oklab, var(--color-blood-500) 12%, transparent);
+  box-shadow: 0 1px 0 rgba(111, 168, 220, 0.28);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .app-header {
-    background: color-mix(in oklab, var(--color-paper-50) 96%, transparent);
+    background: #0f172a;
   }
 }
 .app-header__inner {
@@ -225,21 +225,6 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   justify-content: space-between;
   gap: 1rem;
 }
-.app-header__brand {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
-  color: var(--color-ink-900);
-  letter-spacing: 0;
-  font-variation-settings: 'opsz' 48, 'SOFT' 30;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.app-header__brand em {
-  font-style: italic;
-  color: var(--color-blood-500);
-  font-weight: 400;
-}
 .app-header__nav {
   display: flex;
   gap: 0.35rem;
@@ -253,7 +238,7 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   font-weight: 750;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--color-ink-500);
+  color: rgba(241, 244, 247, 0.68);
   text-decoration: none;
   padding: 0.55rem 0.65rem;
   border-radius: var(--radius-sm);
@@ -266,9 +251,9 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
 }
 .app-header__nav a:hover,
 .app-header__nav a[aria-current="page"] {
-  color: var(--color-blood-500);
-  background: color-mix(in oklab, var(--color-paper-100) 78%, transparent);
-  box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--color-blood-500) 72%, transparent);
+  color: #fff;
+  background: rgba(241, 244, 247, 0.08);
+  box-shadow: inset 0 -2px 0 rgba(111, 168, 220, 0.82);
 }
 @media (prefers-reduced-motion: reduce) {
   .app-header__nav a { transition: none; }
