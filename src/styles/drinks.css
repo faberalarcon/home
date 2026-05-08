@@ -22,7 +22,7 @@ body {
   body,
   .drink-shell,
   .drink-shell__main,
-  .drink-shell__footer {
+  .site-footer {
     touch-action: pan-y;
   }
 }

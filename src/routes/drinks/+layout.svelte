@@ -1,14 +1,14 @@
 <script lang="ts">
   import DrinkSwipeEnhancer from '$lib/drinks/components/DrinkSwipeEnhancer.svelte';
   import DrinkTabShell from '$lib/drinks/components/DrinkTabShell.svelte';
-  import HubNav from '$lib/drinks/components/HubNav.svelte';
+  import SiteFooter from '$lib/site/SiteFooter.svelte';
+  import SiteNav from '$lib/site/SiteNav.svelte';
   import { selectedProfile } from '$lib/drinks/profile';
   import { page } from '$app/stores';
   import { pageTitle } from '$lib/drinks/stores/title';
   import { appAction, appPath, routePath } from '$lib/drinks/app-paths';
 
   let { children, data } = $props();
-  const year = new Date().getFullYear();
   const currentPath = $derived(routePath($page.url.pathname));
 
   function measureMasthead(node: HTMLElement) {
@@ -45,7 +45,7 @@
         <a href={appPath('/menu')} class="drink-shell__brand">
           <span aria-hidden="true">21&middot;</span>Bristoe <em>Drinks</em>
         </a>
-        <HubNav current="drinks" />
+        <SiteNav current="drinks" />
       </div>
       <nav class="drink-shell__nav" aria-label="Drink Hub">
         <a href={appPath('/menu')} aria-current={currentPath === '/menu' ? 'page' : undefined}>Menu</a>
@@ -76,26 +76,7 @@
         {@render children()}
       </DrinkTabShell>
     </main>
-    <footer class="drink-shell__footer">
-      <div class="drink-shell__footer-mark" aria-hidden="true">
-        <span class="drink-shell__footer-mark-word">21 Bristoe</span>
-        <span class="drink-shell__footer-mark-line"></span>
-        <span class="drink-shell__footer-mark-sub">Drink Hub</span>
-      </div>
-      <div class="drink-shell__footer-foot">
-        <p>&copy; {year} &middot; 21 Bristoe Station Rd, Taneytown, Md.</p>
-        <div class="drink-shell__footer-links">
-          <a href="https://21bristoe.com" target="_blank" rel="noopener noreferrer">Home</a>
-          <a href="https://21bristoe.com/stats/">Stats</a>
-        </div>
-      </div>
-      {#if data.visitorCount !== null}
-        <div class="drink-shell__footer-visitors">
-          <span class="drink-shell__footer-count">{(data.visitorCount as number).toLocaleString()}</span>
-          <span>unique visitors so far</span>
-        </div>
-      {/if}
-    </footer>
+    <SiteFooter visitorCount={data.visitorCount} />
   </div>
 {/if}
 
@@ -207,86 +188,6 @@
   .drink-shell__main {
     flex: 1;
     padding: calc(var(--drink-shell-masthead-height, 5.5rem) + 1.25rem) 1rem 2.5rem;
-  }
-  .drink-shell__footer {
-    background: var(--color-ink-900);
-    color: var(--color-paper-100);
-    padding: 2.5rem 1rem 2rem;
-  }
-  .drink-shell__footer-mark {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  .drink-shell__footer-mark-word {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    color: var(--color-paper-50);
-    font-variation-settings: 'opsz' 36, 'SOFT' 30;
-  }
-  .drink-shell__footer-mark-line {
-    flex: 1;
-    height: 1px;
-    background: rgba(245, 239, 223, 0.15);
-  }
-  .drink-shell__footer-mark-sub {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--color-paper-100);
-    opacity: 0.6;
-  }
-  .drink-shell__footer-foot {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
-    flex-wrap: wrap;
-    font-family: var(--font-body);
-    font-size: 0.75rem;
-    color: var(--color-paper-100);
-    opacity: 0.7;
-  }
-  .drink-shell__footer-links {
-    display: flex;
-    gap: 1.5rem;
-  }
-  .drink-shell__footer-links a {
-    color: var(--color-blood-300);
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    padding-bottom: 1px;
-    transition: border-color 0.2s;
-  }
-  .drink-shell__footer-links a:hover { border-bottom-color: var(--color-blood-300); }
-  /* Footer is always dark — pin bg + text so dark-mode token inversion doesn't flip it white */
-  @media (prefers-color-scheme: dark) {
-    .drink-shell__footer { background: #05080c; }
-    .drink-shell__footer-mark-word { color: #f0f4f8; }
-    .drink-shell__footer-mark-sub { color: #c9d2dc; }
-    .drink-shell__footer-foot { color: #c9d2dc; }
-    .drink-shell__footer-links a { color: #8bb8e0; }
-    .drink-shell__footer-visitors { color: #c9d2dc; }
-    .drink-shell__footer-count { color: #f0f4f8; }
-  }
-  .drink-shell__footer-visitors {
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid rgba(245, 239, 223, 0.1);
-    text-align: center;
-    font-family: var(--font-body);
-    font-size: 0.75rem;
-    color: var(--color-paper-100);
-    opacity: 0.6;
-  }
-  .drink-shell__footer-count {
-    font-family: var(--font-mono);
-    font-weight: 600;
-    color: var(--color-paper-50);
-    opacity: 1;
-    margin-right: 0.25em;
   }
   @media (max-width: 520px) {
     .drink-shell__top {

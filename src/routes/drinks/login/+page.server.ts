@@ -3,6 +3,7 @@ import { hashSitePassword, makeSessionToken } from '$lib/drinks/server/auth';
 import { getConfiguredSitePasswordHash, isSecureRequest, normalizeNextPath } from '$lib/drinks/server/site-access';
 import { checkRateLimit } from '$lib/drinks/server/ratelimit';
 import { appPath } from '$lib/drinks/app-paths';
+import { readVisitorCount } from '$lib/site/visitors.server';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -16,7 +17,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     throw redirect(303, appPath(next));
   }
 
-  return { next };
+  return {
+    next,
+    visitorCount: readVisitorCount()
+  };
 };
 
 export const actions: Actions = {

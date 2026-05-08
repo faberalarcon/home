@@ -54,7 +54,7 @@ body {
 @media (pointer: coarse) and (max-width: 900px) {
   body,
   .app-main,
-  .app-footer {
+  .site-footer {
     touch-action: pan-y;
   }
 }

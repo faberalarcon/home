@@ -7,6 +7,7 @@ import {
 } from '$lib/drinks/server/admin-password';
 import { isSecureRequest } from '$lib/drinks/server/site-access';
 import { appPath } from '$lib/drinks/app-paths';
+import { readVisitorCount } from '$lib/site/visitors.server';
 import {
   checkAdminLoginGlobal,
   checkRateLimit,
@@ -17,7 +18,8 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
   return {
-    adminPasswordConfigured: isAdminPasswordConfigured()
+    adminPasswordConfigured: isAdminPasswordConfigured(),
+    visitorCount: readVisitorCount()
   };
 };
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import Header from '$lib/home/Header.svelte';
+  import SiteFooter from '$lib/site/SiteFooter.svelte';
 </script>
 
 <Header />
@@ -14,3 +15,4 @@
     </a>
   </div>
 </main>
+<SiteFooter />

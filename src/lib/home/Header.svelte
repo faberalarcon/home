@@ -1,5 +1,5 @@
 <script lang="ts">
-  import HubNav from './HubNav.svelte';
+  import SiteNav from '$lib/site/SiteNav.svelte';
 </script>
 
 <header class="w-full py-3 sm:py-4 px-4 sm:px-6 bg-gradient-to-b from-warm-50/85 to-warm-50/70 backdrop-blur-md border-b border-warm-200/60 sticky top-0 z-50 shadow-[0_1px_0_theme(colors.warm.500/12%)]">
@@ -15,18 +15,6 @@
       <span class="font-bold text-base sm:text-lg tracking-tight font-display">21 Bristoe</span>
     </a>
 
-    <ul class="flex items-center gap-2 sm:gap-4 md:gap-6 text-sm font-medium list-none" role="list">
-      <li class="hidden md:block">
-        <a href="/#neighborhood" class="text-warm-700 hover:text-warm-500 transition-colors">Neighborhood</a>
-      </li>
-      <li class="hidden md:block">
-        <a href="/#limon" class="text-warm-700 hover:text-warm-500 transition-colors">Limón</a>
-      </li>
-      <li class="hidden sm:block">
-        <a href="/gallery" class="text-warm-700 hover:text-warm-500 transition-colors">Gallery</a>
-      </li>
-    </ul>
-
-    <HubNav current="home" />
+    <SiteNav />
   </nav>
 </header>
