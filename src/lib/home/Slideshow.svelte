@@ -10,6 +10,11 @@
   let images: SlideImage[] = [];
   let current = 0;
   let timer: ReturnType<typeof setInterval> | null = null;
+  let slideshowEl: HTMLDivElement;
+
+  let activeTouch: { id: number; x: number; y: number } | null = null;
+  let suppressNextClick = false;
+  let suppressClickTimer: ReturnType<typeof setTimeout> | null = null;
 
   function imageUrl(img: SlideImage) {
     return img.url || `/uploads/${img.filename}`;
@@ -25,8 +30,76 @@
     if (images.length > 1) timer = setInterval(() => goTo(current + 1), 6000);
   }
 
+  function pauseTimer() {
+    if (timer) clearInterval(timer);
+    timer = null;
+  }
+
+  function gestureRoot() {
+    return slideshowEl?.closest('section');
+  }
+
+  function eventStartedInHero(event: Event) {
+    const target = event.target;
+    return target instanceof Node && !!gestureRoot()?.contains(target);
+  }
+
+  function suppressGalleryClick() {
+    suppressNextClick = true;
+    if (suppressClickTimer) clearTimeout(suppressClickTimer);
+    suppressClickTimer = setTimeout(() => {
+      suppressNextClick = false;
+      suppressClickTimer = null;
+    }, 400);
+  }
+
+  function handleDocumentClick(event: MouseEvent) {
+    if (!suppressNextClick || !eventStartedInHero(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressNextClick = false;
+  }
+
+  function handleTouchStart(event: TouchEvent) {
+    if (images.length <= 1 || event.touches.length !== 1 || !eventStartedInHero(event)) return;
+
+    const touch = event.changedTouches[0];
+    activeTouch = { id: touch.identifier, x: touch.clientX, y: touch.clientY };
+  }
+
+  function handleTouchEnd(event: TouchEvent) {
+    if (!activeTouch || !eventStartedInHero(event)) return;
+
+    const touch = Array.from(event.changedTouches).find((item) => item.identifier === activeTouch?.id);
+    if (!touch) return;
+
+    const dx = touch.clientX - activeTouch.x;
+    const dy = touch.clientY - activeTouch.y;
+    const horizontalSwipe = Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4;
+    activeTouch = null;
+
+    if (!horizontalSwipe) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    goTo(dx < 0 ? current + 1 : current - 1);
+    resetTimer();
+    suppressGalleryClick();
+  }
+
+  function handleTouchCancel(event: TouchEvent) {
+    if (!activeTouch || !eventStartedInHero(event)) return;
+    activeTouch = null;
+  }
+
   onMount(() => {
     let cancelled = false;
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: true, capture: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: false, capture: true });
+    document.addEventListener('touchcancel', handleTouchCancel, { passive: true, capture: true });
+    document.addEventListener('click', handleDocumentClick, true);
+
     fetch('/uploads/manifest.json', { cache: 'no-cache' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -39,17 +112,29 @@
     return () => {
       cancelled = true;
       if (timer) clearInterval(timer);
+      if (suppressClickTimer) clearTimeout(suppressClickTimer);
+      document.removeEventListener('touchstart', handleTouchStart, true);
+      document.removeEventListener('touchend', handleTouchEnd, true);
+      document.removeEventListener('touchcancel', handleTouchCancel, true);
+      document.removeEventListener('click', handleDocumentClick, true);
     };
   });
 </script>
 
-<div class="slideshow" aria-label="Family photo slideshow" role="region">
+<div
+  bind:this={slideshowEl}
+  class="slideshow"
+  aria-label="Family photo slideshow"
+  role="region"
+  on:mouseenter={pauseTimer}
+  on:mouseleave={resetTimer}
+>
   {#if images.length === 0}
     <div class="slide-fallback absolute inset-0 bg-gradient-to-br from-warm-800 via-warm-700 to-sage-700" aria-hidden="true"></div>
   {:else}
     {#each images as img, i}
       <a
-        href="/gallery"
+        href="/gallery/"
         class={`bristoe-slide ${i === current ? 'active' : ''}`}
         style={`background-image: url(${JSON.stringify(imageUrl(img))})`}
         aria-label={`Photo ${i + 1} of ${images.length} — view gallery`}
@@ -80,6 +165,11 @@
     position: absolute;
     inset: 0;
     overflow: hidden;
+    touch-action: pan-y;
+  }
+
+  :global(.bristoe-slide) {
+    touch-action: pan-y;
   }
   .slide-arrow {
     position: absolute;

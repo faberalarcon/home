@@ -43,7 +43,7 @@
     <div class="site-footer__mark" aria-hidden="true">
       <span class="site-footer__brand">{brand}</span>
       <span class="site-footer__line"></span>
-      <span class="site-footer__sub">Home / Drinks / Stats</span>
+      <span class="site-footer__sub">Home / Drinks / Stats / Gallery</span>
     </div>
 
     <div class="site-footer__body">
@@ -57,6 +57,7 @@
           <li><a href="/">Home</a></li>
           <li><a href="/drinks/">Drinks</a></li>
           <li><a href="/stats/">Stats</a></li>
+          <li><a href="/gallery/">Gallery</a></li>
           <li>
             <a href="https://github.com/faberalarcon/home" target="_blank" rel="noopener noreferrer">
               GitHub

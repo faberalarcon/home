@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
 
-  type SiteKey = 'home' | 'drinks' | 'stats';
+  type SiteKey = 'home' | 'drinks' | 'stats' | 'gallery';
 
   interface Props {
     current?: SiteKey;
@@ -12,12 +12,14 @@
   const links: Array<{ key: SiteKey; label: string; href: string }> = [
     { key: 'home', label: 'Home', href: '/' },
     { key: 'drinks', label: 'Drinks', href: '/drinks/' },
-    { key: 'stats', label: 'Stats', href: '/stats/' }
+    { key: 'stats', label: 'Stats', href: '/stats/' },
+    { key: 'gallery', label: 'Gallery', href: '/gallery/' }
   ];
 
   function keyForPath(pathname: string): SiteKey {
     if (pathname === '/drinks' || pathname.startsWith('/drinks/')) return 'drinks';
     if (pathname === '/stats' || pathname.startsWith('/stats/')) return 'stats';
+    if (pathname === '/gallery' || pathname.startsWith('/gallery/')) return 'gallery';
     return 'home';
   }
 
@@ -96,13 +98,13 @@
 
   @media (max-width: 520px) {
     .site-nav__list {
-      gap: 0.18rem;
+      gap: 0.16rem;
     }
 
     .site-nav__pill {
       min-height: 1.9rem;
-      padding: 0.24rem 0.4rem;
-      font-size: 0.64rem;
+      padding: 0.24rem 0.34rem;
+      font-size: 0.6rem;
       letter-spacing: 0.04em;
     }
   }

@@ -37,7 +37,7 @@
 </script>
 
 {#if weather}
-  <div class="weather-card bg-sage-50 border-2 border-sage-200 rounded-2xl p-5 shadow-sm flex flex-col gap-4 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+  <div class="weather-card bg-sage-50 border border-sage-200 rounded-lg p-5 shadow-sm flex flex-col gap-4 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
     <div class="flex items-start justify-between gap-3">
       <div>
         <div class="flex items-center gap-3 mb-1">
@@ -73,7 +73,7 @@
 {:else}
   <a
     href={fullForecast}
-    class="group flex gap-5 p-6 rounded-2xl border-2 transition-all duration-200 shadow-sm hover:shadow-md bg-sage-50 border-sage-200 hover:border-sage-400"
+    class="weather-card group flex gap-5 p-6 rounded-lg border transition-all duration-200 shadow-sm hover:shadow-md bg-sage-50 border-sage-200 hover:border-sage-400"
     target="_blank"
     rel="noopener noreferrer"
     aria-label="Taneytown Weather (opens in new tab)"

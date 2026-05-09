@@ -424,10 +424,12 @@ const DEFAULT_TIPS = [
 ];
 
 const DEFAULT_QUICK_LINKS = [
-  { icon: '🍹', title: 'Drink Hub',        description: 'Browse our cocktail recipes, home bar inventory, and drink recommendations.',                          href: '/drinks/' },
-  { icon: '📊', title: 'Stats Dashboard',  description: 'Live house status, TV on-time, weather, drinks leaderboard, and household trends.',                   href: '/stats/' },
+  { icon: '🍹', title: 'Drink Hub',        description: 'Browse cocktail recipes, home bar inventory, and drink recommendations.',                              href: '/drinks/' },
+  { icon: '📊', title: 'Stats Dashboard',  description: 'Live house status, weather, backups, drink activity, and household trends.',                          href: '/stats/' },
+  { icon: '🖼️', title: 'Gallery',          description: 'Photos from around the house, the neighborhood, and life at 21 Bristoe.',                             href: '/gallery/' },
+  { icon: '🧭', title: 'Guest Info',       description: 'Parking, front-door notes, guest Wi-Fi, and what to expect when you arrive.',                         href: '#visitor-guide' },
   { icon: '🏛️', title: 'Carroll County',   description: 'Local government, services, parks, and community resources for Carroll County residents.',             href: 'https://ccgovernment.carr.org' },
-  { icon: '🗺️', title: 'Taneytown, MD',    description: 'Explore Taneytown on the map — parks, local businesses, and all the spots we love.',                  href: 'https://www.google.com/maps/search/Taneytown+MD' },
+  { icon: '🗺️', title: 'Taneytown, MD',    description: 'Explore Taneytown on the map — parks, local businesses, and the spots we love.',                      href: 'https://www.google.com/maps/search/Taneytown+MD' },
 ];
 
 const DEFAULT_NEIGHBORHOOD = [

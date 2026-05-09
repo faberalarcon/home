@@ -124,6 +124,15 @@ const defaultMembers: HomeMember[] = [
   }
 ];
 
+const defaultQuickLinks: LinkItem[] = [
+  { icon: '🍹', title: 'Drink Hub', description: 'Browse cocktail recipes, home bar inventory, and drink recommendations.', href: '/drinks/' },
+  { icon: '📊', title: 'Stats Dashboard', description: 'Live house status, weather, backups, drink activity, and household trends.', href: '/stats/' },
+  { icon: '🖼️', title: 'Gallery', description: 'Photos from around the house, the neighborhood, and life at 21 Bristoe.', href: '/gallery/' },
+  { icon: '🧭', title: 'Guest Info', description: 'Parking, front-door notes, guest Wi-Fi, and what to expect when you arrive.', href: '#visitor-guide' },
+  { icon: '🏛️', title: 'Carroll County', description: 'Local government, services, parks, and community resources for Carroll County residents.', href: 'https://ccgovernment.carr.org' },
+  { icon: '🗺️', title: 'Taneytown, MD', description: 'Explore Taneytown on the map — parks, local businesses, and the spots we love.', href: 'https://www.google.com/maps/search/Taneytown+MD' }
+];
+
 function readJson(file: string): any {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -156,6 +165,76 @@ function seasonalNote(): string {
   if (month <= 4) return 'Good spring from 21 Bristoe — glad you stopped by.';
   if (month <= 7) return "Good summer from 21 Bristoe — hope it's a great one.";
   return "Good autumn from 21 Bristoe — it's our favorite time of year.";
+}
+
+function cleanVisibleCopy(value: string): string {
+  return value.replace(/\bAmentities\/Fun\b/g, 'Amenities/Fun');
+}
+
+function canonicalizeHref(href: string): string {
+  const trimmed = href.trim();
+  if (!trimmed) return trimmed;
+
+  try {
+    const url = new URL(trimmed, 'https://21bristoe.com');
+    const host = url.hostname.toLowerCase();
+    const pathWithSearch = `${url.pathname}${url.search}${url.hash}`;
+
+    if (host === 'drink-hub.21bristoe.com') return '/drinks/';
+    if (host === 'stats.21bristoe.com') return '/stats/';
+
+    if (host === '21bristoe.com' || host === 'www.21bristoe.com') {
+      if (url.pathname === '/drinks') return `/drinks/${url.search}${url.hash}`;
+      if (url.pathname === '/stats') return `/stats/${url.search}${url.hash}`;
+      if (url.pathname === '/gallery') return `/gallery/${url.search}${url.hash}`;
+      if (url.pathname.startsWith('/drinks/')) return pathWithSearch;
+      if (url.pathname.startsWith('/stats/')) return pathWithSearch;
+      if (url.pathname.startsWith('/gallery/')) return pathWithSearch;
+      if (trimmed.startsWith('/')) return pathWithSearch;
+    }
+  } catch {
+    return trimmed;
+  }
+
+  if (trimmed === '/drinks') return '/drinks/';
+  if (trimmed === '/stats') return '/stats/';
+  if (trimmed === '/gallery') return '/gallery/';
+  return trimmed;
+}
+
+function normalizeLinkItem(link: Partial<LinkItem>, fallback: LinkItem = defaultQuickLinks[0]): LinkItem {
+  return {
+    icon: cleanVisibleCopy(link.icon || fallback.icon),
+    title: cleanVisibleCopy(link.title || fallback.title),
+    description: cleanVisibleCopy(link.description || fallback.description),
+    href: canonicalizeHref(link.href || fallback.href)
+  };
+}
+
+function linkKey(href: string): string {
+  const canonical = canonicalizeHref(href);
+  if (canonical.startsWith('/drinks/')) return '/drinks/';
+  if (canonical.startsWith('/stats/')) return '/stats/';
+  if (canonical.startsWith('/gallery/')) return '/gallery/';
+  if (canonical === '#visitor-guide' || canonical === '/#visitor-guide') return '#visitor-guide';
+  return canonical;
+}
+
+function mergeQuickLinks(rawLinks: Partial<LinkItem>[]): LinkItem[] {
+  const normalized = rawLinks.map((link, index) => normalizeLinkItem(link, defaultQuickLinks[index] ?? defaultQuickLinks[0]));
+  const byKey = new Map(normalized.map((link) => [linkKey(link.href), link]));
+  const core = defaultQuickLinks.slice(0, 4).map((link) => byKey.get(linkKey(link.href)) ?? link);
+  const extras = normalized.filter((link) => !core.some((coreLink) => linkKey(coreLink.href) === linkKey(link.href)));
+  return [...core, ...extras];
+}
+
+function normalizeTextItem<T extends { title: string; description?: string; body?: string }>(item: T): T {
+  return {
+    ...item,
+    title: cleanVisibleCopy(item.title),
+    description: item.description ? cleanVisibleCopy(item.description) : item.description,
+    body: item.body ? cleanVisibleCopy(item.body) : item.body
+  };
 }
 
 function getSky() {
@@ -323,20 +402,15 @@ export async function getHomePageData(): Promise<HomePageData> {
       heading: qt.heading || 'Quick Links',
       description: qt.description || "The household's most-used links and resources, one click away.",
       links: Array.isArray(cfg.quickLinks) && cfg.quickLinks.length > 0
-        ? cfg.quickLinks
-        : [
-            { icon: '🍹', title: 'Drink Hub', description: 'Browse our cocktail recipes, home bar inventory, and drink recommendations.', href: '/drinks/' },
-            { icon: '📊', title: 'Stats Dashboard', description: 'Live house status, TV on-time, weather, drinks leaderboard, and household trends.', href: '/stats/' },
-            { icon: '🏛️', title: 'Carroll County', description: 'Local government, services, parks, and community resources for Carroll County residents.', href: 'https://ccgovernment.carr.org' },
-            { icon: '🗺️', title: 'Taneytown, MD', description: 'Explore Taneytown on the map — parks, local businesses, and all the spots we love.', href: 'https://www.google.com/maps/search/Taneytown+MD' }
-          ]
+        ? mergeQuickLinks(cfg.quickLinks)
+        : defaultQuickLinks
     },
     visitorGuide: {
       label: vt.label || 'For Visitors',
       heading: vt.heading || 'Coming Over?',
       description: vt.description || "Here's everything you need to know before you arrive.",
       tips: Array.isArray(cfg.visitorTips) && cfg.visitorTips.length > 0
-        ? cfg.visitorTips
+        ? cfg.visitorTips.map(normalizeTextItem)
         : [
             { icon: '🚗', title: 'Parking', body: "There's usually room in the driveway, plus easy street parking on Bristoe Station Rd right out front." },
             { icon: '🚪', title: 'The Door', body: 'Come to the front door — ring the bell and give us just a moment.' },
