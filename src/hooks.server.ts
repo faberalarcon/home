@@ -165,8 +165,9 @@ export const handle: Handle = async ({ event, resolve }) => {
     response.headers.set(key, value);
   }
 
-  if (
-    event.url.pathname === '/' ||
+  if (event.url.pathname === '/') {
+    response.headers.set('Cache-Control', 'no-store');
+  } else if (
     event.url.pathname === '/stats/' ||
     event.url.pathname === '/stats/drinks' ||
     event.url.pathname === '/stats/house'

@@ -237,6 +237,45 @@ function normalizeTextItem<T extends { title: string; description?: string; body
   };
 }
 
+function rand(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function oneOf<T>(items: T[]): T {
+  return items[rand(0, items.length - 1)];
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = rand(0, i);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function generateLimonFacts(limon: Record<string, any>): Array<{ label: string; value: string }> {
+  const profileFacts = [
+    { label: 'Breed', value: limon.breed || 'Golden Retriever' },
+    { label: 'Specialty', value: limon.specialty || 'Maximum cuteness' },
+    { label: 'Hobbies', value: limon.hobbies || 'Walks, naps, zoomies' },
+    { label: 'Mood', value: limon.mood || 'Always happy to see you' }
+  ];
+
+  const toyFacts = [
+    { label: 'Squid patrols', value: `${rand(2, 8)} living-room laps` },
+    { label: 'Turtle inspections', value: `${rand(1, 6)} careful shell checks` },
+    { label: 'Lemur rescues', value: `${rand(1, 5)} from couch cushions` },
+    { label: 'Toy pile audit', value: `${rand(9, 18)} plush friends accounted for` },
+    { label: 'Plush rotation', value: oneOf(['Squid first pick', 'Turtle on deck', 'Lemur couch duty', 'Everyone in the pile']) },
+    { label: 'Favorite toy status', value: oneOf(['Squid secured', 'Turtle nearby', 'Lemur under guard', 'Undecided, very serious']) },
+    { label: 'Backyard toy trips', value: `${rand(3, 11)} retrieval missions` },
+    { label: 'Post-nap inventory', value: `${rand(2, 7)} toys rechecked` }
+  ];
+
+  return shuffle([...shuffle(profileFacts).slice(0, 2), ...shuffle(toyFacts).slice(0, 2)]);
+}
+
 function getSky() {
   const now = new Date();
   const times = SunCalc.getTimes(now, LAT, LNG);
@@ -390,12 +429,7 @@ export async function getHomePageData(): Promise<HomePageData> {
       bio: limon.bio || "Limón is our golden retriever and the undisputed heart of the household. Named for the sunshine-yellow coat and the bright energy she brings to every single morning. Whether she's greeting you at the door, stealing a spot on the couch, or doing zoomies through the backyard — life with Limón is never boring.",
       quote: limon.quote || 'She has never met a stranger. She has also never turned down a treat.',
       quoteAttribution: limon.quoteAttribution || 'Faber & Kasey',
-      facts: [
-        { label: 'Breed', value: limon.breed || 'Golden Retriever' },
-        { label: 'Specialty', value: limon.specialty || 'Maximum cuteness' },
-        { label: 'Hobbies', value: limon.hobbies || 'Walks, naps, zoomies' },
-        { label: 'Mood', value: limon.mood || 'Always happy to see you' }
-      ]
+      facts: generateLimonFacts(limon)
     },
     quickLinks: {
       label: qt.label || 'Around the House',
