@@ -46,6 +46,11 @@ export interface GoobyModelOption {
   default?: boolean;
 }
 
+export interface GoobyModelVerification {
+  model: LlamaModel;
+  verifiedAt: string;
+}
+
 export const GOOBY_MODEL_OPTIONS = [
   {
     id: 'gpt-oss-20b-fast',
@@ -146,6 +151,11 @@ export function resolveGoobyModel(modelId: string | null | undefined, models: Ll
   return chooseGoobyDefaultModel(models) ?? GOOBY_DEFAULT_MODEL_ID;
 }
 
+export function resolveAvailableGoobyModel(modelId: string | null | undefined, models: LlamaModel[]): string | null {
+  if (!isGoobyModelId(modelId)) return null;
+  return filterGoobyModels(models).some((model) => model.id === modelId) ? modelId : null;
+}
+
 export async function fetchLlamaModels(): Promise<LlamaModel[]> {
   const response = await fetch(`${llamaBaseUrl()}/v1/models`, {
     signal: timeoutSignal(5_000)
@@ -230,16 +240,52 @@ export async function getGoobyLlamaStatus(): Promise<LlamaStatus> {
   };
 }
 
+export async function verifyGoobyModel(modelId: string): Promise<GoobyModelVerification> {
+  const models = filterGoobyModels(await fetchLlamaModels());
+  const model = models.find((candidate) => candidate.id === modelId);
+
+  if (!model) {
+    throw new Error(`${goobyModelOption(modelId)?.displayLabel ?? modelId} is not listed by llama.cpp`);
+  }
+
+  if (model.failed) {
+    throw new Error(`${model.displayLabel ?? model.id} failed to load in llama.cpp`);
+  }
+
+  if (model.status !== 'loaded' && model.status !== 'loading') {
+    throw new Error(`${model.displayLabel ?? model.id} did not become active in llama.cpp`);
+  }
+
+  return {
+    model,
+    verifiedAt: new Date().toISOString()
+  };
+}
+
 export async function streamChatCompletion(model: string, messages: ChatMessage[]): Promise<Response> {
-  const response = await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model,
-      messages,
-      stream: true
-    })
-  });
+  const controller = new AbortController();
+  const startTimeout = setTimeout(() => controller.abort(), 75_000);
+  let response: Response;
+
+  try {
+    response = await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: true
+      })
+    });
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error('llama.cpp did not start the selected model within 75 seconds');
+    }
+    throw error;
+  } finally {
+    clearTimeout(startTimeout);
+  }
 
   if (!response.ok || !response.body) {
     const body = await response.text().catch(() => '');

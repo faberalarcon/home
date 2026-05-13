@@ -18,6 +18,8 @@
 
 Use Svelte components with two-space indentation and TypeScript where scripts already use it. Keep page files route-oriented in `src/routes/` and reusable UI in `src/lib/`. Follow the shared Tailwind 4 tokens in `packages/bristoe-theme/bristoe-theme.css`; names like `warm-*` and `sage-*` are semantic aliases and should not be renamed casually.
 
+All UI changes must be optimized for mobile portrait viewing. Check narrow viewports for horizontal overflow, clipped controls, keyboard-safe composer behavior, and readable tap targets before considering the change complete.
+
 ## Testing Guidelines
 
 There is no unit test suite. After any code or config change, run `npm run check` and `npm run build`, resolve every error, then smoke test affected pages locally with `npm run dev` or `npm run preview`. Run `./deploy/validate.sh` when deployment behavior, nginx config, admin behavior, or public routes change.

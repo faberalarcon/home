@@ -86,6 +86,7 @@
     if (sending) return;
     selectedModel = modelId;
     modelMenuOpen = false;
+    error = null;
   }
 
   function scrollMessages() {
@@ -260,6 +261,8 @@
 
       const conversationId = res.headers.get('x-conversation-id');
       if (conversationId) selectedId = conversationId;
+      const responseModel = res.headers.get('x-gooby-model');
+      if (responseModel && models.some((model) => model.id === responseModel)) selectedModel = responseModel;
 
       if (!res.ok || !res.body) {
         const payload = await res.json().catch(() => ({}));
@@ -395,44 +398,16 @@
           <span aria-hidden="true"></span>
           <span aria-hidden="true"></span>
         </button>
-        <div class="gooby-model-picker">
-          <button
-            class="gooby-model-button"
-            type="button"
-            aria-haspopup="listbox"
-            aria-expanded={modelMenuOpen}
-            disabled={sending || models.length === 0}
-            onclick={() => (modelMenuOpen = !modelMenuOpen)}
-          >
-            <span>{selectedModelInfo?.shortLabel ?? 'Model'}</span>
-            <span aria-hidden="true">▾</span>
-          </button>
-          {#if modelMenuOpen}
-            <div class="gooby-model-menu" role="listbox" aria-label="GoobyGPT model">
-              {#each models as model (model.id)}
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={model.id === selectedModel}
-                  class:gooby-model-option--selected={model.id === selectedModel}
-                  class="gooby-model-option"
-                  onclick={() => chooseModel(model.id)}
-                >
-                  <span>{modelDisplayLabel(model)}</span>
-                  <em>{modelStatus(model)}</em>
-                </button>
-              {/each}
-            </div>
-          {/if}
-          <p>Switching models can take a moment.</p>
-        </div>
+        <h1>{selectedConversation?.title ?? 'GoobyGPT'}</h1>
       </div>
 
       <div class="gooby-toolbar__status">
         <StatusPill status={error ? 'attention' : loadedCount > 0 ? 'ok' : 'watch'} label={error ? 'Offline' : loadedModel ? `${loadedModel.shortLabel ?? loadedModel.id} ready` : 'Loading on first use'} />
         {#if selectedConversation}
-          <button type="button" onclick={renameSelected}>Rename</button>
-          <button type="button" onclick={deleteSelected}>Delete</button>
+          <div class="gooby-conversation-actions">
+            <button type="button" onclick={renameSelected}>Rename</button>
+            <button type="button" onclick={deleteSelected}>Delete</button>
+          </div>
         {/if}
       </div>
     </div>
@@ -468,16 +443,50 @@
     </div>
 
     <form id="gooby-composer" class="gooby-composer" onsubmit={submitPrompt}>
-      <textarea
-        bind:value={prompt}
-        rows="3"
-        placeholder="Message GoobyGPT"
-        disabled={sending || !selectedModel}
-        onkeydown={(event) => {
-          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) sendPrompt();
-        }}
-      ></textarea>
-      <button type="submit" disabled={!canSend}>{sending ? 'Sending' : 'Send'}</button>
+      <div class="gooby-composer__box">
+        <textarea
+          bind:value={prompt}
+          rows="3"
+          placeholder="Message GoobyGPT"
+          disabled={sending || !selectedModel}
+          onkeydown={(event) => {
+            if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) sendPrompt();
+          }}
+        ></textarea>
+        <div class="gooby-composer__controls">
+          <div class="gooby-model-picker">
+            <button
+              class="gooby-model-button"
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={modelMenuOpen}
+              disabled={sending || models.length === 0}
+              onclick={() => (modelMenuOpen = !modelMenuOpen)}
+            >
+              <span>{selectedModelInfo?.shortLabel ?? 'Model'}</span>
+              <span aria-hidden="true">▾</span>
+            </button>
+            {#if modelMenuOpen}
+              <div class="gooby-model-menu" role="listbox" aria-label="GoobyGPT model">
+                {#each models as model (model.id)}
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={model.id === selectedModel}
+                    class:gooby-model-option--selected={model.id === selectedModel}
+                    class="gooby-model-option"
+                    onclick={() => chooseModel(model.id)}
+                  >
+                    <span>{modelDisplayLabel(model)}</span>
+                    <em>{modelStatus(model)}</em>
+                  </button>
+                {/each}
+              </div>
+            {/if}
+          </div>
+          <button type="submit" disabled={!canSend}>{sending ? 'Sending' : 'Send'}</button>
+        </div>
+      </div>
     </form>
   </section>
 </main>
@@ -487,16 +496,19 @@
 <style>
   :global(body) {
     background: var(--color-paper-50);
+    overflow-x: hidden;
   }
 
   .gooby-shell {
     display: grid;
     grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr);
     gap: 1rem;
+    box-sizing: border-box;
     width: min(100%, var(--measure-full));
-    min-height: calc(100svh - var(--stats-app-header-height, 4.5rem));
+    height: 100svh;
     margin: 0 auto;
     padding: calc(var(--stats-app-header-height, 4.5rem) + 1rem) clamp(0.875rem, 2vw, 1.5rem) 1.25rem;
+    overflow: hidden;
   }
 
   .gooby-drawer-backdrop {
@@ -516,7 +528,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    max-height: calc(100svh - var(--stats-app-header-height, 4.5rem) - 2.25rem);
+    max-height: 100%;
   }
 
   .gooby-sidebar__top {
@@ -618,7 +630,8 @@
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr) auto;
     overflow: hidden;
-    max-height: calc(100svh - var(--stats-app-header-height, 4.5rem) - 2.25rem);
+    min-height: 0;
+    max-height: 100%;
   }
 
   .gooby-toolbar,
@@ -629,16 +642,28 @@
 
   .gooby-toolbar {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 1rem;
   }
 
   .gooby-toolbar__title {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.75rem;
     min-width: 0;
+  }
+
+  .gooby-toolbar__title h1 {
+    max-width: min(42rem, 54vw);
+    margin: 0;
+    color: var(--color-ink-900);
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    font-weight: 780;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .gooby-sidebar-toggle {
@@ -667,9 +692,8 @@
 
   .gooby-model-picker {
     position: relative;
-    display: grid;
-    gap: 0.28rem;
-    min-width: min(17rem, 64vw);
+    display: inline-flex;
+    min-width: 0;
   }
 
   .gooby-model-button {
@@ -677,9 +701,9 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.45rem;
-    width: fit-content;
-    min-width: 8rem;
-    min-height: 2.5rem;
+    max-width: min(14rem, 48vw);
+    min-width: 7.5rem;
+    min-height: 2.25rem;
     border: 1px solid var(--color-paper-300);
     border-radius: var(--radius-sm, 0.5rem);
     background: var(--color-paper-50);
@@ -693,6 +717,13 @@
     transition: background 140ms ease, border-color 140ms ease;
   }
 
+  .gooby-model-button span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .gooby-model-button:hover:not(:disabled),
   .gooby-model-button[aria-expanded="true"] {
     border-color: color-mix(in oklab, var(--color-ink-900) 22%, var(--color-paper-300));
@@ -704,16 +735,9 @@
     opacity: 0.56;
   }
 
-  .gooby-model-picker p {
-    margin: 0;
-    color: var(--color-ink-500);
-    font-size: 0.78rem;
-    line-height: 1.35;
-  }
-
   .gooby-model-menu {
     position: absolute;
-    top: calc(100% + 0.35rem);
+    bottom: calc(100% + 0.35rem);
     left: 0;
     z-index: 50;
     display: grid;
@@ -763,6 +787,12 @@
     flex-wrap: wrap;
   }
 
+  .gooby-conversation-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .gooby-toolbar__status button {
     min-height: 2rem;
     padding: 0.5rem 0.62rem;
@@ -809,6 +839,7 @@
 
   .gooby-message {
     width: min(100%, 52rem);
+    box-sizing: border-box;
     padding: 0.95rem 1rem;
     border: 1px solid var(--color-paper-300);
     border-radius: var(--radius-sm, 0.5rem);
@@ -911,25 +942,50 @@
   }
 
   .gooby-composer {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.75rem;
+    display: flex;
+    justify-content: center;
     border-bottom: 0;
     border-top: 1px solid var(--color-paper-300);
+    background: color-mix(in oklab, var(--color-paper-100) 94%, transparent);
+    padding-bottom: max(clamp(0.85rem, 2vw, 1rem), env(safe-area-inset-bottom));
+  }
+
+  .gooby-composer__box {
+    display: grid;
+    gap: 0.55rem;
+    width: min(100%, 52rem);
+    border: 1px solid var(--color-paper-300);
+    border-radius: var(--radius-sm, 0.5rem);
+    background: var(--color-paper-50);
+    padding: 0.55rem;
+  }
+
+  .gooby-composer__controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+    min-width: 0;
   }
 
   .gooby-composer textarea {
     width: 100%;
-    min-height: 4.25rem;
+    box-sizing: border-box;
+    min-height: 3.75rem;
     max-height: 12rem;
     resize: vertical;
-    border: 1px solid var(--color-paper-300);
-    border-radius: var(--radius-sm, 0.5rem);
-    background: var(--color-paper-50);
+    border: 0;
+    border-radius: calc(var(--radius-sm, 0.5rem) - 0.2rem);
+    background: transparent;
     color: var(--color-ink-900);
-    padding: 0.8rem 0.9rem;
+    padding: 0.45rem 0.5rem;
     font: inherit;
     line-height: 1.4;
+  }
+
+  .gooby-composer textarea:focus {
+    outline: 2px solid color-mix(in oklab, var(--color-blood-500) 35%, transparent);
+    outline-offset: 2px;
   }
 
   .gooby-composer button {
@@ -945,6 +1001,9 @@
   @media (max-width: 900px) {
     .gooby-shell {
       grid-template-columns: 1fr;
+      width: 100%;
+      max-width: 100vw;
+      padding: calc(var(--stats-app-header-height, 4.5rem) + 0.75rem) 0.75rem 0.75rem;
     }
 
     .gooby-drawer-backdrop {
@@ -978,8 +1037,8 @@
     }
 
     .gooby-main {
-      min-height: 70svh;
-      max-height: none;
+      height: 100%;
+      max-height: 100%;
     }
 
     .gooby-sidebar-toggle {
@@ -989,19 +1048,92 @@
 
   @media (max-width: 640px) {
     .gooby-shell {
-      padding: calc(var(--stats-app-header-height, 4.5rem) + 0.75rem) 0.75rem 1rem;
+      padding: var(--stats-app-header-height, 4.5rem) 0 0;
+    }
+
+    .gooby-main {
+      border-right: 0;
+      border-left: 0;
+      border-radius: 0;
+    }
+
+    .gooby-toolbar {
+      gap: 0.6rem;
+      padding: 0.65rem 0.75rem;
     }
 
     .gooby-toolbar__title {
-      align-items: center;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .gooby-toolbar__title h1 {
+      max-width: 100%;
+      font-size: 1rem;
     }
 
     .gooby-toolbar__status {
-      justify-content: flex-start;
+      flex: 0 0 auto;
+      max-width: 46%;
+      justify-content: flex-end;
+    }
+
+    .gooby-conversation-actions {
+      display: none;
+    }
+
+    .gooby-alert {
+      padding: 0.7rem 0.75rem;
+    }
+
+    .gooby-messages {
+      gap: 0.8rem;
+      padding: 0.85rem 0.75rem;
+    }
+
+    .gooby-welcome {
+      width: min(100%, 25rem);
+      padding: 0 0.5rem;
+    }
+
+    .gooby-welcome h2 {
+      font-size: clamp(1.85rem, 12vw, 2.7rem);
+      line-height: 1.02;
+    }
+
+    .gooby-message {
+      width: min(100%, 42rem);
+      padding: 0.85rem 0.9rem;
     }
 
     .gooby-composer {
-      grid-template-columns: 1fr;
+      padding: 0.6rem 0.7rem max(0.6rem, env(safe-area-inset-bottom));
+    }
+
+    .gooby-composer__box {
+      border-radius: var(--radius-sm, 0.5rem);
+    }
+
+    .gooby-composer__controls {
+      align-items: stretch;
+    }
+
+    .gooby-model-button {
+      max-width: calc(100vw - 8.5rem);
+      min-width: 0;
+      height: 2.4rem;
+    }
+
+    .gooby-model-menu {
+      left: 0;
+      width: min(19rem, calc(100vw - 1.4rem));
+    }
+
+    .gooby-composer button {
+      min-width: 5.5rem;
+      height: 2.4rem;
+      padding-right: 0.7rem;
+      padding-left: 0.7rem;
     }
   }
 

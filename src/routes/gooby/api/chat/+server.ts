@@ -7,7 +7,14 @@ import {
   listMessages,
   type GoobyMessage
 } from '$lib/gooby/db';
-import { fetchLlamaModels, resolveGoobyModel, streamChatCompletion, type ChatMessage } from '$lib/gooby/llama';
+import {
+  fetchLlamaModels,
+  goobyModelOption,
+  resolveAvailableGoobyModel,
+  streamChatCompletion,
+  verifyGoobyModel,
+  type ChatMessage
+} from '$lib/gooby/llama';
 
 function messageForLlama(message: GoobyMessage): ChatMessage {
   return {
@@ -55,10 +62,10 @@ export async function POST({ request }) {
   }
 
   const models = await fetchLlamaModels().catch(() => []);
-  model = resolveGoobyModel(model, models) ?? '';
+  model = resolveAvailableGoobyModel(model, models) ?? '';
 
   if (!model) {
-    return json({ error: 'No llama.cpp model is available' }, { status: 503 });
+    return json({ error: 'Selected GoobyGPT model is not available from llama.cpp' }, { status: 503 });
   }
 
   let conversation = conversationId ? getConversation(conversationId) : null;
@@ -73,7 +80,16 @@ export async function POST({ request }) {
     { role: 'system', content: settings.systemPrompt } satisfies ChatMessage,
     ...listMessages(conversationId).slice(-40).map(messageForLlama)
   ];
-  const upstream = await streamChatCompletion(model, messages);
+  let upstream: Response;
+  try {
+    upstream = await streamChatCompletion(model, messages);
+    await verifyGoobyModel(model);
+  } catch (error) {
+    const label = goobyModelOption(model)?.displayLabel ?? model;
+    const detail = error instanceof Error ? error.message : 'llama.cpp did not confirm the requested model';
+    return json({ error: `${label} is not ready: ${detail}` }, { status: 502 });
+  }
+
   const reader = upstream.body!.getReader();
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
@@ -124,7 +140,8 @@ export async function POST({ request }) {
     headers: {
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-store',
-      'X-Conversation-Id': conversationId
+      'X-Conversation-Id': conversationId,
+      'X-Gooby-Model': model
     }
   });
 }
