@@ -4,6 +4,7 @@ const API = '/admin';
 const MEDIA_BASE = 'https://21bristoe.com';
 let manifest = { images: [] };
 let siteConfig = {};
+let goobySettings = { systemPrompt: '' };
 let dragSrc = null;
 let selectedFiles = new Set(); // D2: batch select
 
@@ -92,6 +93,50 @@ document.getElementById('resetVisitorBtn').addEventListener('click', async () =>
     showToast(e.message, 'error');
   }
 });
+
+// --- GoobyGPT settings ---
+async function loadGoobySettings() {
+  try {
+    const res = await fetch(`${API}/api/gooby-settings`);
+    if (!res.ok) throw new Error('Unable to load GoobyGPT instructions');
+    goobySettings = await res.json();
+  } catch {
+    goobySettings = { systemPrompt: '' };
+    showToast('Failed to load GoobyGPT instructions', 'error');
+  }
+  renderGoobySettingsEditor();
+}
+
+function renderGoobySettingsEditor() {
+  const container = document.getElementById('goobySettingsEditor');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="field-row gooby-settings-row">
+      <label>Prompt</label>
+      <textarea class="field-input gooby-settings-prompt" id="goobySystemPrompt" rows="9" maxlength="4000">${escHtml(goobySettings.systemPrompt || '')}</textarea>
+    </div>
+    <p class="admin-field-note">Keep this under 1k tokens. It is prepended to GoobyGPT chats as the private system message.</p>`;
+}
+
+async function saveGoobySettings() {
+  const systemPrompt = document.getElementById('goobySystemPrompt')?.value || '';
+  try {
+    const res = await fetch(`${API}/api/gooby-settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ systemPrompt }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Save failed');
+    goobySettings = data;
+    renderGoobySettingsEditor();
+    showToast('GoobyGPT instructions saved', 'success');
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+document.getElementById('saveGoobySettingsBtn').addEventListener('click', saveGoobySettings);
 
 // --- Load images ---
 async function loadImages() {
@@ -998,6 +1043,7 @@ function showToast(msg, type = 'success') {
 
 // --- Init ---
 loadStats();
+loadGoobySettings();
 loadImages();
 loadLimonImage();
 loadSiteConfig();

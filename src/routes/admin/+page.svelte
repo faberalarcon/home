@@ -41,6 +41,15 @@
     </div>
   </div>
 
+  <div class="content-card">
+    <h3 class="content-card-title">GoobyGPT Instructions</h3>
+    <p class="content-card-desc">System prompt used by GoobyGPT. This is not shown on the chat page.</p>
+    <div id="goobySettingsEditor"></div>
+    <div class="content-actions">
+      <button class="btn-save-content" id="saveGoobySettingsBtn">Save GoobyGPT instructions</button>
+    </div>
+  </div>
+
   <hr class="section-divider" />
 
   <div class="upload-zone" id="dropZone">

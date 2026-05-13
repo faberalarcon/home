@@ -28,7 +28,6 @@
       models: initialModels,
       selectedId: initialConversations[0]?.id ?? null,
       selectedModel: pageData.llama.defaultModel ?? initialModels[0]?.id ?? '',
-      systemPrompt: pageData.settings.systemPrompt,
       error: pageData.llama.error
     };
   }
@@ -42,10 +41,8 @@
   let selectedModel = $state<string>(initial.selectedModel);
   let messages = $state<ChatMessage[]>([]);
   let prompt = $state('');
-  let systemPrompt = $state(initial.systemPrompt);
-  let savedSystemPrompt = $state(initial.systemPrompt);
   let drawerOpen = $state(false);
-  let savingInstructions = $state(false);
+  let modelMenuOpen = $state(false);
   let loadingMessages = $state(false);
   let sending = $state(false);
   let error = $state<string | null>(initial.error);
@@ -54,8 +51,8 @@
   const selectedConversation = $derived(conversations.find((conversation) => conversation.id === selectedId) ?? null);
   const loadedCount = $derived(models.filter((model) => model.status === 'loaded').length);
   const loadedModel = $derived(models.find((model) => model.status === 'loaded') ?? null);
+  const selectedModelInfo = $derived(models.find((model) => model.id === selectedModel) ?? null);
   const canSend = $derived(Boolean(prompt.trim() && selectedModel && !sending));
-  const instructionsDirty = $derived(systemPrompt.trim() !== savedSystemPrompt.trim());
 
   function formatDate(ms: number): string {
     try {
@@ -70,8 +67,25 @@
     }
   }
 
-  function modelLabel(model: LlamaModel): string {
-    return model.status === 'loaded' ? `${model.id} (loaded)` : model.id;
+  function modelDisplayLabel(model: LlamaModel): string {
+    return model.displayLabel ?? model.id;
+  }
+
+  function modelShortLabel(modelId: string | null): string {
+    if (!modelId) return '';
+    return models.find((model) => model.id === modelId)?.shortLabel ?? modelId;
+  }
+
+  function modelStatus(model: LlamaModel): string {
+    if (model.status === 'loaded') return 'Loaded';
+    if (model.status === 'loading') return 'Loading';
+    return model.default ? 'Default' : 'Available';
+  }
+
+  function chooseModel(modelId: string) {
+    if (sending) return;
+    selectedModel = modelId;
+    modelMenuOpen = false;
   }
 
   function scrollMessages() {
@@ -83,8 +97,12 @@
   async function refreshModels() {
     const res = await fetch('/gooby/api/models');
     const payload = await res.json();
-    models = payload.models ?? [];
-    if (!selectedModel && payload.defaultModel) selectedModel = payload.defaultModel;
+    const nextModels = payload.models ?? [];
+    models = nextModels;
+    const available = new Set(nextModels.map((model: LlamaModel) => model.id));
+    if (!selectedModel || !available.has(selectedModel)) {
+      selectedModel = payload.defaultModel ?? nextModels[0]?.id ?? '';
+    }
     error = payload.error ?? null;
   }
 
@@ -108,7 +126,11 @@
       if (!res.ok) throw new Error('Unable to load conversation');
       const payload = await res.json();
       messages = payload.messages ?? [];
-      if (payload.conversation?.model) selectedModel = payload.conversation.model;
+      if (payload.conversation?.model && models.some((model) => model.id === payload.conversation.model)) {
+        selectedModel = payload.conversation.model;
+      } else {
+        selectedModel = data.llama.defaultModel ?? models[0]?.id ?? selectedModel;
+      }
       scrollMessages();
     } catch (err) {
       error = err instanceof Error ? err.message : 'Unable to load conversation';
@@ -169,28 +191,6 @@
     conversations = conversations.filter((conversation) => conversation.id !== id);
     selectedId = conversations[0]?.id ?? null;
     await loadMessages(selectedId);
-  }
-
-  async function saveInstructions() {
-    if (savingInstructions || !instructionsDirty) return;
-    savingInstructions = true;
-    error = null;
-
-    try {
-      const res = await fetch('/gooby/api/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ systemPrompt })
-      });
-      const payload = await res.json();
-      if (!res.ok) throw new Error(payload.error ?? 'Unable to save instructions');
-      savedSystemPrompt = payload.systemPrompt;
-      systemPrompt = payload.systemPrompt;
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Unable to save instructions';
-    } finally {
-      savingInstructions = false;
-    }
   }
 
   function consumeSseChunk(buffer: string): { content: string; remaining: string; error: string | null } {
@@ -312,7 +312,10 @@
   }
 
   function handleWindowKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') drawerOpen = false;
+    if (event.key === 'Escape') {
+      drawerOpen = false;
+      modelMenuOpen = false;
+    }
   }
 
   onMount(() => {
@@ -348,7 +351,7 @@
     ></button>
   {/if}
 
-  <aside id="gooby-chat-drawer" class:gooby-sidebar--open={drawerOpen} class="gooby-sidebar" aria-label="GoobyGPT conversations and settings">
+  <aside id="gooby-chat-drawer" class:gooby-sidebar--open={drawerOpen} class="gooby-sidebar" aria-label="GoobyGPT conversations">
     <div class="gooby-sidebar__top">
       <button class="gooby-command" type="button" onclick={newChat}>New chat</button>
       <form method="POST" action="/gooby/login?/logout">
@@ -374,15 +377,6 @@
       {/if}
     </div>
 
-    <form class="gooby-instructions" onsubmit={(event) => { event.preventDefault(); saveInstructions(); }}>
-      <label>
-        <span>Custom instructions</span>
-        <textarea bind:value={systemPrompt} rows="7" maxlength="4000"></textarea>
-      </label>
-      <button type="submit" disabled={!instructionsDirty || savingInstructions}>
-        {savingInstructions ? 'Saving' : instructionsDirty ? 'Save instructions' : 'Saved'}
-      </button>
-    </form>
   </aside>
 
   <section class="gooby-main" aria-label="GoobyGPT chat">
@@ -401,39 +395,46 @@
           <span aria-hidden="true"></span>
           <span aria-hidden="true"></span>
         </button>
-        <div>
-          <p class="gooby-kicker">Local llama.cpp</p>
-          <h1>GoobyGPT</h1>
+        <div class="gooby-model-picker">
+          <button
+            class="gooby-model-button"
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={modelMenuOpen}
+            disabled={sending || models.length === 0}
+            onclick={() => (modelMenuOpen = !modelMenuOpen)}
+          >
+            <span>{selectedModelInfo?.shortLabel ?? 'Model'}</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+          {#if modelMenuOpen}
+            <div class="gooby-model-menu" role="listbox" aria-label="GoobyGPT model">
+              {#each models as model (model.id)}
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={model.id === selectedModel}
+                  class:gooby-model-option--selected={model.id === selectedModel}
+                  class="gooby-model-option"
+                  onclick={() => chooseModel(model.id)}
+                >
+                  <span>{modelDisplayLabel(model)}</span>
+                  <em>{modelStatus(model)}</em>
+                </button>
+              {/each}
+            </div>
+          {/if}
+          <p>Switching models can take a moment.</p>
         </div>
       </div>
 
       <div class="gooby-toolbar__status">
-        <StatusPill status={error ? 'attention' : loadedCount > 0 ? 'ok' : 'watch'} label={error ? 'Offline' : loadedCount > 0 ? 'Ready' : 'No loaded model'} />
+        <StatusPill status={error ? 'attention' : loadedCount > 0 ? 'ok' : 'watch'} label={error ? 'Offline' : loadedModel ? `${loadedModel.shortLabel ?? loadedModel.id} ready` : 'Loading on first use'} />
         {#if selectedConversation}
           <button type="button" onclick={renameSelected}>Rename</button>
           <button type="button" onclick={deleteSelected}>Delete</button>
         {/if}
       </div>
-    </div>
-
-    <div class="gooby-modelbar">
-      <label>
-        <span>Model</span>
-        <select bind:value={selectedModel} disabled={sending || models.length === 0}>
-          {#each models as model (model.id)}
-            <option value={model.id}>{modelLabel(model)}</option>
-          {/each}
-        </select>
-      </label>
-      <p>
-        {#if loadedModel}
-          Loaded: {loadedModel.id}
-        {:else if models.length > 0}
-          Models are listed, but none report loaded.
-        {:else}
-          No models returned by llama.cpp.
-        {/if}
-      </p>
     </div>
 
     {#if error}
@@ -454,7 +455,7 @@
           <article class="gooby-message" data-role={message.role}>
             <div class="gooby-message__meta">
               <span>{message.role === 'user' ? 'You' : 'GoobyGPT'}</span>
-              {#if message.model}<em>{message.model}</em>{/if}
+              {#if message.model}<em>{modelShortLabel(message.model)}</em>{/if}
             </div>
             {#if message.role === 'assistant'}
               <MarkdownMessage content={message.content || (sending ? 'Thinking...' : '')} />
@@ -601,64 +602,9 @@
     overflow-wrap: anywhere;
   }
 
-  .gooby-instructions {
-    display: grid;
-    gap: 0.6rem;
-    padding: 0.75rem;
-    border-top: 1px solid var(--color-paper-300);
-    background: color-mix(in oklab, var(--color-paper-50) 64%, transparent);
-  }
-
-  .gooby-instructions label {
-    display: grid;
-    gap: 0.45rem;
-  }
-
-  .gooby-instructions span {
-    color: var(--color-ink-600);
-    font-size: 0.68rem;
-    font-weight: 820;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  .gooby-instructions textarea {
-    width: 100%;
-    min-height: 8rem;
-    max-height: 16rem;
-    resize: vertical;
-    border: 1px solid var(--color-paper-300);
-    border-radius: var(--radius-sm, 0.5rem);
-    background: var(--color-paper-50);
-    color: var(--color-ink-900);
-    font: inherit;
-    font-size: 0.82rem;
-    line-height: 1.45;
-    padding: 0.65rem;
-  }
-
-  .gooby-instructions button {
-    min-height: 2.25rem;
-    border: 1px solid var(--color-paper-300);
-    border-radius: var(--radius-sm, 0.5rem);
-    background: var(--color-ink-900);
-    color: var(--color-paper-50);
-    cursor: pointer;
-    font-size: 0.66rem;
-    font-weight: 850;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .gooby-instructions button:disabled {
-    cursor: not-allowed;
-    opacity: 0.54;
-  }
-
   .gooby-conversation em,
   .gooby-message__meta,
-  .gooby-kicker,
-  .gooby-modelbar span {
+  .gooby-kicker {
     color: var(--color-ink-500);
     font-size: 0.68rem;
     font-style: normal;
@@ -670,13 +616,12 @@
 
   .gooby-main {
     display: grid;
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
     overflow: hidden;
     max-height: calc(100svh - var(--stats-app-header-height, 4.5rem) - 2.25rem);
   }
 
   .gooby-toolbar,
-  .gooby-modelbar,
   .gooby-composer {
     border-bottom: 1px solid var(--color-paper-300);
     padding: clamp(0.85rem, 2vw, 1rem);
@@ -720,9 +665,94 @@
     background: currentColor;
   }
 
-  .gooby-toolbar h1 {
-    margin: 0.2rem 0 0;
-    font-size: clamp(2rem, 4vw, 3.25rem);
+  .gooby-model-picker {
+    position: relative;
+    display: grid;
+    gap: 0.28rem;
+    min-width: min(17rem, 64vw);
+  }
+
+  .gooby-model-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.45rem;
+    width: fit-content;
+    min-width: 8rem;
+    min-height: 2.5rem;
+    border: 1px solid var(--color-paper-300);
+    border-radius: var(--radius-sm, 0.5rem);
+    background: var(--color-paper-50);
+    color: var(--color-ink-900);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 760;
+    line-height: 1;
+    padding: 0.62rem 0.75rem;
+    transition: background 140ms ease, border-color 140ms ease;
+  }
+
+  .gooby-model-button:hover:not(:disabled),
+  .gooby-model-button[aria-expanded="true"] {
+    border-color: color-mix(in oklab, var(--color-ink-900) 22%, var(--color-paper-300));
+    background: var(--color-paper-100);
+  }
+
+  .gooby-model-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.56;
+  }
+
+  .gooby-model-picker p {
+    margin: 0;
+    color: var(--color-ink-500);
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .gooby-model-menu {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    z-index: 50;
+    display: grid;
+    width: min(20rem, calc(100vw - 2rem));
+    gap: 0.18rem;
+    border: 1px solid var(--color-paper-300);
+    border-radius: var(--radius-sm, 0.5rem);
+    background: var(--color-paper-50);
+    box-shadow: 0 1rem 2.5rem -1.5rem color-mix(in oklab, var(--color-ink-900) 38%, transparent);
+    padding: 0.35rem;
+  }
+
+  .gooby-model-option {
+    display: grid;
+    gap: 0.2rem;
+    width: 100%;
+    border: 0;
+    border-radius: calc(var(--radius-sm, 0.5rem) - 0.15rem);
+    background: transparent;
+    color: var(--color-ink-900);
+    cursor: pointer;
+    padding: 0.7rem 0.75rem;
+    text-align: left;
+  }
+
+  .gooby-model-option:hover,
+  .gooby-model-option--selected {
+    background: var(--color-paper-200);
+  }
+
+  .gooby-model-option span {
+    font-size: 0.9rem;
+    font-weight: 780;
+  }
+
+  .gooby-model-option em {
+    color: var(--color-ink-500);
+    font-size: 0.72rem;
+    font-style: normal;
   }
 
   .gooby-toolbar__status {
@@ -739,34 +769,6 @@
     font-size: 0.64rem;
   }
 
-  .gooby-modelbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .gooby-modelbar label {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    min-width: min(100%, 24rem);
-  }
-
-  .gooby-modelbar select {
-    min-width: 0;
-    width: 100%;
-    min-height: 2.35rem;
-    border: 1px solid var(--color-paper-300);
-    border-radius: var(--radius-sm, 0.5rem);
-    background: var(--color-paper-50);
-    color: var(--color-ink-900);
-    padding: 0.45rem 0.55rem;
-    font: inherit;
-    font-size: 0.84rem;
-  }
-
-  .gooby-modelbar p,
   .gooby-empty,
   .gooby-alert,
   .gooby-welcome p {
@@ -988,12 +990,6 @@
   @media (max-width: 640px) {
     .gooby-shell {
       padding: calc(var(--stats-app-header-height, 4.5rem) + 0.75rem) 0.75rem 1rem;
-    }
-
-    .gooby-toolbar,
-    .gooby-modelbar {
-      flex-direction: column;
-      align-items: stretch;
     }
 
     .gooby-toolbar__title {

@@ -543,6 +543,17 @@ header .home-link:hover { background: rgba(255,255,255,0.1); }
   resize: vertical;
 }
 .field-input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.gooby-settings-row label { width: 62px; }
+.gooby-settings-prompt {
+  min-height: 14rem;
+  line-height: 1.45;
+}
+.admin-field-note {
+  margin-top: 0.55rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
 .field-emoji { width: 4rem; flex: none; text-align: center; font-size: 1.1rem; }
 .tip-row { border-top: 1px solid var(--border); padding: 0.75rem 0; }
 .tip-row:first-child { border-top: none; padding-top: 0; }

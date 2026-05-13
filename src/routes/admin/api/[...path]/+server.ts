@@ -17,6 +17,7 @@ import {
   uploadFixedImage,
   uploadImages
 } from '$lib/admin/server';
+import { getSettings, updateSystemPrompt } from '$lib/gooby/db';
 
 function result(data: any) {
   if (data && typeof data.status === 'number' && data.error) {
@@ -41,6 +42,7 @@ export const GET: RequestHandler = async (event) => {
   if (parts[0] === 'limon-image') return json(limonImageStatus());
   if (parts[0] === 'stats') return json(adminStats());
   if (parts[0] === 'site-config') return json(getSiteConfig());
+  if (parts[0] === 'gooby-settings') return json(getSettings());
 
   return json({ error: 'Not found' }, { status: 404 });
 };
@@ -90,6 +92,11 @@ export const PUT: RequestHandler = async (event) => {
 
   if (parts[0] === 'images' && parts[1] === 'reorder') return result(await reorderImages(body.order, event));
   if (parts[0] === 'site-config') return result(updateSiteConfig(body, event));
+  if (parts[0] === 'gooby-settings') {
+    const systemPrompt = typeof body.systemPrompt === 'string' ? body.systemPrompt : '';
+    if (systemPrompt.length > 4_000) return json({ error: 'Instructions are too long' }, { status: 400 });
+    return json(updateSystemPrompt(systemPrompt));
+  }
 
   return json({ error: 'Not found' }, { status: 404 });
 };

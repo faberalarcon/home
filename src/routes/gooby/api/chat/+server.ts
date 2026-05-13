@@ -7,7 +7,7 @@ import {
   listMessages,
   type GoobyMessage
 } from '$lib/gooby/db';
-import { chooseDefaultModel, fetchLlamaModels, streamChatCompletion, type ChatMessage } from '$lib/gooby/llama';
+import { fetchLlamaModels, resolveGoobyModel, streamChatCompletion, type ChatMessage } from '$lib/gooby/llama';
 
 function messageForLlama(message: GoobyMessage): ChatMessage {
   return {
@@ -54,10 +54,8 @@ export async function POST({ request }) {
     return json({ error: 'Prompt is too long' }, { status: 400 });
   }
 
-  if (!model) {
-    const models = await fetchLlamaModels().catch(() => []);
-    model = chooseDefaultModel(models) ?? '';
-  }
+  const models = await fetchLlamaModels().catch(() => []);
+  model = resolveGoobyModel(model, models) ?? '';
 
   if (!model) {
     return json({ error: 'No llama.cpp model is available' }, { status: 503 });

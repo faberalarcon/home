@@ -9,6 +9,9 @@ export interface LlamaModel {
   contextSize: number | null;
   parameterCount: number | null;
   sizeBytes: number | null;
+  displayLabel?: string;
+  shortLabel?: string;
+  default?: boolean;
 }
 
 export interface LlamaMetrics {
@@ -35,6 +38,35 @@ export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
+
+export interface GoobyModelOption {
+  id: string;
+  displayLabel: string;
+  shortLabel: string;
+  default?: boolean;
+}
+
+export const GOOBY_MODEL_OPTIONS = [
+  {
+    id: 'gpt-oss-20b-fast',
+    displayLabel: 'GPT 6.7',
+    shortLabel: 'GPT 6.7',
+    default: true
+  },
+  {
+    id: 'gpt-oss-20b-thinking',
+    displayLabel: 'GPT 6.7 - Thinking',
+    shortLabel: 'Thinking'
+  },
+  {
+    id: 'llama3.2:3b',
+    displayLabel: 'GPT 6.7 Instant',
+    shortLabel: 'Instant'
+  }
+] satisfies GoobyModelOption[];
+
+const GOOBY_DEFAULT_MODEL_ID = GOOBY_MODEL_OPTIONS.find((model) => model.default)?.id ?? GOOBY_MODEL_OPTIONS[0].id;
+const GOOBY_MODEL_OPTIONS_BY_ID = new Map(GOOBY_MODEL_OPTIONS.map((model) => [model.id, model]));
 
 const DEFAULT_LLAMA_BASE_URL = 'http://192.168.1.215:8080';
 
@@ -77,6 +109,41 @@ function normalizeModel(raw: any): LlamaModel {
 
 export function chooseDefaultModel(models: LlamaModel[]): string | null {
   return models.find((model) => model.status === 'loaded')?.id ?? models[0]?.id ?? null;
+}
+
+export function isGoobyModelId(modelId: string | null | undefined): modelId is string {
+  return Boolean(modelId && GOOBY_MODEL_OPTIONS_BY_ID.has(modelId));
+}
+
+export function goobyModelOption(modelId: string | null | undefined): GoobyModelOption | null {
+  return modelId ? GOOBY_MODEL_OPTIONS_BY_ID.get(modelId) ?? null : null;
+}
+
+export function filterGoobyModels(models: LlamaModel[]): LlamaModel[] {
+  const modelsById = new Map(models.map((model) => [model.id, model]));
+  return GOOBY_MODEL_OPTIONS.flatMap((option) => {
+    const model = modelsById.get(option.id);
+    if (!model) return [];
+    return [
+      {
+        ...model,
+        displayLabel: option.displayLabel,
+        shortLabel: option.shortLabel,
+        default: Boolean(option.default)
+      }
+    ];
+  });
+}
+
+export function chooseGoobyDefaultModel(models: LlamaModel[]): string | null {
+  const goobyModels = filterGoobyModels(models);
+  return goobyModels.find((model) => model.id === GOOBY_DEFAULT_MODEL_ID)?.id ?? goobyModels[0]?.id ?? null;
+}
+
+export function resolveGoobyModel(modelId: string | null | undefined, models: LlamaModel[] = []): string | null {
+  const availableIds = new Set(filterGoobyModels(models).map((model) => model.id));
+  if (isGoobyModelId(modelId) && (availableIds.size === 0 || availableIds.has(modelId))) return modelId;
+  return chooseGoobyDefaultModel(models) ?? GOOBY_DEFAULT_MODEL_ID;
 }
 
 export async function fetchLlamaModels(): Promise<LlamaModel[]> {
@@ -145,6 +212,22 @@ export async function getLlamaStatus(): Promise<LlamaStatus> {
       checkedAt
     };
   }
+}
+
+export async function getGoobyLlamaStatus(): Promise<LlamaStatus> {
+  const status = await getLlamaStatus();
+  const models = filterGoobyModels(status.models);
+  const loadedModel = models.find((model) => model.status === 'loaded') ?? null;
+  const defaultModel = chooseGoobyDefaultModel(status.models);
+
+  return {
+    ...status,
+    models,
+    loadedModel,
+    defaultModel,
+    metrics: status.metrics,
+    metricsAvailable: status.metricsAvailable
+  };
 }
 
 export async function streamChatCompletion(model: string, messages: ChatMessage[]): Promise<Response> {
