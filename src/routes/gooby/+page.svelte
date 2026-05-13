@@ -4,6 +4,7 @@
   import SiteFooter from '$lib/site/SiteFooter.svelte';
   import SiteNav from '$lib/site/SiteNav.svelte';
   import StatusPill from '$lib/components/StatusPill.svelte';
+  import MarkdownMessage from '$lib/gooby/MarkdownMessage.svelte';
   import type { PageData } from './$types';
 
   type Conversation = PageData['conversations'][number];
@@ -27,6 +28,7 @@
       models: initialModels,
       selectedId: initialConversations[0]?.id ?? null,
       selectedModel: pageData.llama.defaultModel ?? initialModels[0]?.id ?? '',
+      systemPrompt: pageData.settings.systemPrompt,
       error: pageData.llama.error
     };
   }
@@ -40,6 +42,10 @@
   let selectedModel = $state<string>(initial.selectedModel);
   let messages = $state<ChatMessage[]>([]);
   let prompt = $state('');
+  let systemPrompt = $state(initial.systemPrompt);
+  let savedSystemPrompt = $state(initial.systemPrompt);
+  let drawerOpen = $state(false);
+  let savingInstructions = $state(false);
   let loadingMessages = $state(false);
   let sending = $state(false);
   let error = $state<string | null>(initial.error);
@@ -49,6 +55,7 @@
   const loadedCount = $derived(models.filter((model) => model.status === 'loaded').length);
   const loadedModel = $derived(models.find((model) => model.status === 'loaded') ?? null);
   const canSend = $derived(Boolean(prompt.trim() && selectedModel && !sending));
+  const instructionsDirty = $derived(systemPrompt.trim() !== savedSystemPrompt.trim());
 
   function formatDate(ms: number): string {
     try {
@@ -124,10 +131,12 @@
     conversations = [payload.conversation, ...conversations];
     selectedId = payload.conversation.id;
     messages = [];
+    drawerOpen = false;
   }
 
   async function selectConversation(id: string) {
     selectedId = id;
+    drawerOpen = false;
     await loadMessages(id);
   }
 
@@ -160,6 +169,28 @@
     conversations = conversations.filter((conversation) => conversation.id !== id);
     selectedId = conversations[0]?.id ?? null;
     await loadMessages(selectedId);
+  }
+
+  async function saveInstructions() {
+    if (savingInstructions || !instructionsDirty) return;
+    savingInstructions = true;
+    error = null;
+
+    try {
+      const res = await fetch('/gooby/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ systemPrompt })
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error ?? 'Unable to save instructions');
+      savedSystemPrompt = payload.systemPrompt;
+      systemPrompt = payload.systemPrompt;
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Unable to save instructions';
+    } finally {
+      savingInstructions = false;
+    }
   }
 
   function consumeSseChunk(buffer: string): { content: string; remaining: string; error: string | null } {
@@ -280,10 +311,16 @@
     sendPrompt();
   }
 
+  function handleWindowKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') drawerOpen = false;
+  }
+
   onMount(() => {
     loadMessages(selectedId);
   });
 </script>
+
+<svelte:window onkeydown={handleWindowKeydown} />
 
 <svelte:head>
   <title>GoobyGPT - 21 Bristoe</title>
@@ -301,8 +338,17 @@
   </div>
 </header>
 
-<main class="gooby-shell">
-  <aside class="gooby-sidebar" aria-label="GoobyGPT conversations">
+<main class:gooby-shell--drawer-open={drawerOpen} class="gooby-shell">
+  {#if drawerOpen}
+    <button
+      class="gooby-drawer-backdrop"
+      type="button"
+      aria-label="Close GoobyGPT chat drawer"
+      onclick={() => (drawerOpen = false)}
+    ></button>
+  {/if}
+
+  <aside id="gooby-chat-drawer" class:gooby-sidebar--open={drawerOpen} class="gooby-sidebar" aria-label="GoobyGPT conversations and settings">
     <div class="gooby-sidebar__top">
       <button class="gooby-command" type="button" onclick={newChat}>New chat</button>
       <form method="POST" action="/gooby/login?/logout">
@@ -327,13 +373,38 @@
         {/each}
       {/if}
     </div>
+
+    <form class="gooby-instructions" onsubmit={(event) => { event.preventDefault(); saveInstructions(); }}>
+      <label>
+        <span>Custom instructions</span>
+        <textarea bind:value={systemPrompt} rows="7" maxlength="4000"></textarea>
+      </label>
+      <button type="submit" disabled={!instructionsDirty || savingInstructions}>
+        {savingInstructions ? 'Saving' : instructionsDirty ? 'Save instructions' : 'Saved'}
+      </button>
+    </form>
   </aside>
 
   <section class="gooby-main" aria-label="GoobyGPT chat">
     <div class="gooby-toolbar">
-      <div>
-        <p class="gooby-kicker">Local llama.cpp</p>
-        <h1>GoobyGPT</h1>
+      <div class="gooby-toolbar__title">
+        <button
+          id="gooby-sidebar-button"
+          class="gooby-sidebar-toggle"
+          type="button"
+          aria-label="Open GoobyGPT chat drawer"
+          aria-expanded={drawerOpen}
+          aria-controls="gooby-chat-drawer"
+          onclick={() => (drawerOpen = !drawerOpen)}
+        >
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </button>
+        <div>
+          <p class="gooby-kicker">Local llama.cpp</p>
+          <h1>GoobyGPT</h1>
+        </div>
       </div>
 
       <div class="gooby-toolbar__status">
@@ -375,8 +446,8 @@
       {:else if messages.length === 0}
         <div class="gooby-welcome reveal">
           <p class="gooby-kicker">Private chat</p>
-          <h2>Ask the local models.</h2>
-          <p>Conversations save on this site until deleted.</p>
+          <h2>Welcome to GoobyGPT.</h2>
+          <p>Ask about the house, Limón, plans, code, or anything that needs a local second brain.</p>
         </div>
       {:else}
         {#each messages as message (message.id)}
@@ -385,7 +456,11 @@
               <span>{message.role === 'user' ? 'You' : 'GoobyGPT'}</span>
               {#if message.model}<em>{message.model}</em>{/if}
             </div>
-            <p>{message.content || (sending && message.role === 'assistant' ? 'Thinking...' : '')}</p>
+            {#if message.role === 'assistant'}
+              <MarkdownMessage content={message.content || (sending ? 'Thinking...' : '')} />
+            {:else}
+              <p>{message.content}</p>
+            {/if}
           </article>
         {/each}
       {/if}
@@ -421,6 +496,10 @@
     min-height: calc(100svh - var(--stats-app-header-height, 4.5rem));
     margin: 0 auto;
     padding: calc(var(--stats-app-header-height, 4.5rem) + 1rem) clamp(0.875rem, 2vw, 1.5rem) 1.25rem;
+  }
+
+  .gooby-drawer-backdrop {
+    display: none;
   }
 
   .gooby-sidebar,
@@ -490,6 +569,7 @@
     gap: 0.3rem;
     padding: 0.55rem;
     overflow-y: auto;
+    min-height: 0;
   }
 
   .gooby-conversation {
@@ -519,6 +599,60 @@
     font-weight: 760;
     line-height: 1.25;
     overflow-wrap: anywhere;
+  }
+
+  .gooby-instructions {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    border-top: 1px solid var(--color-paper-300);
+    background: color-mix(in oklab, var(--color-paper-50) 64%, transparent);
+  }
+
+  .gooby-instructions label {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .gooby-instructions span {
+    color: var(--color-ink-600);
+    font-size: 0.68rem;
+    font-weight: 820;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .gooby-instructions textarea {
+    width: 100%;
+    min-height: 8rem;
+    max-height: 16rem;
+    resize: vertical;
+    border: 1px solid var(--color-paper-300);
+    border-radius: var(--radius-sm, 0.5rem);
+    background: var(--color-paper-50);
+    color: var(--color-ink-900);
+    font: inherit;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    padding: 0.65rem;
+  }
+
+  .gooby-instructions button {
+    min-height: 2.25rem;
+    border: 1px solid var(--color-paper-300);
+    border-radius: var(--radius-sm, 0.5rem);
+    background: var(--color-ink-900);
+    color: var(--color-paper-50);
+    cursor: pointer;
+    font-size: 0.66rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .gooby-instructions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.54;
   }
 
   .gooby-conversation em,
@@ -553,6 +687,37 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
+  }
+
+  .gooby-toolbar__title {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .gooby-sidebar-toggle {
+    display: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.27rem;
+    border: 1px solid var(--color-paper-300);
+    border-radius: var(--radius-sm, 0.5rem);
+    background: var(--color-paper-50);
+    color: var(--color-ink-900);
+    cursor: pointer;
+  }
+
+  .gooby-sidebar-toggle span {
+    display: block;
+    width: 1.05rem;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
   }
 
   .gooby-toolbar h1 {
@@ -669,13 +834,78 @@
     color: var(--color-ink-900);
   }
 
-  .gooby-message p {
+  .gooby-message > p {
     margin: 0;
     color: var(--color-ink-800);
     font-size: 0.96rem;
     line-height: 1.62;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
+  }
+
+  :global(.gooby-markdown) {
+    color: var(--color-ink-800);
+    font-size: 0.96rem;
+    line-height: 1.62;
+    overflow-wrap: anywhere;
+  }
+
+  :global(.gooby-markdown > :first-child) {
+    margin-top: 0;
+  }
+
+  :global(.gooby-markdown > :last-child) {
+    margin-bottom: 0;
+  }
+
+  :global(.gooby-markdown p),
+  :global(.gooby-markdown ul),
+  :global(.gooby-markdown ol),
+  :global(.gooby-markdown pre),
+  :global(.gooby-markdown blockquote) {
+    margin: 0.75rem 0;
+  }
+
+  :global(.gooby-markdown ul),
+  :global(.gooby-markdown ol) {
+    padding-left: 1.25rem;
+  }
+
+  :global(.gooby-markdown h1),
+  :global(.gooby-markdown h2),
+  :global(.gooby-markdown h3) {
+    margin: 1rem 0 0.45rem;
+    color: var(--color-ink-900);
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  :global(.gooby-markdown code) {
+    border-radius: 0.3rem;
+    background: var(--color-paper-200);
+    color: var(--color-ink-900);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 0.88em;
+    padding: 0.1rem 0.25rem;
+  }
+
+  :global(.gooby-markdown pre) {
+    overflow-x: auto;
+    border: 1px solid var(--color-paper-300);
+    border-radius: var(--radius-sm, 0.5rem);
+    background: var(--color-ink-900);
+    padding: 0.85rem;
+  }
+
+  :global(.gooby-markdown pre code) {
+    background: transparent;
+    color: var(--color-paper-50);
+    padding: 0;
+  }
+
+  :global(.gooby-markdown a) {
+    color: var(--color-blood-600);
+    font-weight: 720;
   }
 
   .gooby-composer {
@@ -715,17 +945,43 @@
       grid-template-columns: 1fr;
     }
 
-    .gooby-sidebar,
-    .gooby-main {
-      max-height: none;
+    .gooby-drawer-backdrop {
+      position: fixed;
+      top: var(--stats-app-header-height, 4.5rem);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 60;
+      display: block;
+      border: 0;
+      background: rgba(15, 23, 42, 0.36);
+      cursor: pointer;
     }
 
     .gooby-sidebar {
-      min-height: 12rem;
+      position: fixed;
+      top: var(--stats-app-header-height, 4.5rem);
+      bottom: 0;
+      left: 0;
+      z-index: 70;
+      width: min(20rem, calc(100vw - 3rem));
+      max-height: none;
+      border-radius: 0 var(--radius-sm, 0.5rem) 0 0;
+      transform: translateX(-105%);
+      transition: transform 180ms ease;
+    }
+
+    .gooby-sidebar--open {
+      transform: translateX(0);
     }
 
     .gooby-main {
       min-height: 70svh;
+      max-height: none;
+    }
+
+    .gooby-sidebar-toggle {
+      display: inline-flex;
     }
   }
 
@@ -738,6 +994,10 @@
     .gooby-modelbar {
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .gooby-toolbar__title {
+      align-items: center;
     }
 
     .gooby-toolbar__status {
@@ -753,7 +1013,9 @@
     .gooby-command,
     .gooby-toolbar__status button,
     .gooby-composer button,
-    .gooby-conversation {
+    .gooby-conversation,
+    .gooby-sidebar,
+    .gooby-sidebar-toggle {
       transition: none;
     }
 

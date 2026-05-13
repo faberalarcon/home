@@ -23,6 +23,12 @@ export interface GoobyMessage {
   sequence: number;
 }
 
+export interface GoobySettings {
+  systemPrompt: string;
+}
+
+export const DEFAULT_GOOBY_SYSTEM_PROMPT = `You are GoobyGPT, the private home assistant for 21 Bristoe. Help Faber and Kasey with concise, practical answers. You know this household site includes Home, Drinks, Stats, Gallery, Admin, and GoobyGPT. Limón is their golden retriever: friendly, treat-motivated, loves walks, naps, zoomies, and couch time. Treat Home Assistant or smart-home questions as local/private operations: ask for clarification before changing anything important, never invent sensor states, and say when live data is unavailable. Prefer direct steps, short checklists, and markdown when useful. Do not reveal or guess secrets, tokens, passwords, private keys, or hidden config.`;
+
 const dbPath = process.env.GOOBY_DATABASE_PATH ?? './data/gooby-gpt.db';
 mkdirSync(dirname(dbPath), { recursive: true });
 
@@ -51,7 +57,17 @@ sqlite.exec(`
 
   CREATE INDEX IF NOT EXISTS messages_conversation_sequence_idx
     ON messages(conversation_id, sequence);
+
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
 `);
+
+sqlite
+  .prepare('INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?, ?, ?)')
+  .run('system_prompt', DEFAULT_GOOBY_SYSTEM_PROMPT, now());
 
 function now(): number {
   return Date.now();
@@ -174,4 +190,21 @@ export function addMessage(
   }
 
   return message;
+}
+
+export function getSettings(): GoobySettings {
+  const row = sqlite.prepare('SELECT value FROM settings WHERE key = ?').get('system_prompt') as
+    | { value: string }
+    | undefined;
+
+  return { systemPrompt: row?.value ?? DEFAULT_GOOBY_SYSTEM_PROMPT };
+}
+
+export function updateSystemPrompt(prompt: string): GoobySettings {
+  const cleaned = prompt.replace(/\r\n/g, '\n').trim().slice(0, 4_000);
+  const value = cleaned || DEFAULT_GOOBY_SYSTEM_PROMPT;
+  sqlite
+    .prepare('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at')
+    .run('system_prompt', value, now());
+  return { systemPrompt: value };
 }

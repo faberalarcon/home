@@ -3,6 +3,7 @@ import {
   addMessage,
   createConversation,
   getConversation,
+  getSettings,
   listMessages,
   type GoobyMessage
 } from '$lib/gooby/db';
@@ -69,7 +70,11 @@ export async function POST({ request }) {
   }
 
   addMessage(conversationId, 'user', prompt, model);
-  const messages = listMessages(conversationId).slice(-40).map(messageForLlama);
+  const settings = getSettings();
+  const messages = [
+    { role: 'system', content: settings.systemPrompt } satisfies ChatMessage,
+    ...listMessages(conversationId).slice(-40).map(messageForLlama)
+  ];
   const upstream = await streamChatCompletion(model, messages);
   const reader = upstream.body!.getReader();
   const encoder = new TextEncoder();
