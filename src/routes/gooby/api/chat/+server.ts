@@ -8,11 +8,14 @@ import {
   type GoobyMessage
 } from '$lib/gooby/db';
 import {
+  fetchGoobyModels,
   fetchLlamaModels,
   goobyModelOption,
+  goobyModelStatusLabel,
+  isModelLoadPendingError,
   resolveAvailableGoobyModel,
   streamChatCompletion,
-  verifyGoobyModel,
+  waitForGoobyModelReady,
   type ChatMessage
 } from '$lib/gooby/llama';
 
@@ -45,6 +48,59 @@ function assistantDeltaFromSse(buffer: string): { content: string; remaining: st
   }
 
   return { content, remaining };
+}
+
+function sseEvent(event: 'status' | 'error', payload: Record<string, unknown>): Uint8Array {
+  return new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
+}
+
+async function openUpstreamChat(
+  model: string,
+  messages: ChatMessage[],
+  controller: ReadableStreamDefaultController<Uint8Array>
+): Promise<Response> {
+  const label = goobyModelOption(model)?.displayLabel ?? model;
+  const models = await fetchGoobyModels();
+  const selectedModel = models.find((candidate) => candidate.id === model);
+
+  if (!selectedModel) {
+    throw new Error(`${label} is not listed by llama.cpp`);
+  }
+
+  if (selectedModel.failed) {
+    throw new Error(`${label} failed to load in llama.cpp`);
+  }
+
+  if (selectedModel.status === 'loading') {
+    controller.enqueue(sseEvent('status', { message: `Waiting for ${label} to load...` }));
+    await waitForGoobyModelReady(model, {
+      onPoll(modelStatus) {
+        controller.enqueue(
+          sseEvent('status', { message: `${label} is ${goobyModelStatusLabel(modelStatus)}...` })
+        );
+      }
+    });
+    controller.enqueue(sseEvent('status', { message: `${label} is ready. Sending...` }));
+  } else if (selectedModel.status !== 'loaded') {
+    controller.enqueue(sseEvent('status', { message: `Starting ${label}. This can take a moment...` }));
+  }
+
+  try {
+    return await streamChatCompletion(model, messages);
+  } catch (error) {
+    if (!isModelLoadPendingError(error)) throw error;
+
+    controller.enqueue(sseEvent('status', { message: `Waiting for ${label} to load...` }));
+    await waitForGoobyModelReady(model, {
+      onPoll(modelStatus) {
+        controller.enqueue(
+          sseEvent('status', { message: `${label} is ${goobyModelStatusLabel(modelStatus)}...` })
+        );
+      }
+    });
+    controller.enqueue(sseEvent('status', { message: `${label} is ready. Sending...` }));
+    return streamChatCompletion(model, messages);
+  }
 }
 
 export async function POST({ request }) {
@@ -80,26 +136,18 @@ export async function POST({ request }) {
     { role: 'system', content: settings.systemPrompt } satisfies ChatMessage,
     ...listMessages(conversationId).slice(-40).map(messageForLlama)
   ];
-  let upstream: Response;
-  try {
-    upstream = await streamChatCompletion(model, messages);
-    await verifyGoobyModel(model);
-  } catch (error) {
-    const label = goobyModelOption(model)?.displayLabel ?? model;
-    const detail = error instanceof Error ? error.message : 'llama.cpp did not confirm the requested model';
-    return json({ error: `${label} is not ready: ${detail}` }, { status: 502 });
-  }
-
-  const reader = upstream.body!.getReader();
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-
   let assistantContent = '';
   let parseBuffer = '';
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
+        const upstream = await openUpstreamChat(model, messages, controller);
+        reader = upstream.body!.getReader();
+
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
@@ -125,14 +173,14 @@ export async function POST({ request }) {
         controller.close();
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Chat stream failed';
-        controller.enqueue(encoder.encode(`event: error\ndata: ${JSON.stringify({ error: message })}\n\n`));
+        controller.enqueue(sseEvent('error', { error: message }));
         controller.close();
       } finally {
-        reader.releaseLock();
+        reader?.releaseLock();
       }
     },
     cancel() {
-      reader.cancel().catch(() => {});
+      reader?.cancel().catch(() => {});
     }
   });
 

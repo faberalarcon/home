@@ -47,12 +47,25 @@
   let sending = $state(false);
   let error = $state<string | null>(initial.error);
   let messagesEl: HTMLDivElement;
+  let promptEl: HTMLTextAreaElement;
 
   const selectedConversation = $derived(conversations.find((conversation) => conversation.id === selectedId) ?? null);
-  const loadedCount = $derived(models.filter((model) => model.status === 'loaded').length);
-  const loadedModel = $derived(models.find((model) => model.status === 'loaded') ?? null);
   const selectedModelInfo = $derived(models.find((model) => model.id === selectedModel) ?? null);
   const canSend = $derived(Boolean(prompt.trim() && selectedModel && !sending));
+  const selectedModelLabel = $derived(selectedModelInfo?.shortLabel ?? selectedModelInfo?.id ?? 'Model');
+  const selectedModelStatus = $derived(
+    error
+      ? 'Offline'
+      : selectedModelInfo?.failed
+        ? `${selectedModelLabel} failed`
+        : selectedModelInfo?.status === 'loaded'
+          ? `${selectedModelLabel} ready`
+          : selectedModelInfo?.status === 'loading'
+            ? `Loading ${selectedModelLabel}`
+            : selectedModelInfo
+              ? `${selectedModelLabel} loads on first use`
+              : 'Loading on first use'
+  );
 
   function formatDate(ms: number): string {
     try {
@@ -77,9 +90,10 @@
   }
 
   function modelStatus(model: LlamaModel): string {
+    if (model.failed) return 'Failed';
     if (model.status === 'loaded') return 'Loaded';
     if (model.status === 'loading') return 'Loading';
-    return model.default ? 'Default' : 'Available';
+    return 'Loads on first use';
   }
 
   function chooseModel(modelId: string) {
@@ -87,6 +101,7 @@
     selectedModel = modelId;
     modelMenuOpen = false;
     error = null;
+    refreshModels().catch(() => {});
   }
 
   function scrollMessages() {
@@ -95,16 +110,34 @@
     });
   }
 
-  async function refreshModels() {
-    const res = await fetch('/gooby/api/models');
-    const payload = await res.json();
-    const nextModels = payload.models ?? [];
-    models = nextModels;
-    const available = new Set(nextModels.map((model: LlamaModel) => model.id));
-    if (!selectedModel || !available.has(selectedModel)) {
-      selectedModel = payload.defaultModel ?? nextModels[0]?.id ?? '';
+  function resizePrompt() {
+    tick().then(() => {
+      if (!promptEl) return;
+      const maxHeight = 192;
+      promptEl.style.height = 'auto';
+      const nextHeight = Math.min(promptEl.scrollHeight, maxHeight);
+      promptEl.style.height = `${nextHeight}px`;
+      promptEl.style.overflowY = promptEl.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    });
+  }
+
+  async function refreshModels(options: { preserveError?: boolean } = {}) {
+    try {
+      const res = await fetch('/gooby/api/models', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Unable to refresh GoobyGPT models');
+      const payload = await res.json();
+      const nextModels = payload.models ?? [];
+      models = nextModels;
+      const available = new Set(nextModels.map((model: LlamaModel) => model.id));
+      if (!selectedModel || !available.has(selectedModel)) {
+        selectedModel = payload.defaultModel ?? nextModels[0]?.id ?? '';
+      }
+      if (!options.preserveError || payload.error) error = payload.error ?? null;
+      return payload;
+    } catch (err) {
+      if (!options.preserveError) error = err instanceof Error ? err.message : 'Unable to refresh GoobyGPT models';
+      return null;
     }
-    error = payload.error ?? null;
   }
 
   async function refreshConversations() {
@@ -194,13 +227,19 @@
     await loadMessages(selectedId);
   }
 
-  function consumeSseChunk(buffer: string): { content: string; remaining: string; error: string | null } {
+  function consumeSseChunk(buffer: string): { content: string; remaining: string; error: string | null; status: string | null } {
     let content = '';
     let streamError: string | null = null;
+    let status: string | null = null;
     const events = buffer.split('\n\n');
     const remaining = events.pop() ?? '';
 
     for (const event of events) {
+      const eventName = event
+        .split('\n')
+        .find((line) => line.startsWith('event:'))
+        ?.slice(6)
+        .trim();
       const dataLines = event
         .split('\n')
         .filter((line) => line.startsWith('data:'))
@@ -210,6 +249,10 @@
         if (!dataLine || dataLine === '[DONE]') continue;
         try {
           const payload = JSON.parse(dataLine);
+          if (eventName === 'status' && typeof payload.message === 'string') {
+            status = payload.message;
+            continue;
+          }
           const delta = payload.choices?.[0]?.delta;
           if (typeof delta?.content === 'string') content += delta.content;
           if (typeof payload.error === 'string') streamError = payload.error;
@@ -220,7 +263,7 @@
       }
     }
 
-    return { content, remaining, error: streamError };
+    return { content, remaining, error: streamError, status };
   }
 
   async function sendPrompt() {
@@ -230,7 +273,10 @@
     sending = true;
     error = null;
     prompt = '';
+    resizePrompt();
 
+    const waitingForModel = selectedModelInfo?.status !== 'loaded';
+    const waitingMessage = waitingForModel ? `Waiting for ${selectedModelLabel} to load...` : '';
     const userMessage: ChatMessage = {
       id: `local-user-${Date.now()}`,
       role: 'user',
@@ -241,7 +287,7 @@
     const assistantMessage: ChatMessage = {
       id: `local-assistant-${Date.now()}`,
       role: 'assistant',
-      content: '',
+      content: waitingMessage,
       model: selectedModel,
       createdAt: Date.now()
     };
@@ -272,6 +318,7 @@
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let parseBuffer = '';
+      let assistantHasAnswer = false;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -280,7 +327,19 @@
         const parsed = consumeSseChunk(parseBuffer);
         parseBuffer = parsed.remaining;
         if (parsed.error) throw new Error(parsed.error);
+        if (parsed.status && !assistantHasAnswer) {
+          assistantMessage.content = parsed.status;
+          messages = messages.map((message) =>
+            message.id === assistantMessage.id ? { ...assistantMessage } : message
+          );
+          await refreshModels({ preserveError: true });
+          scrollMessages();
+        }
         if (parsed.content) {
+          if (!assistantHasAnswer) {
+            assistantMessage.content = '';
+            assistantHasAnswer = true;
+          }
           assistantMessage.content += parsed.content;
           messages = messages.map((message) =>
             message.id === assistantMessage.id ? { ...assistantMessage } : message
@@ -323,6 +382,21 @@
 
   onMount(() => {
     loadMessages(selectedId);
+    refreshModels().catch(() => {});
+    resizePrompt();
+  });
+
+  $effect(() => {
+    const shouldPoll = Boolean(
+      selectedModel && (sending || modelMenuOpen || !selectedModelInfo || selectedModelInfo.status !== 'loaded')
+    );
+    if (!shouldPoll) return;
+
+    const interval = window.setInterval(() => {
+      refreshModels().catch(() => {});
+    }, 2_000);
+
+    return () => window.clearInterval(interval);
   });
 </script>
 
@@ -402,7 +476,7 @@
       </div>
 
       <div class="gooby-toolbar__status">
-        <StatusPill status={error ? 'attention' : loadedCount > 0 ? 'ok' : 'watch'} label={error ? 'Offline' : loadedModel ? `${loadedModel.shortLabel ?? loadedModel.id} ready` : 'Loading on first use'} />
+        <StatusPill status={error ? 'attention' : selectedModelInfo?.status === 'loaded' ? 'ok' : 'watch'} label={selectedModelStatus} />
         {#if selectedConversation}
           <div class="gooby-conversation-actions">
             <button type="button" onclick={renameSelected}>Rename</button>
@@ -443,17 +517,8 @@
     </div>
 
     <form id="gooby-composer" class="gooby-composer" onsubmit={submitPrompt}>
-      <div class="gooby-composer__box">
-        <textarea
-          bind:value={prompt}
-          rows="3"
-          placeholder="Message GoobyGPT"
-          disabled={sending || !selectedModel}
-          onkeydown={(event) => {
-            if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) sendPrompt();
-          }}
-        ></textarea>
-        <div class="gooby-composer__controls">
+      <div class="gooby-composer__inner">
+        <div class="gooby-composer__top">
           <div class="gooby-model-picker">
             <button
               class="gooby-model-button"
@@ -484,7 +549,20 @@
               </div>
             {/if}
           </div>
-          <button type="submit" disabled={!canSend}>{sending ? 'Sending' : 'Send'}</button>
+        </div>
+        <div class="gooby-composer__box">
+          <textarea
+            bind:this={promptEl}
+            bind:value={prompt}
+            rows="1"
+            placeholder="Message GoobyGPT"
+            disabled={sending || !selectedModel}
+            oninput={resizePrompt}
+            onkeydown={(event) => {
+              if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) sendPrompt();
+            }}
+          ></textarea>
+          <button class="gooby-send-button" type="submit" disabled={!canSend}>{sending ? 'Sending' : 'Send'}</button>
         </div>
       </div>
     </form>
@@ -894,6 +972,7 @@
   :global(.gooby-markdown p),
   :global(.gooby-markdown ul),
   :global(.gooby-markdown ol),
+  :global(.gooby-markdown table),
   :global(.gooby-markdown pre),
   :global(.gooby-markdown blockquote) {
     margin: 0.75rem 0;
@@ -941,6 +1020,36 @@
     font-weight: 720;
   }
 
+  :global(.gooby-markdown table) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    border-spacing: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    overflow-wrap: normal;
+  }
+
+  :global(.gooby-markdown th),
+  :global(.gooby-markdown td) {
+    border: 1px solid var(--color-paper-300);
+    padding: 0.5rem 0.62rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  :global(.gooby-markdown th) {
+    background: var(--color-paper-200);
+    color: var(--color-ink-900);
+    font-weight: 780;
+  }
+
+  :global(.gooby-markdown tr:nth-child(even) td) {
+    background: color-mix(in oklab, var(--color-paper-100) 72%, var(--color-paper-50));
+  }
+
   .gooby-composer {
     display: flex;
     justify-content: center;
@@ -950,46 +1059,63 @@
     padding-bottom: max(clamp(0.85rem, 2vw, 1rem), env(safe-area-inset-bottom));
   }
 
-  .gooby-composer__box {
+  .gooby-composer__inner {
     display: grid;
-    gap: 0.55rem;
+    gap: 0.38rem;
     width: min(100%, 52rem);
+  }
+
+  .gooby-composer__top {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .gooby-composer__box {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
     border: 1px solid var(--color-paper-300);
     border-radius: var(--radius-sm, 0.5rem);
     background: var(--color-paper-50);
-    padding: 0.55rem;
+    padding: 0.45rem 6.15rem 0.45rem 0.55rem;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
   }
 
-  .gooby-composer__controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.65rem;
-    min-width: 0;
+  .gooby-composer__box:focus-within {
+    border-color: color-mix(in oklab, var(--color-blood-500) 45%, var(--color-paper-300));
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-blood-500) 14%, transparent);
   }
 
   .gooby-composer textarea {
     width: 100%;
     box-sizing: border-box;
-    min-height: 3.75rem;
+    min-height: 1.85rem;
     max-height: 12rem;
-    resize: vertical;
+    resize: none;
     border: 0;
     border-radius: calc(var(--radius-sm, 0.5rem) - 0.2rem);
     background: transparent;
     color: var(--color-ink-900);
-    padding: 0.45rem 0.5rem;
+    padding: 0.24rem 0;
     font: inherit;
-    line-height: 1.4;
+    line-height: 1.35;
+    overflow-y: hidden;
   }
 
   .gooby-composer textarea:focus {
-    outline: 2px solid color-mix(in oklab, var(--color-blood-500) 35%, transparent);
-    outline-offset: 2px;
+    outline: 0;
   }
 
-  .gooby-composer button {
-    min-width: 6rem;
+  .gooby-composer .gooby-send-button {
+    position: absolute;
+    right: 0.42rem;
+    bottom: 0.42rem;
+    min-width: 5.2rem;
+    min-height: 2rem;
+    padding: 0.5rem 0.7rem;
   }
 
   .gooby-composer button:disabled,
@@ -1112,14 +1238,11 @@
 
     .gooby-composer__box {
       border-radius: var(--radius-sm, 0.5rem);
-    }
-
-    .gooby-composer__controls {
-      align-items: stretch;
+      padding-right: 5.85rem;
     }
 
     .gooby-model-button {
-      max-width: calc(100vw - 8.5rem);
+      max-width: calc(100vw - 1.4rem);
       min-width: 0;
       height: 2.4rem;
     }
@@ -1129,9 +1252,10 @@
       width: min(19rem, calc(100vw - 1.4rem));
     }
 
-    .gooby-composer button {
+    .gooby-composer .gooby-send-button {
       min-width: 5.5rem;
-      height: 2.4rem;
+      min-height: 2rem;
+      height: 2rem;
       padding-right: 0.7rem;
       padding-left: 0.7rem;
     }

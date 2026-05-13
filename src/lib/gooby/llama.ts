@@ -51,6 +51,12 @@ export interface GoobyModelVerification {
   verifiedAt: string;
 }
 
+export interface GoobyModelWaitOptions {
+  timeoutMs?: number;
+  pollMs?: number;
+  onPoll?: (model: LlamaModel) => void | Promise<void>;
+}
+
 export const GOOBY_MODEL_OPTIONS = [
   {
     id: 'gpt-oss-20b-fast',
@@ -72,6 +78,8 @@ export const GOOBY_MODEL_OPTIONS = [
 
 const GOOBY_DEFAULT_MODEL_ID = GOOBY_MODEL_OPTIONS.find((model) => model.default)?.id ?? GOOBY_MODEL_OPTIONS[0].id;
 const GOOBY_MODEL_OPTIONS_BY_ID = new Map(GOOBY_MODEL_OPTIONS.map((model) => [model.id, model]));
+export const GOOBY_MODEL_READY_TIMEOUT_MS = 90_000;
+export const GOOBY_MODEL_READY_POLL_MS = 2_000;
 
 const DEFAULT_LLAMA_BASE_URL = 'http://192.168.1.215:8080';
 
@@ -81,6 +89,10 @@ function llamaBaseUrl(): string {
 
 function timeoutSignal(ms: number): AbortSignal {
   return AbortSignal.timeout(ms);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function numberFromMetric(text: string, name: string): number | null {
@@ -138,6 +150,10 @@ export function filterGoobyModels(models: LlamaModel[]): LlamaModel[] {
       }
     ];
   });
+}
+
+export async function fetchGoobyModels(): Promise<LlamaModel[]> {
+  return filterGoobyModels(await fetchLlamaModels());
 }
 
 export function chooseGoobyDefaultModel(models: LlamaModel[]): string | null {
@@ -241,7 +257,7 @@ export async function getGoobyLlamaStatus(): Promise<LlamaStatus> {
 }
 
 export async function verifyGoobyModel(modelId: string): Promise<GoobyModelVerification> {
-  const models = filterGoobyModels(await fetchLlamaModels());
+  const models = await fetchGoobyModels();
   const model = models.find((candidate) => candidate.id === modelId);
 
   if (!model) {
@@ -260,6 +276,59 @@ export async function verifyGoobyModel(modelId: string): Promise<GoobyModelVerif
     model,
     verifiedAt: new Date().toISOString()
   };
+}
+
+export function goobyModelStatusLabel(model: LlamaModel | null | undefined): string {
+  if (!model) return 'unavailable';
+  if (model.failed) return 'failed';
+  if (model.status === 'loaded') return 'ready';
+  if (model.status === 'loading') return 'loading';
+  if (model.status === 'unloaded') return 'loading on first use';
+  return 'status unknown';
+}
+
+export function isModelLoadPendingError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return /abort|busy|loading|load|not ready|switch|timeout|unavailable|503|500/i.test(message);
+}
+
+export async function waitForGoobyModelReady(
+  modelId: string,
+  options: GoobyModelWaitOptions = {}
+): Promise<GoobyModelVerification> {
+  const timeoutMs = options.timeoutMs ?? GOOBY_MODEL_READY_TIMEOUT_MS;
+  const pollMs = options.pollMs ?? GOOBY_MODEL_READY_POLL_MS;
+  const deadline = Date.now() + timeoutMs;
+  let lastModel: LlamaModel | null = null;
+
+  while (Date.now() <= deadline) {
+    const models = await fetchGoobyModels();
+    const model = models.find((candidate) => candidate.id === modelId);
+
+    if (!model) {
+      throw new Error(`${goobyModelOption(modelId)?.displayLabel ?? modelId} is not listed by llama.cpp`);
+    }
+
+    lastModel = model;
+    await options.onPoll?.(model);
+
+    if (model.failed) {
+      throw new Error(`${model.displayLabel ?? model.id} failed to load in llama.cpp`);
+    }
+
+    if (model.status === 'loaded') {
+      return {
+        model,
+        verifiedAt: new Date().toISOString()
+      };
+    }
+
+    await sleep(Math.min(pollMs, Math.max(0, deadline - Date.now())));
+  }
+
+  const label = lastModel?.displayLabel ?? goobyModelOption(modelId)?.displayLabel ?? modelId;
+  const status = goobyModelStatusLabel(lastModel);
+  throw new Error(`${label} is still ${status} after ${Math.round(timeoutMs / 1000)} seconds`);
 }
 
 export async function streamChatCompletion(model: string, messages: ChatMessage[]): Promise<Response> {
