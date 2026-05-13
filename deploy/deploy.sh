@@ -59,6 +59,8 @@ ensure_root_env() {
     if [[ -f "$ROOT_ENV_FILE" ]]; then
         ensure_env_key_literal "DRINK_HUB_DATA_DIR" "$DRINK_HUB_DATA_DIR"
         ensure_env_key_literal "MEDIA_DIR" "$MEDIA_DIR"
+        ensure_env_key_literal "GOOBY_DATABASE_PATH" "/app/data/gooby-gpt.db"
+        ensure_env_key_literal "LLAMA_BASE_URL" "http://192.168.1.215:8080"
         ensure_env_key_from "ADMIN_SHARED_SECRET" "$ADMIN_ENV"
         chmod 600 "$ROOT_ENV_FILE"
         return 0
@@ -72,8 +74,12 @@ ensure_root_env() {
         printf 'CSRF_TRUSTED_ORIGINS=https://21bristoe.com,https://admin.21bristoe.com\n'
         printf 'DRINK_HUB_DATA_DIR=%s\n' "$DRINK_HUB_DATA_DIR"
         printf 'MEDIA_DIR=%s\n' "$MEDIA_DIR"
+        printf 'GOOBY_DATABASE_PATH=/app/data/gooby-gpt.db\n'
+        printf 'LLAMA_BASE_URL=http://192.168.1.215:8080\n'
         write_env_key_from "$LEGACY_DRINK_HUB_ENV" "SITE_PASSWORD"
         write_env_key_from "$LEGACY_DRINK_HUB_ENV" "SITE_PASSWORD_HASH"
+        write_env_key_from "$LEGACY_DRINK_HUB_ENV" "GOOBY_PASSWORD"
+        write_env_key_from "$LEGACY_DRINK_HUB_ENV" "GOOBY_PASSWORD_HASH"
         write_env_key_from "$LEGACY_DRINK_HUB_ENV" "ADMIN_PASSWORD"
         write_env_key_from "$LEGACY_DRINK_HUB_ENV" "SESSION_SECRET"
         write_env_key_from "$LEGACY_DRINK_HUB_ENV" "HA_STRICT_PUBLIC"
@@ -111,6 +117,24 @@ retire_legacy_container() {
     docker rm -f "$name" >/dev/null
 }
 
+wait_for_site() {
+    local url="${1:-http://127.0.0.1:6173/}"
+    local code
+
+    echo "      Waiting for site to answer at $url..."
+    for _ in {1..30}; do
+        code="$(curl -so /dev/null -w '%{http_code}' "$url" 2>/dev/null || true)"
+        if [[ "$code" == "200" || "$code" == "303" ]]; then
+            echo "      Site is ready ($code)."
+            return 0
+        fi
+        sleep 1
+    done
+
+    echo "      Site did not become ready in time; last status: ${code:-none}"
+    return 1
+}
+
 echo ""
 echo "==> 21bristoe.com unified deploy"
 echo "    Repo: $REPO_DIR"
@@ -140,6 +164,7 @@ done
 
 echo "[4/7] Rebuilding unified site container..."
 docker compose up -d --build site
+wait_for_site
 echo "      Unified site container running."
 
 echo "[5/7] Installing and testing nginx config..."

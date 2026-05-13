@@ -1,5 +1,5 @@
 <script lang="ts">
-  type SiteKey = 'home' | 'drinks' | 'stats';
+  type SiteKey = 'home' | 'drinks' | 'stats' | 'gooby';
 
   interface Props {
     site?: SiteKey;
@@ -11,7 +11,8 @@
   const suffixBySite: Record<SiteKey, string> = {
     home: '',
     drinks: 'Drinks',
-    stats: 'Stats'
+    stats: 'Stats',
+    gooby: 'GoobyGPT'
   };
 
   const suffix = $derived(suffixBySite[site]);

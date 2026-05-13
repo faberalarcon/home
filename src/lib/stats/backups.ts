@@ -55,7 +55,7 @@ export const DEFAULT_RETAIN: Record<BackupTier, number> = {
 };
 
 export const BACKUP_CADENCE_HOURS: Record<BackupTier, number> = {
-  daily: 24 * 7,
+  daily: 24,
   weekly: 24 * 7,
   monthly: 24 * 31,
   quarterly: 24 * 93

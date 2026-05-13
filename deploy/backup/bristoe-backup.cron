@@ -1,0 +1,16 @@
+# Bristoe Pi tiered backups - installed to /etc/cron.d/bristoe-backup
+# Runs as faber so rsync can read /home/faber without sudo quirks.
+# All times are America/New_York (cron.d inherits /etc/localtime).
+#
+# daily      -> 03:00 every day                     (retain 7)
+# weekly     -> 03:30 every Sunday                  (retain 4)
+# monthly    -> 04:00 on the 1st                    (retain 12)
+# quarterly  -> 04:30 on the 1st of Jan/Apr/Jul/Oct (retain 4)
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+0  3  *  *  *          faber /home/faber/bin/backup.sh daily
+30 3  *  *  0          faber /home/faber/bin/backup.sh weekly
+0  4  1  *  *          faber /home/faber/bin/backup.sh monthly
+30 4  1  1,4,7,10 *    faber /home/faber/bin/backup.sh quarterly

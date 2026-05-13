@@ -44,6 +44,23 @@
     return `${Math.round(value)}°${unit}`;
   }
 
+  function formatCompact(value: number | null): string {
+    if (value === null || !Number.isFinite(value)) return '--';
+    return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+  }
+
+  function formatRate(value: number | null): string {
+    if (value === null || !Number.isFinite(value)) return '--';
+    return `${value.toFixed(1)} tok/s`;
+  }
+
+  function formatBytesShort(value: number | null): string {
+    if (value === null || !Number.isFinite(value)) return '--';
+    if (value >= 1024 ** 3) return `${(value / 1024 ** 3).toFixed(1)} GiB`;
+    if (value >= 1024 ** 2) return `${(value / 1024 ** 2).toFixed(1)} MiB`;
+    return `${Math.round(value / 1024)} KiB`;
+  }
+
   function cardVariant(severity: Severity): 'success' | 'warning' | 'attention' {
     if (severity === 'attention') return 'attention';
     if (severity === 'watch') return 'warning';
@@ -63,6 +80,7 @@
   const weatherService = $derived(serviceById('weather'));
   const piService = $derived(serviceById('pi'));
   const backupService = $derived(serviceById('backups'));
+  const llamaService = $derived(serviceById('llama'));
   const drinkService = $derived(serviceById('drink-hub'));
   const visitorService = $derived(serviceById('visitors'));
   const serviceCounts = $derived([
@@ -209,7 +227,7 @@
       compact
     />
 
-    <div class="ops-layout">
+    <div class="ops-layout ops-layout--triple">
       <BristoeCard variant={piService ? cardVariant(piService.severity) : 'attention'} class="status-panel">
         <div class="panel-heading">
           <div>
@@ -223,6 +241,51 @@
           <MetricTile label="Memory" value={formatPct(ops.infrastructure.pi.memPct)} detail="latest sample" icon="▣" status={piService?.severity ?? 'neutral'} />
           <MetricTile label="Pi temp" value={formatTemp(ops.infrastructure.pi.tempC, 'C')} detail={`${ops.infrastructure.pi.sampleAgeMinutes ?? '--'}m ago`} icon="🌡️" status={piService?.severity ?? 'neutral'} />
         </div>
+      </BristoeCard>
+
+      <BristoeCard variant={llamaService ? cardVariant(llamaService.severity) : 'attention'} class="status-panel">
+        <div class="panel-heading">
+          <div>
+            <h3>GoobyGPT models</h3>
+            <p>{llamaService?.detail ?? 'llama.cpp unavailable'}</p>
+          </div>
+          <StatusPill status={llamaService?.severity ?? 'attention'} label={llamaService?.value ?? 'Needs attention'} />
+        </div>
+        <div class="panel-metric-grid">
+          <MetricTile
+            label="Models"
+            value={`${ops.infrastructure.llama.loadedCount}/${ops.infrastructure.llama.modelCount}`}
+            detail={ops.infrastructure.llama.defaultModel ?? 'no default model'}
+            icon="AI"
+            status={llamaService?.severity ?? 'neutral'}
+          />
+          <MetricTile
+            label="Generation"
+            value={formatRate(ops.infrastructure.llama.predictedTokensPerSecond)}
+            detail={`${formatCompact(ops.infrastructure.llama.predictedTokensTotal)} tokens`}
+            icon="tok"
+            status={ops.infrastructure.llama.metricsAvailable ? 'ok' : 'watch'}
+          />
+          <MetricTile
+            label="Queue"
+            value={ops.infrastructure.llama.requestsProcessing ?? '--'}
+            detail={`${ops.infrastructure.llama.requestsDeferred ?? '--'} deferred`}
+            icon="Q"
+            status={llamaService?.severity ?? 'neutral'}
+          />
+        </div>
+        <p class="llama-detail">
+          {#if ops.infrastructure.llama.loadedModel}
+            {ops.infrastructure.llama.loadedModel}
+            / ctx {formatCompact(ops.infrastructure.llama.contextSize)}
+            / {formatCompact(ops.infrastructure.llama.parameterCount)} params
+            / {formatBytesShort(ops.infrastructure.llama.sizeBytes)}
+          {:else if ops.infrastructure.llama.error}
+            {ops.infrastructure.llama.error}
+          {:else}
+            No model is loaded right now.
+          {/if}
+        </p>
       </BristoeCard>
 
       <BristoeCard variant={backupService ? cardVariant(backupService.severity) : 'attention'} class="status-panel">
@@ -553,6 +616,14 @@
     grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.6fr);
   }
 
+  .ops-layout--triple {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ops-layout--triple .panel-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
   .weather-panel__main {
     align-items: center;
     padding-bottom: 1rem;
@@ -654,6 +725,15 @@
     margin-bottom: 1rem;
   }
 
+  .llama-detail {
+    margin: 1rem 0 0;
+    color: var(--color-ink-500);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
   .tier-list {
     border: 1px solid var(--color-paper-300);
     border-radius: var(--radius-sm, 0.5rem);
@@ -714,7 +794,8 @@
   @media (max-width: 900px) {
     .ops-hero,
     .ops-layout,
-    .ops-layout--primary {
+    .ops-layout--primary,
+    .ops-layout--triple {
       grid-template-columns: 1fr;
     }
 

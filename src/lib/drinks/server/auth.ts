@@ -4,7 +4,7 @@ import { getAdminSessionEpoch, getSessionSecret } from './admin-password';
 const SITE_PASSWORD_SALT = 'drink-hub-site-password';
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
-export type SessionScope = 'admin' | 'site';
+export type SessionScope = 'admin' | 'site' | 'gooby';
 
 export function hashSitePassword(password: string): string {
   return scryptSync(password, SITE_PASSWORD_SALT, 32).toString('hex');

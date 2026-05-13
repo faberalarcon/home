@@ -9,6 +9,7 @@ import {
   isAdminPasswordConfigured
 } from '$lib/drinks/server/admin-password';
 import { getConfiguredSitePasswordHash } from '$lib/drinks/server/site-access';
+import { getConfiguredGoobyPasswordHash } from '$lib/gooby/auth';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const rootAdminSecret = process.env.ADMIN_SHARED_SECRET ?? '';
@@ -99,6 +100,15 @@ function withDrinksBase(path: string): string {
   return `/drinks${path}`;
 }
 
+function isGoobyPublicPath(pathname: string): boolean {
+  return (
+    pathname === '/gooby/login' ||
+    pathname.startsWith('/_app/') ||
+    pathname === '/favicon.png' ||
+    pathname === '/favicon.svg'
+  );
+}
+
 function verifyRootAdminProxy(event: Parameters<Handle>[0]['event']): boolean {
   if (!isProduction) return true;
   const supplied = event.request.headers.get('x-admin-auth') ?? '';
@@ -110,6 +120,8 @@ function verifyRootAdminProxy(event: Parameters<Handle>[0]['event']): boolean {
 
 export const handle: Handle = async ({ event, resolve }) => {
   event.locals.rootAdminAuthenticated = false;
+  event.locals.goobyPasswordEnabled = false;
+  event.locals.goobyAuthenticated = false;
 
   if (event.url.pathname === '/admin') {
     throw redirect(308, '/admin/');
@@ -151,6 +163,30 @@ export const handle: Handle = async ({ event, resolve }) => {
       if (!event.locals.drinkAdminAuthenticated) {
         throw redirect(303, withDrinksBase('/admin/login'));
       }
+    }
+  } else if (event.url.pathname.startsWith('/gooby')) {
+    const goobyPasswordHash = getConfiguredGoobyPasswordHash();
+    const goobyToken = event.cookies.get('gooby_session');
+
+    event.locals.goobyPasswordEnabled = !!goobyPasswordHash;
+    event.locals.goobyAuthenticated = event.locals.goobyPasswordEnabled
+      ? verifySessionToken(goobyToken, 'gooby')
+      : false;
+    event.locals.sitePasswordEnabled = false;
+    event.locals.siteAuthenticated = true;
+    event.locals.drinkAdminAuthenticated = false;
+    event.locals.adminAuthenticated = false;
+
+    if ((!event.locals.goobyPasswordEnabled || !event.locals.goobyAuthenticated) && !isGoobyPublicPath(event.url.pathname)) {
+      if (event.url.pathname.startsWith('/gooby/api/')) {
+        return json(
+          { error: event.locals.goobyPasswordEnabled ? 'Authentication required' : 'GoobyGPT password is not configured' },
+          { status: event.locals.goobyPasswordEnabled ? 401 : 503 }
+        );
+      }
+
+      const next = `${event.url.pathname}${event.url.search}`;
+      throw redirect(303, `/gooby/login?next=${encodeURIComponent(next)}`);
     }
   } else {
     event.locals.sitePasswordEnabled = false;

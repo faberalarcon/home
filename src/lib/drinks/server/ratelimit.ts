@@ -24,6 +24,8 @@ const PROFILES: Record<string, LimitProfile> = {
   order: { refillMs: 3_000, burst: 1, windowMs: 60_000, windowMax: 10 },
   // Site login: 5 attempts per 5 minutes
   login: { refillMs: 60_000, burst: 5, windowMs: 5 * 60_000, windowMax: 5 },
+  // GoobyGPT login: 5 attempts per 5 minutes
+  'gooby-login': { refillMs: 60_000, burst: 5, windowMs: 5 * 60_000, windowMax: 5 },
   // Admin login: 3 attempts per 5 minutes (per IP bucket).
   // A separate global persistent backoff (see checkAdminLoginGlobal) makes
   // rotating X-Forwarded-For ineffective against the admin endpoint.

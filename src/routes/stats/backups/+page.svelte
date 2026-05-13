@@ -21,7 +21,7 @@
   const used = $derived(pctUsed(drive));
 
   const TIER_META: Record<BackupTier, { label: string; cadence: string }> = {
-    daily:     { label: 'Rolling 7-day', cadence: 'retains the latest 7-day snapshot set' },
+    daily:     { label: 'Rolling 7-day', cadence: 'daily at 03:00, retains newest 7' },
     weekly:    { label: 'Weekly',    cadence: 'Sundays at 03:30' },
     monthly:   { label: 'Monthly',   cadence: '1st of month at 04:00' },
     quarterly: { label: 'Quarterly', cadence: '1st of Jan/Apr/Jul/Oct at 04:30' }

@@ -5,6 +5,7 @@ import { getVisitorLocationStats } from '$lib/stats/server/visitors';
 import { getPiMetrics } from '$lib/stats/server/pi-metrics';
 import { readBackupManifest } from '$lib/stats/server/backups';
 import { TIERS, backupAgeLabel, formatBytes, humanAge, staleness, tierNotDueYet } from '$lib/stats/backups';
+import { getLlamaStatus } from '$lib/gooby/llama';
 import type { BackupManifest, BackupTier } from '$lib/stats/backups';
 import type { DailyWeather } from '$lib/stats/server/weather';
 
@@ -78,6 +79,25 @@ export interface OpsBoard {
         age: string;
         severity: Severity;
       }[];
+    };
+    llama: {
+      available: boolean;
+      modelCount: number;
+      loadedCount: number;
+      loadedModel: string | null;
+      defaultModel: string | null;
+      contextSize: number | null;
+      parameterCount: number | null;
+      sizeBytes: number | null;
+      metricsAvailable: boolean;
+      promptTokensPerSecond: number | null;
+      predictedTokensPerSecond: number | null;
+      promptTokensTotal: number | null;
+      predictedTokensTotal: number | null;
+      requestsProcessing: number | null;
+      requestsDeferred: number | null;
+      checkedAt: string;
+      error: string | null;
     };
   };
   activity: {
@@ -209,7 +229,8 @@ export async function getOpsBoard(): Promise<OpsBoard> {
     drinkStats,
     visitors,
     piMetrics,
-    backups
+    backups,
+    llama
   ] = await Promise.all([
     getStates(Object.values(ENTITIES)).catch(() => new Map()),
     getCurrentWeather().catch(() => null),
@@ -217,7 +238,8 @@ export async function getOpsBoard(): Promise<OpsBoard> {
     fetchDrinkHubStats().catch(() => null),
     getVisitorLocationStats().catch(() => null),
     getPiMetrics('1d').catch(() => ({ available: false, latest: null, history: [], range: '1d' as const })),
-    readBackupManifest().catch(async () => readBackupManifest())
+    readBackupManifest().catch(async () => readBackupManifest()),
+    getLlamaStatus()
   ]);
 
   const get = (key: keyof typeof ENTITIES): StateLike | null => {
@@ -270,6 +292,12 @@ export async function getOpsBoard(): Promise<OpsBoard> {
   const weatherSeverity: Severity = currentWeather ? 'ok' : 'watch';
   const piStatus = piSeverity(pi);
   const backupStatus = backupSeverity(backups);
+  const llamaLoadedCount = llama.models.filter((model) => model.status === 'loaded').length;
+  const llamaStatus: Severity = !llama.available
+    ? 'attention'
+    : llamaLoadedCount === 0 || !llama.metricsAvailable
+      ? 'watch'
+      : 'ok';
 
   const services: OpsSignal[] = [
     {
@@ -313,6 +341,17 @@ export async function getOpsBoard(): Promise<OpsBoard> {
       value: severityLabel(weatherSeverity),
       detail: currentWeather ? weatherDesc.text : 'Open-Meteo unavailable',
       severity: weatherSeverity
+    },
+    {
+      id: 'llama',
+      label: 'GoobyGPT',
+      value: severityLabel(llamaStatus),
+      detail: !llama.available
+        ? llama.error ?? 'llama.cpp unavailable'
+        : llama.loadedModel
+          ? `${llama.loadedModel.id} loaded`
+          : `${llama.models.length} models listed, none loaded`,
+      severity: llamaStatus
     }
   ];
 
@@ -359,6 +398,25 @@ export async function getOpsBoard(): Promise<OpsBoard> {
         driveFree: formatBytes(backups.drive.freeBytes),
         latest: humanAge(backupLatest),
         tiers: backupTiers
+      },
+      llama: {
+        available: llama.available,
+        modelCount: llama.models.length,
+        loadedCount: llamaLoadedCount,
+        loadedModel: llama.loadedModel?.id ?? null,
+        defaultModel: llama.defaultModel,
+        contextSize: llama.loadedModel?.contextSize ?? null,
+        parameterCount: llama.loadedModel?.parameterCount ?? null,
+        sizeBytes: llama.loadedModel?.sizeBytes ?? null,
+        metricsAvailable: llama.metricsAvailable,
+        promptTokensPerSecond: llama.metrics?.promptTokensPerSecond ?? null,
+        predictedTokensPerSecond: llama.metrics?.predictedTokensPerSecond ?? null,
+        promptTokensTotal: llama.metrics?.promptTokensTotal ?? null,
+        predictedTokensTotal: llama.metrics?.predictedTokensTotal ?? null,
+        requestsProcessing: llama.metrics?.requestsProcessing ?? null,
+        requestsDeferred: llama.metrics?.requestsDeferred ?? null,
+        checkedAt: llama.checkedAt,
+        error: llama.error
       }
     },
     activity: {

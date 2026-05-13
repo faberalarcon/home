@@ -4,6 +4,8 @@ declare global {
     interface Locals {
       sitePasswordEnabled: boolean;
       siteAuthenticated: boolean;
+      goobyPasswordEnabled: boolean;
+      goobyAuthenticated: boolean;
       adminAuthenticated: boolean;
       drinkAdminAuthenticated: boolean;
       rootAdminAuthenticated: boolean;
