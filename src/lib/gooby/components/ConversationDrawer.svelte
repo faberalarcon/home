@@ -149,9 +149,9 @@
 
   .list {
     overflow-y: auto;
-    padding: 0.6rem 0.55rem 1rem;
+    padding: 0.45rem 0.45rem 0.85rem;
     display: grid;
-    gap: 0.65rem;
+    gap: 0.35rem;
   }
 
   .empty {
@@ -162,13 +162,13 @@
 
   .group {
     display: grid;
-    gap: 0.15rem;
+    gap: 0.05rem;
   }
 
   .group h3 {
-    margin: 0.5rem 0.5rem 0.25rem;
+    margin: 0.35rem 0.5rem 0.15rem;
     color: var(--color-ink-500);
-    font-size: 0.7rem;
+    font-size: 0.66rem;
     font-weight: 800;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -181,10 +181,11 @@
     border: 0;
     background: transparent;
     color: var(--color-ink-900);
-    padding: 0.55rem 0.6rem;
-    border-radius: 0.7rem;
-    font-size: 0.92rem;
-    font-weight: 600;
+    padding: 0.32rem 0.55rem;
+    border-radius: 0.55rem;
+    font-size: 0.88rem;
+    font-weight: 500;
+    line-height: 1.25;
     cursor: pointer;
     transition: background 120ms ease;
   }
@@ -198,11 +199,10 @@
   }
 
   .title {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
+    display: block;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .drawer-foot {

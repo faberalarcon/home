@@ -66,7 +66,7 @@
 
   .app {
     display: grid;
-    grid-template-rows: 1fr;
+    grid-template-rows: minmax(0, 1fr);
     width: 100%;
     height: 100dvh;
     min-height: 0;
@@ -78,8 +78,8 @@
   .frame {
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr) auto;
-    height: 100%;
     min-height: 0;
+    height: 100%;
     background: var(--color-paper-50);
   }
 

@@ -15,7 +15,12 @@
     if (!textareaEl) return;
     const max = 192;
     textareaEl.style.height = 'auto';
-    const next = Math.min(textareaEl.scrollHeight, max);
+    const lineHeight = parseFloat(getComputedStyle(textareaEl).lineHeight) || 22;
+    const padding =
+      parseFloat(getComputedStyle(textareaEl).paddingTop) +
+      parseFloat(getComputedStyle(textareaEl).paddingBottom);
+    const single = Math.ceil(lineHeight + padding);
+    const next = chat.prompt.length === 0 ? single : Math.min(textareaEl.scrollHeight, max);
     textareaEl.style.height = `${next}px`;
     textareaEl.style.overflowY = textareaEl.scrollHeight > max ? 'auto' : 'hidden';
   }
@@ -81,8 +86,8 @@
 <style>
   .composer {
     display: grid;
-    gap: 0.3rem;
-    padding: 0.4rem clamp(0.7rem, 3vw, 1.1rem) max(0.5rem, env(safe-area-inset-bottom));
+    gap: 0.25rem;
+    padding: 0.3rem clamp(0.7rem, 3vw, 1.1rem) max(0.45rem, env(safe-area-inset-bottom));
     background: color-mix(in oklab, var(--color-paper-50) 88%, var(--color-paper-100));
     border-top: 1px solid var(--color-paper-300);
   }
@@ -90,13 +95,13 @@
   .pill {
     position: relative;
     display: flex;
-    align-items: flex-end;
-    gap: 0.4rem;
+    align-items: center;
+    gap: 0.35rem;
     width: min(100%, 48rem);
     margin: 0 auto;
-    padding: 0.3rem 0.5rem 0.3rem 1rem;
+    padding: 0.2rem 0.4rem 0.2rem 0.9rem;
     border: 1px solid var(--color-paper-300);
-    border-radius: 1.5rem;
+    border-radius: 1.4rem;
     background: var(--color-paper-50);
     box-shadow: 0 1px 0 rgb(0 0 0 / 0.02);
     transition: border-color 140ms ease, box-shadow 140ms ease;
@@ -116,10 +121,10 @@
     border: 0;
     background: transparent;
     color: var(--color-ink-900);
-    padding: 0.2rem 0.1rem;
+    padding: 0.1rem 0.1rem;
     font: inherit;
     font-size: 0.98rem;
-    line-height: 1.4;
+    line-height: 1.35;
     overflow-y: hidden;
   }
 
