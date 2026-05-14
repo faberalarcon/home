@@ -16,9 +16,13 @@
   let atBottom = $state(true);
   let debounceTimer: number | null = null;
 
-  function scrollToBottom() {
+  function scrollToBottom(immediate = false) {
     if (!scrollEl) return;
-    scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' });
+    if (immediate) {
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+    } else {
+      scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' });
+    }
   }
 
   async function jumpToBottom() {
@@ -29,7 +33,8 @@
 
   onMount(() => {
     chat.setScrollHandler(() => {
-      if (atBottom) scrollToBottom();
+      if (chat.sending) scrollToBottom(true);
+      else if (atBottom) scrollToBottom();
     });
     jumpToBottom();
 

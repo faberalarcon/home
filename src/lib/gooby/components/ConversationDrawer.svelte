@@ -163,11 +163,11 @@
 
   .group {
     display: grid;
-    gap: 0.05rem;
+    gap: 0.25rem;
   }
 
   .group h3 {
-    margin: 0.35rem 0.5rem 0.15rem;
+    margin: 0.35rem 0.5rem 0.2rem;
     color: var(--color-ink-500);
     font-size: 0.66rem;
     font-weight: 800;
@@ -179,24 +179,26 @@
     display: block;
     width: 100%;
     text-align: left;
-    border: 0;
-    background: transparent;
+    border: 1px solid var(--color-paper-300);
+    background: var(--color-paper-50);
     color: var(--color-ink-900);
-    padding: 0.32rem 0.55rem;
-    border-radius: 0.55rem;
+    padding: 0.45rem 2rem 0.45rem 0.7rem;
+    border-radius: 0.6rem;
     font-size: 0.88rem;
     font-weight: 500;
     line-height: 1.25;
     cursor: pointer;
-    transition: background 120ms ease;
+    transition: background 120ms ease, border-color 120ms ease;
   }
 
   .group button:hover {
     background: var(--color-paper-200);
+    border-color: color-mix(in oklab, var(--color-paper-300) 60%, var(--color-ink-500));
   }
 
   .group button.active {
     background: color-mix(in oklab, var(--color-sage-100) 70%, var(--color-paper-200));
+    border-color: color-mix(in oklab, var(--color-sage-300) 80%, var(--color-paper-300));
   }
 
   .title {
