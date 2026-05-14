@@ -151,8 +151,10 @@
     overflow: hidden;
     padding: 0.45rem 0.45rem 0.85rem;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.2rem;
     align-content: start;
+    min-width: 0;
   }
 
   .empty {
@@ -163,7 +165,9 @@
 
   .group {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.25rem;
+    min-width: 0;
   }
 
   .group h3 {
@@ -178,6 +182,9 @@
   .group button {
     display: block;
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
     text-align: left;
     border: 1px solid var(--color-paper-300);
     background: var(--color-paper-50);

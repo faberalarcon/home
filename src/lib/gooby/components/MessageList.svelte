@@ -32,7 +32,8 @@
   }
 
   onMount(() => {
-    chat.setScrollHandler(() => {
+    chat.setScrollHandler(async () => {
+      await tick();
       if (chat.sending) scrollToBottom(true);
       else if (atBottom) scrollToBottom();
     });
