@@ -304,13 +304,13 @@ export async function getGoobyLlamaStatus(): Promise<LlamaStatus> {
   };
 }
 
-export async function probeGoobyModelLoad(modelId: string): Promise<void> {
-  // Fire-and-forget: kick off a tiny completion so llama-swap begins swap. We do
-  // NOT abort or await the response — llama-swap binds the swap to the upstream
-  // request, so cancelling can cancel the load. Generous 180s timeout for big
-  // models; readiness is verified separately by polling /v1/models.
+export async function probeGoobyModelLoad(modelId: string): Promise<string | null> {
+  // Kick off a tiny completion so llama-swap performs the swap. Returns null on
+  // success, or the upstream error message if llama-swap rejected the load
+  // (e.g. model crashed during initialization, OOM, bad config). Generous 180s
+  // timeout for big models.
   try {
-    await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
+    const response = await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -321,8 +321,25 @@ export async function probeGoobyModelLoad(modelId: string): Promise<void> {
       }),
       signal: timeoutSignal(180_000)
     });
-  } catch {
-    // Probe outcome doesn't matter — polling will surface readiness.
+
+    if (response.ok) return null;
+
+    const text = await response.text().catch(() => '');
+    try {
+      const payload = JSON.parse(text);
+      const message =
+        typeof payload?.error?.message === 'string'
+          ? payload.error.message
+          : typeof payload?.error === 'string'
+            ? payload.error
+            : null;
+      if (message) return message;
+    } catch {
+      // Not JSON — fall through.
+    }
+    return text || `llama.cpp returned HTTP ${response.status}`;
+  } catch (error) {
+    return error instanceof Error ? error.message : 'Probe request failed';
   }
 }
 

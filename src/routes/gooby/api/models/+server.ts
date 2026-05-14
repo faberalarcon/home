@@ -19,8 +19,10 @@ export async function POST({ request }) {
   if (!isGoobyModelId(model)) {
     return json({ error: 'Unknown model' }, { status: 400 });
   }
-  await probeGoobyModelLoad(model);
-  return json(await getGoobyLlamaStatus(), {
-    headers: { 'Cache-Control': 'no-store' }
-  });
+  const probeError = await probeGoobyModelLoad(model);
+  const status = await getGoobyLlamaStatus();
+  return json(
+    { ...status, error: probeError ?? status.error },
+    { headers: { 'Cache-Control': 'no-store' } }
+  );
 }

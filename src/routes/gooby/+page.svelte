@@ -20,16 +20,6 @@
     chat.refreshModels().catch(() => {});
   });
 
-  $effect(() => {
-    const info = chat.selectedModelInfo;
-    const shouldPoll = chat.sending || !info || info.status !== 'loaded';
-    if (!shouldPoll) return;
-    const id = window.setInterval(() => {
-      chat.refreshModels({ preserveError: true }).catch(() => {});
-    }, 2_000);
-    return () => window.clearInterval(id);
-  });
-
   function onWindowKey(event: KeyboardEvent) {
     if (event.key === 'Escape') drawerOpen = false;
   }
