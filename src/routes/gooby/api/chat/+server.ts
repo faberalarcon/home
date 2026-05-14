@@ -13,6 +13,7 @@ import {
   goobyModelOption,
   goobyModelStatusLabel,
   isModelLoadPendingError,
+  probeGoobyModelLoad,
   resolveAvailableGoobyModel,
   streamChatCompletion,
   waitForGoobyModelReady,
@@ -67,12 +68,9 @@ async function openUpstreamChat(
     throw new Error(`${label} is not listed by llama.cpp`);
   }
 
-  if (selectedModel.failed) {
-    throw new Error(`${label} failed to load in llama.cpp`);
-  }
-
-  if (selectedModel.status === 'loading') {
-    controller.enqueue(sseEvent('status', { message: `Waiting for ${label} to load...` }));
+  if (selectedModel.status !== 'loaded') {
+    controller.enqueue(sseEvent('status', { message: `Loading ${label}...` }));
+    await probeGoobyModelLoad(model);
     await waitForGoobyModelReady(model, {
       onPoll(modelStatus) {
         controller.enqueue(
@@ -81,8 +79,6 @@ async function openUpstreamChat(
       }
     });
     controller.enqueue(sseEvent('status', { message: `${label} is ready. Sending...` }));
-  } else if (selectedModel.status !== 'loaded') {
-    controller.enqueue(sseEvent('status', { message: `Starting ${label}. This can take a moment...` }));
   }
 
   try {

@@ -18,11 +18,11 @@
   }
 
   function statusText(model: LlamaModel | null): string {
-    if (!model) return 'idle';
+    if (!model) return 'unavailable';
     if (model.failed) return 'failed';
     if (model.status === 'loaded') return 'ready';
     if (model.status === 'loading') return 'loading';
-    return 'sleeping';
+    return 'unloaded';
   }
 
   function pick(modelId: string) {
@@ -50,7 +50,11 @@
     disabled={chat.sending || chat.models.length === 0}
     onclick={() => (open = !open)}
   >
-    <span class="dot" data-state={statusKind(chat.selectedModelInfo)} aria-hidden="true"></span>
+    <span
+      class="dot"
+      data-state={chat.switchingModel ? 'loading' : statusKind(chat.selectedModelInfo)}
+      aria-hidden="true"
+    ></span>
     <span class="label">{chat.selectedModelInfo?.shortLabel ?? 'Model'}</span>
     <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
       <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
@@ -78,7 +82,13 @@
             onclick={() => pick(model.id)}
           >
             <span class="row">
-              <span class="dot" data-state={statusKind(model)} aria-hidden="true"></span>
+              <span
+                class="dot"
+                data-state={chat.switchingModel && model.id === chat.selectedModel
+                  ? 'loading'
+                  : statusKind(model)}
+                aria-hidden="true"
+              ></span>
               <span class="name">{model.displayLabel ?? model.id}</span>
               {#if model.id === chat.selectedModel}
                 <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -86,7 +96,9 @@
                 </svg>
               {/if}
             </span>
-            <span class="status">{statusText(model)}</span>
+            <span class="status">
+              {chat.switchingModel && model.id === chat.selectedModel ? 'loading' : statusText(model)}
+            </span>
           </button>
         </li>
       {/each}

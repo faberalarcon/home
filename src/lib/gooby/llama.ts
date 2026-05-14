@@ -137,12 +137,24 @@ function parseArgNumber(args: unknown, flag: string): number | null {
 }
 
 function normalizeModel(raw: any): LlamaModel {
+  const rawStatus = raw.status;
+  const statusValue = typeof rawStatus?.value === 'string' ? rawStatus.value : null;
+  const explicitFailed =
+    rawStatus?.failed === true || raw.failed === true || statusValue === 'error';
+
+  let status: LlamaModelStatus;
+  if (statusValue === 'loaded' || statusValue === 'ready') status = 'loaded';
+  else if (statusValue === 'loading') status = 'loading';
+  else if (statusValue === 'unloaded' || statusValue === 'idle') status = 'unloaded';
+  else if (rawStatus) status = 'unloaded';
+  else status = 'unknown';
+
   return {
     id: String(raw.id ?? 'unknown'),
     ownedBy: String(raw.owned_by ?? raw.ownedBy ?? 'llamacpp'),
     created: typeof raw.created === 'number' ? raw.created : null,
-    status: raw.status?.value ?? 'unknown',
-    failed: Boolean(raw.status?.failed ?? raw.failed),
+    status,
+    failed: explicitFailed,
     contextSize: raw.meta?.n_ctx ?? parseArgNumber(raw.status?.args, '--ctx-size'),
     parameterCount: raw.meta?.n_params ?? null,
     sizeBytes: raw.meta?.size ?? null
@@ -205,7 +217,15 @@ export async function fetchLlamaModels(): Promise<LlamaModel[]> {
 
   const payload = await response.json();
   const data = Array.isArray(payload.data) ? payload.data : [];
-  return data.map(normalizeModel);
+  const anyHasStatus = data.some((m: any) => m && typeof m.status === 'object');
+  const normalized = data.map(normalizeModel);
+  // Vanilla llama-server: /v1/models has no status field — only one model is ever live.
+  if (!anyHasStatus && normalized.length > 0) {
+    normalized.forEach((m: LlamaModel, idx: number) => {
+      m.status = idx === 0 ? 'loaded' : 'unloaded';
+    });
+  }
+  return normalized;
 }
 
 export async function fetchLlamaMetrics(modelId: string | null): Promise<LlamaMetrics | null> {
@@ -281,6 +301,24 @@ export async function getGoobyLlamaStatus(): Promise<LlamaStatus> {
   };
 }
 
+export async function probeGoobyModelLoad(modelId: string): Promise<void> {
+  try {
+    await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 1,
+        stream: false
+      }),
+      signal: timeoutSignal(5_000)
+    });
+  } catch {
+    // Probe is fire-and-forget — readiness verified separately via waitForGoobyModelReady.
+  }
+}
+
 export async function verifyGoobyModel(modelId: string): Promise<GoobyModelVerification> {
   const models = await fetchGoobyModels();
   const model = models.find((candidate) => candidate.id === modelId);
@@ -308,8 +346,7 @@ export function goobyModelStatusLabel(model: LlamaModel | null | undefined): str
   if (model.failed) return 'failed';
   if (model.status === 'loaded') return 'ready';
   if (model.status === 'loading') return 'loading';
-  if (model.status === 'unloaded') return 'loading on first use';
-  return 'status unknown';
+  return 'unloaded';
 }
 
 export function isModelLoadPendingError(error: unknown): boolean {
@@ -325,6 +362,7 @@ export async function waitForGoobyModelReady(
   const pollMs = options.pollMs ?? GOOBY_MODEL_READY_POLL_MS;
   const deadline = Date.now() + timeoutMs;
   let lastModel: LlamaModel | null = null;
+  let sawProgress = false;
 
   while (Date.now() <= deadline) {
     const models = await fetchGoobyModels();
@@ -337,15 +375,20 @@ export async function waitForGoobyModelReady(
     lastModel = model;
     await options.onPoll?.(model);
 
-    if (model.failed) {
-      throw new Error(`${model.displayLabel ?? model.id} failed to load in llama.cpp`);
-    }
-
     if (model.status === 'loaded') {
       return {
         model,
         verifiedAt: new Date().toISOString()
       };
+    }
+
+    if (model.status === 'loading') sawProgress = true;
+
+    // Only treat `failed` as fatal once we've seen actual load progress — llama-swap
+    // can carry a stale `failed: true` from a prior attempt for a moment before the
+    // new probe flips it to `loading`.
+    if (model.failed && sawProgress) {
+      throw new Error(`${model.displayLabel ?? model.id} failed to load in llama.cpp`);
     }
 
     await sleep(Math.min(pollMs, Math.max(0, deadline - Date.now())));

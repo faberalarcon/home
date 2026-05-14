@@ -46,8 +46,13 @@
   }
 
   .row[data-role='user'] {
-    grid-template-columns: 1fr;
-    justify-items: flex-end;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .row[data-role='user'] .body {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
   }
 
   .avatar {
@@ -73,6 +78,7 @@
   .bubble {
     margin: 0;
     max-width: min(82%, 36rem);
+    width: fit-content;
     padding: 0.65rem 0.95rem;
     border-radius: 1.15rem 1.15rem 0.3rem 1.15rem;
     background: var(--color-sage-100);

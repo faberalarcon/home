@@ -94,7 +94,7 @@
     gap: 0.4rem;
     width: min(100%, 48rem);
     margin: 0 auto;
-    padding: 0.45rem 0.5rem 0.45rem 1rem;
+    padding: 0.3rem 0.5rem 0.3rem 1rem;
     border: 1px solid var(--color-paper-300);
     border-radius: 1.5rem;
     background: var(--color-paper-50);
@@ -110,16 +110,16 @@
   textarea {
     flex: 1 1 auto;
     box-sizing: border-box;
-    min-height: 1.6rem;
+    min-height: 1.4rem;
     max-height: 12rem;
     resize: none;
     border: 0;
     background: transparent;
     color: var(--color-ink-900);
-    padding: 0.4rem 0.1rem;
+    padding: 0.2rem 0.1rem;
     font: inherit;
     font-size: 0.98rem;
-    line-height: 1.45;
+    line-height: 1.4;
     overflow-y: hidden;
   }
 

@@ -76,6 +76,7 @@ export class GoobyChat {
   prompt = $state('');
   loadingMessages = $state(false);
   sending = $state(false);
+  switchingModel = $state(false);
   error = $state<string | null>(null);
 
   private fallbackDefaultModel: string;
@@ -112,11 +113,33 @@ export class GoobyChat {
     return this.models.find((model) => model.id === modelId)?.shortLabel ?? modelId;
   }
 
-  selectModel(modelId: string) {
-    if (this.sending) return;
+  async selectModel(modelId: string) {
+    if (this.sending || modelId === this.selectedModel) return;
     this.selectedModel = modelId;
     this.error = null;
-    this.refreshModels().catch(() => {});
+    this.switchingModel = true;
+    try {
+      await fetch('/gooby/api/models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: modelId })
+      }).catch(() => null);
+
+      const deadline = Date.now() + 45_000;
+      while (Date.now() < deadline) {
+        const payload = await this.refreshModels({ preserveError: true });
+        const next = (payload?.models ?? this.models) as LlamaModel[];
+        const info = next.find((m) => m.id === modelId);
+        if (info?.status === 'loaded') break;
+        if (info?.failed && info.status !== 'loading') {
+          this.error = `${info.displayLabel ?? modelId} failed to load`;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 2_000));
+      }
+    } finally {
+      this.switchingModel = false;
+    }
   }
 
   async refreshModels(options: { preserveError?: boolean } = {}) {
