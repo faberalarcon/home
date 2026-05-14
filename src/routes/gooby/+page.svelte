@@ -65,8 +65,8 @@
   }
 
   .app {
-    display: grid;
-    grid-template-rows: minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100dvh;
     min-height: 0;
@@ -76,11 +76,22 @@
   }
 
   .frame {
-    display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
     min-height: 0;
-    height: 100%;
     background: var(--color-paper-50);
+  }
+
+  .frame :global(.head),
+  .frame :global(.composer),
+  .alert {
+    flex: 0 0 auto;
+  }
+
+  .frame :global(.wrap) {
+    flex: 1 1 0;
+    min-height: 0;
   }
 
   .alert {

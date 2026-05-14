@@ -148,10 +148,11 @@
   .close:hover { background: var(--color-paper-200); }
 
   .list {
-    overflow-y: auto;
+    overflow: hidden;
     padding: 0.45rem 0.45rem 0.85rem;
     display: grid;
-    gap: 0.35rem;
+    gap: 0.2rem;
+    align-content: start;
   }
 
   .empty {
