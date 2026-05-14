@@ -66,13 +66,38 @@ export const GOOBY_MODEL_OPTIONS = [
   },
   {
     id: 'gpt-oss-20b-thinking',
-    displayLabel: 'GPT 6.7 - Thinking',
+    displayLabel: 'GPT 6.7 Thinking',
     shortLabel: 'Thinking'
   },
   {
     id: 'llama3.2:3b',
     displayLabel: 'GPT 6.7 Instant',
     shortLabel: 'Instant'
+  },
+  {
+    id: 'gpt-oss-20b-heretic-ara-v3',
+    displayLabel: 'GPT 6.9',
+    shortLabel: 'GPT 6.9'
+  },
+  {
+    id: 'gpt-oss-20b-heretic-ara-v3-thinking',
+    displayLabel: 'GPT 6.9 Thinking',
+    shortLabel: '6.9 Think'
+  },
+  {
+    id: 'gemma4:e4b',
+    displayLabel: 'LimonLite',
+    shortLabel: 'Limon'
+  },
+  {
+    id: 'gemma4-26b-heretic',
+    displayLabel: 'Limon Max',
+    shortLabel: 'Limon Max'
+  },
+  {
+    id: 'qwen2.5-coder:7b',
+    displayLabel: 'Coder',
+    shortLabel: 'Coder'
   }
 ] satisfies GoobyModelOption[];
 
