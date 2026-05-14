@@ -81,8 +81,8 @@
 <style>
   .composer {
     display: grid;
-    gap: 0.35rem;
-    padding: 0.55rem clamp(0.7rem, 3vw, 1.1rem) max(0.7rem, env(safe-area-inset-bottom));
+    gap: 0.3rem;
+    padding: 0.4rem clamp(0.7rem, 3vw, 1.1rem) max(0.5rem, env(safe-area-inset-bottom));
     background: color-mix(in oklab, var(--color-paper-50) 88%, var(--color-paper-100));
     border-top: 1px solid var(--color-paper-300);
   }
@@ -136,8 +136,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.1rem;
-    height: 2.1rem;
+    width: 1.85rem;
+    height: 1.85rem;
     border: 0;
     border-radius: 999px;
     cursor: pointer;

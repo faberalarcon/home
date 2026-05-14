@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import SiteBrand from '$lib/site/SiteBrand.svelte';
-  import SiteFooter from '$lib/site/SiteFooter.svelte';
   import SiteNav from '$lib/site/SiteNav.svelte';
   import ChatHeader from '$lib/gooby/components/ChatHeader.svelte';
   import ConversationDrawer from '$lib/gooby/components/ConversationDrawer.svelte';
@@ -68,8 +67,6 @@
     <Composer {chat} />
   </section>
 </main>
-
-<SiteFooter visitorCount={data.visitorCount} />
 
 <style>
   :global(body) {

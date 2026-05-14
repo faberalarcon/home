@@ -24,6 +24,10 @@
     await chat.deleteConversation(conversation.id);
   }
 
+  async function startNewChat() {
+    await chat.newConversation();
+  }
+
   const title = $derived(chat.selectedConversation?.title ?? 'GoobyGPT');
 </script>
 
@@ -39,6 +43,18 @@
   </button>
 
   <div class="right">
+    <button class="icon" type="button" aria-label="New chat" onclick={startNewChat}>
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path
+          d="M16 4l4 4-9.5 9.5L6 19l1.5-4.5L16 4z"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
     {#if chat.selectedConversation}
       <button class="icon" type="button" aria-label="Delete conversation" onclick={remove}>
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">

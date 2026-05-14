@@ -139,8 +139,11 @@ function parseArgNumber(args: unknown, flag: string): number | null {
 function normalizeModel(raw: any): LlamaModel {
   const rawStatus = raw.status;
   const statusValue = typeof rawStatus?.value === 'string' ? rawStatus.value : null;
-  const explicitFailed =
-    rawStatus?.failed === true || raw.failed === true || statusValue === 'error';
+  // llama-swap sets `status.failed: true` whenever a previous load attempt exited
+  // non-zero — including normal exits from being swapped out (exit_code 10). It is
+  // NOT a terminal state: the model can be loaded again on demand. We therefore
+  // ignore it and only treat an explicit `status.value === 'error'` as failed.
+  const explicitFailed = statusValue === 'error';
 
   let status: LlamaModelStatus;
   if (statusValue === 'loaded' || statusValue === 'ready') status = 'loaded';
@@ -302,6 +305,10 @@ export async function getGoobyLlamaStatus(): Promise<LlamaStatus> {
 }
 
 export async function probeGoobyModelLoad(modelId: string): Promise<void> {
+  // Fire-and-forget: kick off a tiny completion so llama-swap begins swap. We do
+  // NOT abort or await the response — llama-swap binds the swap to the upstream
+  // request, so cancelling can cancel the load. Generous 180s timeout for big
+  // models; readiness is verified separately by polling /v1/models.
   try {
     await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
       method: 'POST',
@@ -312,10 +319,10 @@ export async function probeGoobyModelLoad(modelId: string): Promise<void> {
         max_tokens: 1,
         stream: false
       }),
-      signal: timeoutSignal(5_000)
+      signal: timeoutSignal(180_000)
     });
   } catch {
-    // Probe is fire-and-forget — readiness verified separately via waitForGoobyModelReady.
+    // Probe outcome doesn't matter — polling will surface readiness.
   }
 }
 
@@ -362,7 +369,6 @@ export async function waitForGoobyModelReady(
   const pollMs = options.pollMs ?? GOOBY_MODEL_READY_POLL_MS;
   const deadline = Date.now() + timeoutMs;
   let lastModel: LlamaModel | null = null;
-  let sawProgress = false;
 
   while (Date.now() <= deadline) {
     const models = await fetchGoobyModels();
@@ -382,15 +388,6 @@ export async function waitForGoobyModelReady(
       };
     }
 
-    if (model.status === 'loading') sawProgress = true;
-
-    // Only treat `failed` as fatal once we've seen actual load progress — llama-swap
-    // can carry a stale `failed: true` from a prior attempt for a moment before the
-    // new probe flips it to `loading`.
-    if (model.failed && sawProgress) {
-      throw new Error(`${model.displayLabel ?? model.id} failed to load in llama.cpp`);
-    }
-
     await sleep(Math.min(pollMs, Math.max(0, deadline - Date.now())));
   }
 
@@ -401,7 +398,8 @@ export async function waitForGoobyModelReady(
 
 export async function streamChatCompletion(model: string, messages: ChatMessage[]): Promise<Response> {
   const controller = new AbortController();
-  const startTimeout = setTimeout(() => controller.abort(), 75_000);
+  // llama-swap may need to unload/load a model before responding — give it room.
+  const startTimeout = setTimeout(() => controller.abort(), 180_000);
   let response: Response;
 
   try {
@@ -417,7 +415,7 @@ export async function streamChatCompletion(model: string, messages: ChatMessage[
     });
   } catch (error) {
     if (controller.signal.aborted) {
-      throw new Error('llama.cpp did not start the selected model within 75 seconds');
+      throw new Error('llama.cpp did not start the selected model within 180 seconds');
     }
     throw error;
   } finally {

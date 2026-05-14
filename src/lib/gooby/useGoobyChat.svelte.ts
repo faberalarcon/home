@@ -118,23 +118,23 @@ export class GoobyChat {
     this.selectedModel = modelId;
     this.error = null;
     this.switchingModel = true;
-    try {
-      await fetch('/gooby/api/models', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: modelId })
-      }).catch(() => null);
 
-      const deadline = Date.now() + 45_000;
+    // Kick off probe in the background — llama-swap starts the swap on the upstream
+    // request and may take 30–120s for big models. We don't await it; readiness is
+    // verified by polling /v1/models below.
+    fetch('/gooby/api/models', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: modelId })
+    }).catch(() => null);
+
+    try {
+      const deadline = Date.now() + 180_000;
       while (Date.now() < deadline) {
         const payload = await this.refreshModels({ preserveError: true });
         const next = (payload?.models ?? this.models) as LlamaModel[];
         const info = next.find((m) => m.id === modelId);
         if (info?.status === 'loaded') break;
-        if (info?.failed && info.status !== 'loading') {
-          this.error = `${info.displayLabel ?? modelId} failed to load`;
-          break;
-        }
         await new Promise((resolve) => setTimeout(resolve, 2_000));
       }
     } finally {
