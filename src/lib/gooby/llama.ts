@@ -262,7 +262,7 @@ export async function getLlamaStatus(): Promise<LlamaStatus> {
     const models = await fetchLlamaModels();
     const loadedModel = models.find((model) => model.status === 'loaded') ?? null;
     const defaultModel = chooseDefaultModel(models);
-    const metrics = await fetchLlamaMetrics(loadedModel?.id ?? defaultModel);
+    const metrics = loadedModel ? await fetchLlamaMetrics(loadedModel.id) : null;
 
     return {
       available: true,
