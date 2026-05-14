@@ -66,15 +66,19 @@
 
   .app {
     display: grid;
+    grid-template-rows: 1fr;
     width: 100%;
     height: 100dvh;
+    min-height: 0;
     box-sizing: border-box;
     padding-top: var(--stats-app-header-height, 4.5rem);
+    overflow: hidden;
   }
 
   .frame {
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr) auto;
+    height: 100%;
     min-height: 0;
     background: var(--color-paper-50);
   }

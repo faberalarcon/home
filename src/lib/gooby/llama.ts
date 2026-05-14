@@ -59,45 +59,35 @@ export interface GoobyModelWaitOptions {
 
 export const GOOBY_MODEL_OPTIONS = [
   {
-    id: 'gpt-oss-20b-fast',
+    id: 'gpt-oss-20b-heretic-ara-v3',
     displayLabel: 'GPT 6.7',
     shortLabel: 'GPT 6.7',
     default: true
   },
   {
-    id: 'gpt-oss-20b-thinking',
+    id: 'gpt-oss-20b-heretic-ara-v3-thinking',
     displayLabel: 'GPT 6.7 Thinking',
     shortLabel: 'Thinking'
   },
   {
-    id: 'llama3.2:3b',
+    id: 'gemma4:e2b',
     displayLabel: 'GPT 6.7 Instant',
     shortLabel: 'Instant'
   },
   {
-    id: 'gpt-oss-20b-heretic-ara-v3',
-    displayLabel: 'GPT 6.9',
-    shortLabel: 'GPT 6.9'
-  },
-  {
-    id: 'gpt-oss-20b-heretic-ara-v3-thinking',
-    displayLabel: 'GPT 6.9 Thinking',
-    shortLabel: '6.9 Think'
-  },
-  {
     id: 'gemma4:e4b',
-    displayLabel: 'LimonLite',
-    shortLabel: 'Limon'
+    displayLabel: 'GPT 6.9 Limon Light',
+    shortLabel: 'Limon Light'
   },
   {
     id: 'gemma4-26b-heretic',
-    displayLabel: 'Limon Max',
+    displayLabel: 'GPT 6.9 Limon Max',
     shortLabel: 'Limon Max'
   },
   {
-    id: 'qwen2.5-coder:7b',
-    displayLabel: 'Coder',
-    shortLabel: 'Coder'
+    id: 'gemma4-26b-heretic-128k',
+    displayLabel: 'GPT 6.9 Limon Ultra',
+    shortLabel: 'Limon Ultra'
   }
 ] satisfies GoobyModelOption[];
 

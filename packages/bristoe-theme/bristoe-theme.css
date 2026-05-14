@@ -99,6 +99,7 @@
   color-scheme: light;
   --color-success-bg:   #dce6f0;
   --color-success-text: #1e3a5f;
+  --color-status-ready: #16a34a;
   --color-warning-bg:   #f5e6c0;
   --color-warning-text: #6a4a10;
   --color-danger-bg:    #fce5dd;
@@ -158,6 +159,7 @@
 
     --color-success-bg:   #1a2638;
     --color-success-text: #b8d4ec;
+    --color-status-ready: #22c55e;
     --color-warning-bg:   #2a2010;
     --color-warning-text: #d4a030;
     --color-danger-bg:    #2a1010;

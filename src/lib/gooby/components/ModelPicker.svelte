@@ -155,7 +155,7 @@
     background: var(--color-ink-300);
   }
 
-  .dot[data-state='ok'] { background: var(--color-success-text); }
+  .dot[data-state='ok'] { background: var(--color-status-ready); }
   .dot[data-state='loading'] {
     background: var(--color-leaf-500);
     animation: blink 1.2s infinite ease-in-out;

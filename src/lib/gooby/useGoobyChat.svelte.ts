@@ -21,50 +21,62 @@ export type GoobyChatInit = {
   llama: LlamaStatus;
 };
 
-type SseParse = {
-  content: string;
-  remaining: string;
-  error: string | null;
-  status: string | null;
-};
+type SseEvent = { name: string; data: any };
 
-function consumeSseChunk(buffer: string): SseParse {
-  let content = '';
-  let streamError: string | null = null;
-  let status: string | null = null;
-  const events = buffer.split('\n\n');
-  const remaining = events.pop() ?? '';
+function readSseEvents(buffer: string): { events: SseEvent[]; remaining: string } {
+  const events: SseEvent[] = [];
+  const chunks = buffer.split('\n\n');
+  const remaining = chunks.pop() ?? '';
 
-  for (const event of events) {
-    const eventName = event
-      .split('\n')
-      .find((line) => line.startsWith('event:'))
-      ?.slice(6)
-      .trim();
-    const dataLines = event
-      .split('\n')
-      .filter((line) => line.startsWith('data:'))
-      .map((line) => line.slice(5).trim());
-
-    for (const dataLine of dataLines) {
+  for (const chunk of chunks) {
+    let name = '';
+    const dataParts: string[] = [];
+    for (const line of chunk.split('\n')) {
+      if (line.startsWith('event:')) name = line.slice(6).trim();
+      else if (line.startsWith('data:')) dataParts.push(line.slice(5).trim());
+    }
+    for (const dataLine of dataParts) {
       if (!dataLine || dataLine === '[DONE]') continue;
       try {
-        const payload = JSON.parse(dataLine);
-        if (eventName === 'status' && typeof payload.message === 'string') {
-          status = payload.message;
-          continue;
-        }
-        const delta = payload.choices?.[0]?.delta;
-        if (typeof delta?.content === 'string') content += delta.content;
-        if (typeof payload.error === 'string') streamError = payload.error;
-        if (typeof payload.error?.message === 'string') streamError = payload.error.message;
+        events.push({ name, data: JSON.parse(dataLine) });
       } catch {
-        // Ignore malformed data events from upstream.
+        // Ignore malformed upstream chunks.
       }
     }
   }
 
-  return { content, remaining, error: streamError, status };
+  return { events, remaining };
+}
+
+type ChatChunkParse = {
+  content: string;
+  remaining: string;
+  error: string | null;
+  awaitingModel: boolean;
+};
+
+function parseChatChunk(buffer: string): ChatChunkParse {
+  let content = '';
+  let error: string | null = null;
+  let awaitingModel = false;
+  const { events, remaining } = readSseEvents(buffer);
+
+  for (const event of events) {
+    if (event.name === 'status') {
+      if (event.data?.phase && event.data.phase !== 'ready') awaitingModel = true;
+      continue;
+    }
+    if (event.name === 'error') {
+      if (typeof event.data?.error === 'string') error = event.data.error;
+      continue;
+    }
+    const delta = event.data?.choices?.[0]?.delta;
+    if (typeof delta?.content === 'string') content += delta.content;
+    if (typeof event.data?.error === 'string') error = event.data.error;
+    if (typeof event.data?.error?.message === 'string') error = event.data.error.message;
+  }
+
+  return { content, remaining, error, awaitingModel };
 }
 
 export class GoobyChat {
@@ -81,6 +93,7 @@ export class GoobyChat {
 
   private fallbackDefaultModel: string;
   private streamAbort: AbortController | null = null;
+  private switchAbort: AbortController | null = null;
   private onScroll: (() => void) | null = null;
 
   constructor(init: GoobyChatInit) {
@@ -119,23 +132,65 @@ export class GoobyChat {
     this.error = null;
     this.switchingModel = true;
 
+    this.switchAbort?.abort();
+    const controller = new AbortController();
+    this.switchAbort = controller;
+
+    let reachedTerminal = false;
+
     try {
       const res = await fetch('/gooby/api/models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: modelId })
+        body: JSON.stringify({ model: modelId }),
+        signal: controller.signal
       });
-      const payload = await res.json().catch(() => null);
-      if (payload) {
-        const nextModels: LlamaModel[] = payload.models ?? [];
-        this.models = nextModels;
-        if (payload.error) {
-          this.error = payload.error;
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        this.error = payload?.error ?? 'Model switch failed';
+        return;
+      }
+
+      if (!res.body) {
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let parseBuffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        parseBuffer += decoder.decode(value, { stream: true });
+        const { events, remaining } = readSseEvents(parseBuffer);
+        parseBuffer = remaining;
+
+        for (const event of events) {
+          if (event.name !== 'status') continue;
+          const data = event.data ?? {};
+          if (Array.isArray(data.models)) {
+            this.models = data.models;
+          }
+          if (data.phase === 'ready') {
+            reachedTerminal = true;
+            this.error = null;
+          } else if (data.phase === 'failed') {
+            reachedTerminal = true;
+            this.error = typeof data.error === 'string' ? data.error : 'Model failed to load';
+          }
         }
       }
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       this.error = err instanceof Error ? err.message : 'Failed to switch model';
     } finally {
+      if (this.switchAbort === controller) this.switchAbort = null;
+      if (!reachedTerminal && !this.error) {
+        // Stream closed without explicit terminal — fall back to a snapshot fetch.
+        await this.refreshModels({ preserveError: true }).catch(() => {});
+      }
       this.switchingModel = false;
     }
   }
@@ -255,8 +310,6 @@ export class GoobyChat {
     this.error = null;
     if (input === undefined) this.prompt = '';
 
-    const waitingForModel = this.selectedModelInfo?.status !== 'loaded';
-    const label = this.selectedModelInfo?.shortLabel ?? this.selectedModelInfo?.id ?? 'model';
     const userMessage: GoobyMessage = {
       id: `local-user-${Date.now()}`,
       role: 'user',
@@ -267,7 +320,7 @@ export class GoobyChat {
     const assistantMessage: GoobyMessage = {
       id: `local-assistant-${Date.now()}`,
       role: 'assistant',
-      content: waitingForModel ? `Waiting for ${label} to load...` : '',
+      content: '',
       model: this.selectedModel,
       createdAt: Date.now()
     };
@@ -304,28 +357,15 @@ export class GoobyChat {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let parseBuffer = '';
-      let assistantHasAnswer = false;
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         parseBuffer += decoder.decode(value, { stream: true });
-        const parsed = consumeSseChunk(parseBuffer);
+        const parsed = parseChatChunk(parseBuffer);
         parseBuffer = parsed.remaining;
         if (parsed.error) throw new Error(parsed.error);
-        if (parsed.status && !assistantHasAnswer) {
-          assistantMessage.content = parsed.status;
-          this.messages = this.messages.map((message) =>
-            message.id === assistantMessage.id ? { ...assistantMessage } : message
-          );
-          await this.refreshModels({ preserveError: true });
-          this.onScroll?.();
-        }
         if (parsed.content) {
-          if (!assistantHasAnswer) {
-            assistantMessage.content = '';
-            assistantHasAnswer = true;
-          }
           assistantMessage.content += parsed.content;
           this.messages = this.messages.map((message) =>
             message.id === assistantMessage.id ? { ...assistantMessage } : message
@@ -361,7 +401,7 @@ export class GoobyChat {
     } finally {
       this.sending = false;
       this.streamAbort = null;
-      await this.refreshModels().catch(() => {});
+      await this.refreshModels({ preserveError: true }).catch(() => {});
     }
   }
 }

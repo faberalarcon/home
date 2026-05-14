@@ -175,7 +175,8 @@
       right: 0;
       z-index: 120;
       display: grid;
-      min-width: min(16rem, calc(100vw - 2rem));
+      width: max-content;
+      max-width: calc(100vw - 2rem);
       gap: 0.25rem;
       padding: 0.5rem;
       border: 1px solid rgba(241, 244, 247, 0.16);
@@ -195,10 +196,9 @@
     }
 
     .site-nav__pill {
-      width: 100%;
       min-height: 2.6rem;
       justify-content: flex-start;
-      padding: 0.65rem 0.75rem;
+      padding: 0.65rem 0.85rem;
       font-size: 0.72rem;
       letter-spacing: 0.08em;
     }

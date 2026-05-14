@@ -68,9 +68,7 @@ async function openUpstreamChat(
   }
 
   if (selectedModel.status !== 'loaded') {
-    // llama-swap performs the swap inline on the upstream chat request — no separate
-    // probe needed. Just tell the user we're loading; streamChatCompletion will wait.
-    controller.enqueue(sseEvent('status', { message: `Loading ${label}...` }));
+    controller.enqueue(sseEvent('status', { phase: 'loading', model, label }));
   }
 
   try {
@@ -78,15 +76,20 @@ async function openUpstreamChat(
   } catch (error) {
     if (!isModelLoadPendingError(error)) throw error;
 
-    controller.enqueue(sseEvent('status', { message: `Waiting for ${label} to load...` }));
+    controller.enqueue(sseEvent('status', { phase: 'waiting', model, label }));
     await waitForGoobyModelReady(model, {
       onPoll(modelStatus) {
         controller.enqueue(
-          sseEvent('status', { message: `${label} is ${goobyModelStatusLabel(modelStatus)}...` })
+          sseEvent('status', {
+            phase: 'loading',
+            model,
+            label,
+            status: goobyModelStatusLabel(modelStatus)
+          })
         );
       }
     });
-    controller.enqueue(sseEvent('status', { message: `${label} is ready. Sending...` }));
+    controller.enqueue(sseEvent('status', { phase: 'ready', model, label }));
     return streamChatCompletion(model, messages);
   }
 }

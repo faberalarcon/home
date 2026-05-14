@@ -1,5 +1,6 @@
 <script lang="ts">
   import MarkdownMessage from '../MarkdownMessage.svelte';
+  import ThinkingIndicator from './ThinkingIndicator.svelte';
   import type { GoobyMessage } from '../useGoobyChat.svelte';
 
   interface Props {
@@ -11,7 +12,7 @@
   let { message, streaming, modelLabel }: Props = $props();
 
   const isAssistant = $derived(message.role === 'assistant');
-  const showStreamingPulse = $derived(isAssistant && streaming && !message.content.trim());
+  const showThinking = $derived(isAssistant && streaming && !message.content.trim());
 </script>
 
 <article class="row" data-role={message.role}>
@@ -21,8 +22,8 @@
 
   <div class="body">
     {#if isAssistant}
-      {#if showStreamingPulse}
-        <p class="pulse"><span></span><span></span><span></span></p>
+      {#if showThinking}
+        <ThinkingIndicator />
       {:else}
         <MarkdownMessage content={message.content} />
       {/if}
@@ -98,34 +99,4 @@
     text-transform: uppercase;
   }
 
-  .pulse {
-    display: inline-flex;
-    gap: 0.3rem;
-    margin: 0.35rem 0 0;
-  }
-
-  .pulse span {
-    width: 0.45rem;
-    height: 0.45rem;
-    border-radius: 999px;
-    background: var(--color-ink-500);
-    opacity: 0.45;
-    animation: pulse 1.2s infinite ease-in-out;
-  }
-
-  .pulse span:nth-child(2) {
-    animation-delay: 0.15s;
-  }
-  .pulse span:nth-child(3) {
-    animation-delay: 0.3s;
-  }
-
-  @keyframes pulse {
-    0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
-    40% { opacity: 0.9; transform: translateY(-2px); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .pulse span { animation: none; opacity: 0.6; }
-  }
 </style>
