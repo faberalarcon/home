@@ -472,11 +472,11 @@ export async function generateChatTitle(
     const response = await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: timeoutSignal(30_000),
+      signal: timeoutSignal(60_000),
       body: JSON.stringify({
         model,
         stream: false,
-        max_tokens: 64,
+        max_tokens: 512,
         temperature: 0.4,
         messages: [
           { role: 'system', content: TITLE_SYSTEM_PROMPT },
