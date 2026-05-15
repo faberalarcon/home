@@ -9,26 +9,9 @@
 
   let { chat, onOpenDrawer }: Props = $props();
 
-  async function rename() {
-    const conversation = chat.selectedConversation;
-    if (!conversation) return;
-    const next = window.prompt('Conversation title', conversation.title);
-    if (!next) return;
-    await chat.renameConversation(conversation.id, next);
-  }
-
-  async function remove() {
-    const conversation = chat.selectedConversation;
-    if (!conversation) return;
-    if (!window.confirm(`Delete "${conversation.title}"?`)) return;
-    await chat.deleteConversation(conversation.id);
-  }
-
   async function startNewChat() {
     await chat.newConversation();
   }
-
-  const title = $derived(chat.selectedConversation?.title ?? 'GoobyGPT');
 </script>
 
 <header class="head">
@@ -38,9 +21,7 @@
     </svg>
   </button>
 
-  <button class="title" type="button" onclick={rename} title="Rename conversation">
-    <span>{title}</span>
-  </button>
+  <h1 class="title">GoobyGPT</h1>
 
   <div class="right">
     <button class="icon" type="button" aria-label="New chat" onclick={startNewChat}>
@@ -55,13 +36,6 @@
         />
       </svg>
     </button>
-    {#if chat.selectedConversation}
-      <button class="icon" type="button" aria-label="Delete conversation" onclick={remove}>
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path d="M5 7h14M10 7V5h4v2m-7 0v12a2 2 0 002 2h6a2 2 0 002-2V7" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </button>
-    {/if}
     <ModelPicker {chat} />
   </div>
 </header>
@@ -94,28 +68,17 @@
   .ham:hover, .icon:hover { background: var(--color-paper-100); }
 
   .title {
+    margin: 0;
     min-width: 0;
-    border: 0;
-    background: transparent;
     color: var(--color-ink-900);
     font-weight: 750;
     font-size: 0.98rem;
     text-align: center;
     padding: 0.35rem 0.4rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background 120ms ease;
-  }
-
-  .title span {
-    display: inline-block;
-    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-
-  .title:hover { background: var(--color-paper-100); }
 
   .right {
     display: inline-flex;
@@ -128,6 +91,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ham, .icon, .title { transition: none; }
+    .ham, .icon { transition: none; }
   }
 </style>

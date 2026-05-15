@@ -70,12 +70,15 @@ function readSseEvents(buffer: string): { events: SseEvent[]; remaining: string 
   return { events, remaining };
 }
 
+type TitleUpdate = { conversationId: string; title: string };
+
 type ChatChunkParse = {
   content: string;
   reasoning: string;
   remaining: string;
   error: string | null;
   awaitingModel: boolean;
+  titleUpdate: TitleUpdate | null;
 };
 
 function parseChatChunk(buffer: string): ChatChunkParse {
@@ -83,6 +86,7 @@ function parseChatChunk(buffer: string): ChatChunkParse {
   let reasoning = '';
   let error: string | null = null;
   let awaitingModel = false;
+  let titleUpdate: TitleUpdate | null = null;
   const { events, remaining } = readSseEvents(buffer);
 
   for (const event of events) {
@@ -94,6 +98,14 @@ function parseChatChunk(buffer: string): ChatChunkParse {
       if (typeof event.data?.error === 'string') error = event.data.error;
       continue;
     }
+    if (event.name === 'title') {
+      const id = event.data?.conversationId;
+      const title = event.data?.title;
+      if (typeof id === 'string' && typeof title === 'string' && title) {
+        titleUpdate = { conversationId: id, title };
+      }
+      continue;
+    }
     const delta = event.data?.choices?.[0]?.delta;
     if (typeof delta?.content === 'string') content += delta.content;
     if (typeof delta?.reasoning_content === 'string') reasoning += delta.reasoning_content;
@@ -101,7 +113,7 @@ function parseChatChunk(buffer: string): ChatChunkParse {
     if (typeof event.data?.error?.message === 'string') error = event.data.error.message;
   }
 
-  return { content, reasoning, remaining, error, awaitingModel };
+  return { content, reasoning, remaining, error, awaitingModel, titleUpdate };
 }
 
 export class GoobyChat {
@@ -401,6 +413,14 @@ export class GoobyChat {
         const parsed = parseChatChunk(parseBuffer);
         parseBuffer = parsed.remaining;
         if (parsed.error) throw new Error(parsed.error);
+        if (parsed.titleUpdate) {
+          const update = parsed.titleUpdate;
+          this.conversations = this.conversations.map((conversation) =>
+            conversation.id === update.conversationId
+              ? { ...conversation, title: update.title }
+              : conversation
+          );
+        }
         if (parsed.content || parsed.reasoning) {
           if (parsed.content) assistantMessage.content += parsed.content;
           if (parsed.reasoning) {

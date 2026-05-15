@@ -408,6 +408,71 @@ export async function waitForGoobyModelReady(
   throw new Error(`${label} is still ${status} after ${Math.round(timeoutMs / 1000)} seconds`);
 }
 
+const TITLE_SYSTEM_PROMPT = `You are a chat title generator. Read the conversation and output ONLY a short title that summarizes the topic. Rules: 3 to 6 words, plain text, no quotes, no trailing punctuation, no preamble, no explanation. Output the title and nothing else.`;
+
+export function sanitizeChatTitle(raw: string): string | null {
+  if (typeof raw !== 'string') return null;
+  let title = raw.replace(/\r\n/g, '\n').trim();
+  if (!title) return null;
+  // Model rambled — bail out, caller keeps placeholder.
+  if (title.length > 120) return null;
+  // Take only first line in case model added explanation below.
+  title = title.split('\n')[0].trim();
+  // Strip wrapping quotes / backticks (matched pairs).
+  const pairs: Array<[string, string]> = [
+    ['"', '"'],
+    ["'", "'"],
+    ['`', '`'],
+    ['“', '”'],
+    ['‘', '’']
+  ];
+  for (const [open, close] of pairs) {
+    if (title.startsWith(open) && title.endsWith(close) && title.length >= 2) {
+      title = title.slice(1, -1).trim();
+    }
+  }
+  // Drop common preambles.
+  title = title.replace(/^(title|chat title)\s*[:\-]\s*/i, '').trim();
+  // Collapse whitespace.
+  title = title.replace(/\s+/g, ' ');
+  // Drop trailing punctuation.
+  title = title.replace(/[.!?,;:]+$/u, '').trim();
+  if (!title) return null;
+  return title.slice(0, 60);
+}
+
+export async function generateChatTitle(
+  model: string,
+  firstUser: string,
+  firstAssistant: string
+): Promise<string | null> {
+  const userPayload = `Conversation:\n\nUser: ${firstUser.slice(0, 2_000)}\n\nAssistant: ${firstAssistant.slice(0, 2_000)}\n\nReturn the title now.`;
+  try {
+    const response = await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: timeoutSignal(20_000),
+      body: JSON.stringify({
+        model,
+        stream: false,
+        max_tokens: 32,
+        temperature: 0.4,
+        messages: [
+          { role: 'system', content: TITLE_SYSTEM_PROMPT },
+          { role: 'user', content: userPayload }
+        ]
+      })
+    });
+    if (!response.ok) return null;
+    const payload = await response.json().catch(() => null);
+    const raw = payload?.choices?.[0]?.message?.content;
+    if (typeof raw !== 'string') return null;
+    return sanitizeChatTitle(raw);
+  } catch {
+    return null;
+  }
+}
+
 export async function streamChatCompletion(model: string, messages: ChatMessage[]): Promise<Response> {
   const controller = new AbortController();
   // llama-swap may need to unload/load a model before responding — give it room.

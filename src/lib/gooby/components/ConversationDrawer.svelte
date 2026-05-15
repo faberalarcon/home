@@ -1,6 +1,6 @@
 <script lang="ts">
   import { groupConversations } from '../groupConversations';
-  import type { GoobyChat } from '../useGoobyChat.svelte';
+  import type { GoobyChat, GoobyConversation } from '../useGoobyChat.svelte';
 
   interface Props {
     chat: GoobyChat;
@@ -20,6 +20,19 @@
   async function startNewChat() {
     await chat.newConversation();
     onClose();
+  }
+
+  async function renameConv(conversation: GoobyConversation, event: MouseEvent) {
+    event.stopPropagation();
+    const next = window.prompt('Conversation title', conversation.title);
+    if (!next) return;
+    await chat.renameConversation(conversation.id, next);
+  }
+
+  async function deleteConv(conversation: GoobyConversation, event: MouseEvent) {
+    event.stopPropagation();
+    if (!window.confirm(`Delete "${conversation.title}"?`)) return;
+    await chat.deleteConversation(conversation.id);
   }
 </script>
 
@@ -50,13 +63,53 @@
         <section class="group">
           <h3>{group.label}</h3>
           {#each group.items as conversation (conversation.id)}
-            <button
-              type="button"
-              class:active={conversation.id === chat.selectedId}
-              onclick={() => openConversation(conversation.id)}
-            >
-              <span class="title">{conversation.title}</span>
-            </button>
+            <div class="row" class:active={conversation.id === chat.selectedId}>
+              <button
+                type="button"
+                class="open"
+                onclick={() => openConversation(conversation.id)}
+              >
+                <span class="title">{conversation.title}</span>
+              </button>
+              <div class="actions">
+                <button
+                  type="button"
+                  class="row-action"
+                  aria-label="Rename conversation"
+                  title="Rename"
+                  onclick={(event) => renameConv(conversation, event)}
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                    <path
+                      d="M4 20h4l10-10-4-4L4 16v4zM14 6l4 4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="row-action"
+                  aria-label="Delete conversation"
+                  title="Delete"
+                  onclick={(event) => deleteConv(conversation, event)}
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                    <path
+                      d="M5 7h14M10 7V5h4v2m-7 0v12a2 2 0 002 2h6a2 2 0 002-2V7"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
           {/each}
         </section>
       {/each}
@@ -179,33 +232,40 @@
     text-transform: uppercase;
   }
 
-  .group button {
-    display: block;
-    width: 100%;
+  .row {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
     min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
-    text-align: left;
     border: 1px solid var(--color-paper-300);
     background: var(--color-paper-50);
-    color: var(--color-ink-900);
-    padding: 0.45rem 2rem 0.45rem 0.7rem;
     border-radius: 0.6rem;
-    font-size: 0.88rem;
-    font-weight: 500;
-    line-height: 1.25;
-    cursor: pointer;
+    overflow: hidden;
     transition: background 120ms ease, border-color 120ms ease;
   }
 
-  .group button:hover {
+  .row:hover {
     background: var(--color-paper-200);
     border-color: color-mix(in oklab, var(--color-paper-300) 60%, var(--color-ink-500));
   }
 
-  .group button.active {
+  .row.active {
     background: color-mix(in oklab, var(--color-sage-100) 70%, var(--color-paper-200));
     border-color: color-mix(in oklab, var(--color-sage-300) 80%, var(--color-paper-300));
+  }
+
+  .row .open {
+    min-width: 0;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    color: var(--color-ink-900);
+    padding: 0.45rem 0.3rem 0.45rem 0.7rem;
+    font-size: 0.88rem;
+    font-weight: 500;
+    line-height: 1.25;
+    cursor: pointer;
   }
 
   .title {
@@ -213,6 +273,44 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1rem;
+    padding-right: 0.25rem;
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  .row:hover .actions,
+  .row:focus-within .actions,
+  .row.active .actions {
+    opacity: 1;
+  }
+
+  .row-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.7rem;
+    height: 1.7rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-ink-500);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+  }
+
+  .row-action:hover {
+    background: var(--color-paper-100);
+    color: var(--color-ink-900);
+  }
+
+  @media (hover: none) {
+    .actions { opacity: 1; }
   }
 
   .drawer-foot {

@@ -153,6 +153,13 @@ export function deleteConversation(id: string): boolean {
   return result.changes > 0;
 }
 
+export function countMessages(conversationId: string): number {
+  const row = sqlite
+    .prepare('SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ?')
+    .get(conversationId) as { n: number };
+  return row.n;
+}
+
 export function listMessages(conversationId: string): GoobyMessage[] {
   return sqlite
     .prepare(

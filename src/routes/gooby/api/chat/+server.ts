@@ -1,15 +1,18 @@
 import { json } from '@sveltejs/kit';
 import {
   addMessage,
+  countMessages,
   createConversation,
   getConversation,
   getSettings,
   listMessages,
+  renameConversation,
   type GoobyMessage
 } from '$lib/gooby/db';
 import {
   fetchGoobyModels,
   fetchLlamaModels,
+  generateChatTitle,
   goobyModelOption,
   goobyModelStatusLabel,
   isModelLoadPendingError,
@@ -52,7 +55,7 @@ function assistantDeltaFromSse(buffer: string): { content: string; reasoning: st
   return { content, reasoning, remaining };
 }
 
-function sseEvent(event: 'status' | 'error', payload: Record<string, unknown>): Uint8Array {
+function sseEvent(event: 'status' | 'error' | 'title', payload: Record<string, unknown>): Uint8Array {
   return new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
 }
 
@@ -123,6 +126,7 @@ export async function POST({ request }) {
     conversationId = conversation.id;
   }
 
+  const wasFirstExchange = countMessages(conversationId) === 0;
   addMessage(conversationId, 'user', prompt, model);
   const settings = getSettings();
   const messages = [
@@ -173,6 +177,24 @@ export async function POST({ request }) {
         const finalReasoning = assistantReasoning.trim();
         if (finalContent) {
           addMessage(conversationId, 'assistant', finalContent, model, finalReasoning || null);
+        }
+
+        if (wasFirstExchange && finalContent && !clientClosed) {
+          try {
+            const title = await generateChatTitle(model, prompt, finalContent);
+            if (title) {
+              const updated = renameConversation(conversationId, title);
+              if (updated) {
+                try {
+                  controller.enqueue(sseEvent('title', { conversationId, title: updated.title }));
+                } catch {
+                  clientClosed = true;
+                }
+              }
+            }
+          } catch {
+            // Title gen failures are silent — placeholder slice stays.
+          }
         }
 
         if (!clientClosed) {
