@@ -6,7 +6,7 @@ import { appPath } from '$lib/drinks/app-paths';
 import { readVisitorCount } from '$lib/site/visitors.server';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url, cookies, request, getClientAddress }) => {
   const next = normalizeNextPath(url.searchParams.get('next'));
 
   if (!locals.sitePasswordEnabled) {
@@ -15,6 +15,28 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
   if (locals.siteAuthenticated) {
     throw redirect(303, appPath(next));
+  }
+
+  const pw = url.searchParams.get('pw');
+  const storedHash = getConfiguredSitePasswordHash();
+  if (pw && storedHash) {
+    const ip = getClientAddress();
+    const rateCheck = checkRateLimit('login', ip);
+    if (rateCheck.allowed && hashSitePassword(pw.trim()) === storedHash) {
+      cookies.set('site_session', makeSessionToken('site'), {
+        path: appPath('/'),
+        httpOnly: true,
+        secure: isSecureRequest(url, request.headers.get('x-forwarded-proto')),
+        maxAge: 24 * 60 * 60,
+        sameSite: 'strict'
+      });
+      throw redirect(303, appPath(next));
+    }
+    if (!rateCheck.allowed) {
+      console.warn(`[auth] site-login (qr) rate-limited ip=${ip} at=${new Date().toISOString()}`);
+    } else {
+      console.warn(`[auth] site-login (qr) failed ip=${ip} at=${new Date().toISOString()}`);
+    }
   }
 
   return {

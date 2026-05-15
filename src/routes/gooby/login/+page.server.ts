@@ -10,11 +10,32 @@ import {
 import { readVisitorCount } from '$lib/site/visitors.server';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url, cookies, request, getClientAddress }) => {
   const next = normalizeGoobyNextPath(url.searchParams.get('next'));
 
   if (locals.goobyAuthenticated) {
     throw redirect(303, next);
+  }
+
+  const pw = url.searchParams.get('pw');
+  if (pw && getConfiguredGoobyPasswordHash()) {
+    const ip = getClientAddress();
+    const rateCheck = checkRateLimit('gooby-login', ip);
+    if (rateCheck.allowed && verifyGoobyPassword(pw.trim())) {
+      cookies.set('gooby_session', makeSessionToken('gooby'), {
+        path: '/gooby',
+        httpOnly: true,
+        secure: isSecureRequest(url, request.headers.get('x-forwarded-proto')),
+        maxAge: 24 * 60 * 60,
+        sameSite: 'strict'
+      });
+      throw redirect(303, next);
+    }
+    if (!rateCheck.allowed) {
+      console.warn(`[auth] gooby-login (qr) rate-limited ip=${ip} at=${new Date().toISOString()}`);
+    } else {
+      console.warn(`[auth] gooby-login (qr) failed ip=${ip} at=${new Date().toISOString()}`);
+    }
   }
 
   return {
