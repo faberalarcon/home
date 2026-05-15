@@ -156,6 +156,7 @@ function parseChatChunk(buffer: string): ChatChunkParse {
 export type SessionStats = {
   promptTokens: number;
   completionTokensTotal: number;
+  lastReplyTokens: number;
   elapsedMsTotal: number;
   liveCompletionTokens: number;
   streamStartMs: number | null;
@@ -167,6 +168,7 @@ function emptyStats(): SessionStats {
   return {
     promptTokens: 0,
     completionTokensTotal: 0,
+    lastReplyTokens: 0,
     elapsedMsTotal: 0,
     liveCompletionTokens: 0,
     streamStartMs: null
@@ -234,7 +236,10 @@ export class GoobyChat {
   get tokensUsed(): number {
     const stats = this.currentStats;
     if (!stats) return 0;
-    return stats.promptTokens + stats.liveCompletionTokens;
+    const completion = stats.streamStartMs != null
+      ? Math.max(stats.liveCompletionTokens, stats.lastReplyTokens)
+      : stats.lastReplyTokens;
+    return stats.promptTokens + completion;
   }
 
   get tokensPerSecondAvg(): number | null {
@@ -533,6 +538,7 @@ export class GoobyChat {
             : 0;
           stats.promptTokens = parsed.usage.promptTokens;
           stats.completionTokensTotal += parsed.usage.completionTokens;
+          stats.lastReplyTokens = parsed.usage.completionTokens;
           if (elapsed > 0) stats.elapsedMsTotal += elapsed;
           stats.liveCompletionTokens = 0;
           stats.streamStartMs = null;
@@ -591,6 +597,7 @@ export class GoobyChat {
             const elapsed = Math.max(1, performance.now() - finalStats.streamStartMs);
             finalStats.elapsedMsTotal += elapsed;
             finalStats.completionTokensTotal += finalStats.liveCompletionTokens;
+            finalStats.lastReplyTokens = finalStats.liveCompletionTokens;
           }
           finalStats.liveCompletionTokens = 0;
           finalStats.streamStartMs = null;
