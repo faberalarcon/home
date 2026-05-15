@@ -1,0 +1,203 @@
+.gooby-markdown {
+  color: var(--color-ink-900);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.gooby-markdown > :first-child { margin-top: 0; }
+.gooby-markdown > :last-child { margin-bottom: 0; }
+
+.gooby-markdown p {
+  margin: 0.6em 0;
+}
+
+.gooby-markdown h1,
+.gooby-markdown h2,
+.gooby-markdown h3,
+.gooby-markdown h4,
+.gooby-markdown h5,
+.gooby-markdown h6 {
+  margin: 1.2em 0 0.5em;
+  line-height: 1.25;
+  font-weight: 800;
+  color: var(--color-ink-900);
+  letter-spacing: -0.01em;
+}
+.gooby-markdown h1 { font-size: 1.55rem; }
+.gooby-markdown h2 { font-size: 1.3rem; }
+.gooby-markdown h3 { font-size: 1.12rem; }
+.gooby-markdown h4 { font-size: 1rem; }
+.gooby-markdown h5 { font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-ink-700); }
+.gooby-markdown h6 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-ink-500); }
+
+.gooby-markdown ul,
+.gooby-markdown ol {
+  margin: 0.55em 0;
+  padding-left: 1.45em;
+}
+.gooby-markdown li { margin: 0.2em 0; }
+.gooby-markdown li > p { margin: 0.2em 0; }
+.gooby-markdown li::marker { color: var(--color-ink-500); }
+.gooby-markdown ul ul,
+.gooby-markdown ol ol,
+.gooby-markdown ul ol,
+.gooby-markdown ol ul { margin: 0.1em 0; }
+
+.gooby-markdown a {
+  color: var(--color-warm-600);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 1px;
+}
+.gooby-markdown a:hover {
+  color: var(--color-warm-500);
+  text-decoration-thickness: 2px;
+}
+
+.gooby-markdown blockquote {
+  margin: 0.8em 0;
+  padding: 0.2em 0 0.2em 0.9em;
+  border-left: 3px solid var(--color-warm-300);
+  color: var(--color-ink-700);
+  font-style: italic;
+}
+
+.gooby-markdown hr {
+  border: 0;
+  border-top: 1px solid var(--color-paper-300);
+  margin: 1.2em 0;
+}
+
+.gooby-markdown strong { font-weight: 700; color: var(--color-ink-900); }
+.gooby-markdown em { font-style: italic; }
+.gooby-markdown del { text-decoration: line-through; color: var(--color-ink-500); }
+
+.gooby-markdown :not(pre) > code {
+  background: var(--color-paper-200);
+  color: var(--color-ink-900);
+  padding: 0.1em 0.38em;
+  border-radius: 0.35em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.86em;
+  border: 1px solid color-mix(in srgb, var(--color-ink-900) 6%, transparent);
+}
+
+.gooby-markdown .gooby-table-wrap {
+  margin: 0.8em 0;
+  overflow-x: auto;
+  border: 1px solid var(--color-paper-300);
+  border-radius: 0.55rem;
+}
+.gooby-markdown table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.88rem;
+}
+.gooby-markdown thead {
+  background: var(--color-paper-200);
+}
+.gooby-markdown th,
+.gooby-markdown td {
+  text-align: left;
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--color-paper-300);
+}
+.gooby-markdown tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--color-paper-100) 50%, transparent);
+}
+.gooby-markdown tbody tr:last-child td { border-bottom: 0; }
+
+.gooby-markdown .gooby-code-block {
+  margin: 0.85em 0;
+  border-radius: 0.65rem;
+  overflow: hidden;
+  border: 1px solid var(--color-paper-300);
+  background: var(--color-paper-100);
+  font-size: 0.85rem;
+}
+.gooby-markdown .gooby-code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.32rem 0.55rem 0.32rem 0.75rem;
+  background: var(--color-paper-200);
+  border-bottom: 1px solid var(--color-paper-300);
+}
+.gooby-markdown .gooby-code-lang {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-500);
+}
+.gooby-markdown .gooby-copy-btn {
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--color-ink-700);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.gooby-markdown .gooby-copy-btn:hover {
+  background: color-mix(in srgb, var(--color-ink-900) 8%, transparent);
+  color: var(--color-ink-900);
+}
+.gooby-markdown .gooby-copy-btn:focus-visible {
+  outline: 2px solid var(--color-warm-500);
+  outline-offset: 2px;
+}
+
+.gooby-markdown .gooby-code-block pre {
+  margin: 0;
+  padding: 0.75rem 0.95rem;
+  overflow-x: auto;
+  line-height: 1.55;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.85rem;
+}
+.gooby-markdown .gooby-code-block code {
+  font-family: inherit;
+  background: transparent;
+  padding: 0;
+  border: 0;
+  color: inherit;
+}
+
+.gooby-markdown .gooby-code-block .shiki,
+.gooby-markdown .gooby-code-block pre.shiki {
+  background: transparent !important;
+  color: var(--shiki-light);
+}
+.gooby-markdown .gooby-code-block .shiki span {
+  color: var(--shiki-light);
+}
+
+@media (prefers-color-scheme: dark) {
+  .gooby-markdown .gooby-code-block .shiki,
+  .gooby-markdown .gooby-code-block pre.shiki { color: var(--shiki-dark); }
+  .gooby-markdown .gooby-code-block .shiki span { color: var(--shiki-dark); }
+}
+
+.gooby-markdown .gooby-code-block[data-streaming='1'] pre {
+  animation: gooby-stream-pulse 1.4s ease-in-out infinite;
+}
+@keyframes gooby-stream-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+.gooby-markdown .katex { font-size: 1.02em; }
+.gooby-markdown .katex-display {
+  margin: 0.9em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.2em 0;
+}

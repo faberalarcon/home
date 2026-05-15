@@ -1,95 +1,80 @@
 <script lang="ts">
-  import DOMPurify from 'dompurify';
-  import { marked } from 'marked';
-  import { tick } from 'svelte';
+  import { onMount } from 'svelte';
+  import { renderMarkdown } from './markdown-stream';
+  import { ensureHighlighter, onReady } from './highlighter';
+  import 'katex/dist/katex.min.css';
+  import './markdown.css';
 
   interface Props {
     content: string;
+    streaming?: boolean;
   }
 
-  let { content }: Props = $props();
+  let { content, streaming = false }: Props = $props();
 
-  marked.use({
-    gfm: true,
-    breaks: true
+  let highlighterReady = $state(false);
+  let rafScheduled = false;
+  let pendingContent = $state('');
+
+  onMount(() => {
+    pendingContent = content;
+    ensureHighlighter().then(() => {
+      highlighterReady = true;
+    });
+    return onReady(() => {
+      highlighterReady = true;
+    });
+  });
+
+  $effect(() => {
+    const next = content;
+    if (!streaming) {
+      pendingContent = next;
+      return;
+    }
+    if (rafScheduled) return;
+    rafScheduled = true;
+    requestAnimationFrame(() => {
+      rafScheduled = false;
+      pendingContent = next;
+    });
   });
 
   const html = $derived(
-    DOMPurify.sanitize(marked.parse(content || '', { async: false }), {
-      USE_PROFILES: { html: true }
-    })
+    (() => {
+      // Touch highlighterReady so the derived re-runs once Shiki finishes loading.
+      void highlighterReady;
+      return renderMarkdown(pendingContent, { streaming });
+    })()
   );
 
   let container = $state<HTMLDivElement | null>(null);
 
-  $effect(() => {
-    html;
-    tick().then(() => attachCopyButtons());
-  });
-
-  function attachCopyButtons() {
-    if (!container) return;
-    const pres = container.querySelectorAll('pre');
-    pres.forEach((pre) => {
-      if ((pre as HTMLElement).dataset.copyReady === '1') return;
-      (pre as HTMLElement).dataset.copyReady = '1';
-      (pre as HTMLElement).style.position = 'relative';
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'gooby-copy-btn';
-      button.textContent = 'Copy';
-      button.setAttribute('aria-label', 'Copy code');
-      button.addEventListener('click', async () => {
-        const code = pre.querySelector('code');
-        const text = code?.textContent ?? pre.textContent ?? '';
-        try {
-          await navigator.clipboard.writeText(text);
-          button.textContent = 'Copied';
-          window.setTimeout(() => {
-            button.textContent = 'Copy';
-          }, 1400);
-        } catch {
-          button.textContent = 'Failed';
-        }
+  function handleClick(event: MouseEvent) {
+    const target = event.target as HTMLElement | null;
+    const btn = target?.closest?.('.gooby-copy-btn') as HTMLButtonElement | null;
+    if (!btn || !container?.contains(btn)) return;
+    const code = btn.dataset.code ?? '';
+    navigator.clipboard
+      .writeText(code)
+      .then(() => {
+        const original = btn.textContent;
+        btn.textContent = 'Copied';
+        window.setTimeout(() => {
+          btn.textContent = original ?? 'Copy';
+        }, 1400);
+      })
+      .catch(() => {
+        btn.textContent = 'Failed';
       });
-      pre.appendChild(button);
-    });
   }
 </script>
 
-<div bind:this={container} class="gooby-markdown">
+<div
+  bind:this={container}
+  class="gooby-markdown"
+  onclick={handleClick}
+  role="presentation"
+>
   {@html html}
 </div>
-
-<style>
-  :global(.gooby-copy-btn) {
-    position: absolute;
-    top: 0.4rem;
-    right: 0.4rem;
-    border: 0;
-    border-radius: 0.4rem;
-    background: rgba(255, 255, 255, 0.12);
-    color: var(--color-paper-50);
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 0.3rem 0.55rem;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 120ms ease, background 120ms ease;
-  }
-
-  :global(.gooby-markdown pre:hover .gooby-copy-btn),
-  :global(.gooby-copy-btn:focus-visible) {
-    opacity: 1;
-  }
-
-  :global(.gooby-copy-btn:hover) {
-    background: rgba(255, 255, 255, 0.22);
-  }
-
-  @media (hover: none) {
-    :global(.gooby-copy-btn) { opacity: 0.7; }
-  }
-</style>

@@ -26,9 +26,12 @@
     "chart.js": "^4.4.8",
     "dompurify": "^3.4.3",
     "drizzle-orm": "^0.45.2",
+    "katex": "^0.16.46",
     "marked": "^18.0.3",
+    "marked-katex-extension": "^5.1.8",
     "maxmind": "^5.0.6",
     "sharp": "^0.34.5",
+    "shiki": "^4.0.2",
     "suncalc": "^1.9.0",
     "svelte-chartjs": "^4.0.1"
   },

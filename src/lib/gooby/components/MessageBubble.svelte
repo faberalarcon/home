@@ -25,7 +25,7 @@
       {#if showThinking}
         <ThinkingIndicator />
       {:else}
-        <MarkdownMessage content={message.content} />
+        <MarkdownMessage content={message.content} {streaming} />
       {/if}
       {#if modelLabel}<p class="meta">{modelLabel}</p>{/if}
     {:else}
