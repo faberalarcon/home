@@ -55,7 +55,10 @@ function assistantDeltaFromSse(buffer: string): { content: string; reasoning: st
   return { content, reasoning, remaining };
 }
 
-function sseEvent(event: 'status' | 'error' | 'title', payload: Record<string, unknown>): Uint8Array {
+function sseEvent(
+  event: 'status' | 'error' | 'title' | 'done',
+  payload: Record<string, unknown>
+): Uint8Array {
   return new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
 }
 
@@ -177,6 +180,16 @@ export async function POST({ request }) {
         const finalReasoning = assistantReasoning.trim();
         if (finalContent) {
           addMessage(conversationId, 'assistant', finalContent, model, finalReasoning || null);
+        }
+
+        // Mark primary response complete so the client can release the "sending" UI
+        // before the (potentially slow) title-gen second request finishes.
+        if (!clientClosed) {
+          try {
+            controller.enqueue(sseEvent('done', { conversationId }));
+          } catch {
+            clientClosed = true;
+          }
         }
 
         if (wasFirstExchange && finalContent && !clientClosed) {

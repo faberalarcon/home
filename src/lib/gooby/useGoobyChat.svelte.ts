@@ -79,6 +79,7 @@ type ChatChunkParse = {
   error: string | null;
   awaitingModel: boolean;
   titleUpdate: TitleUpdate | null;
+  done: boolean;
 };
 
 function parseChatChunk(buffer: string): ChatChunkParse {
@@ -87,6 +88,7 @@ function parseChatChunk(buffer: string): ChatChunkParse {
   let error: string | null = null;
   let awaitingModel = false;
   let titleUpdate: TitleUpdate | null = null;
+  let done = false;
   const { events, remaining } = readSseEvents(buffer);
 
   for (const event of events) {
@@ -106,6 +108,10 @@ function parseChatChunk(buffer: string): ChatChunkParse {
       }
       continue;
     }
+    if (event.name === 'done') {
+      done = true;
+      continue;
+    }
     const delta = event.data?.choices?.[0]?.delta;
     if (typeof delta?.content === 'string') content += delta.content;
     if (typeof delta?.reasoning_content === 'string') reasoning += delta.reasoning_content;
@@ -113,7 +119,7 @@ function parseChatChunk(buffer: string): ChatChunkParse {
     if (typeof event.data?.error?.message === 'string') error = event.data.error.message;
   }
 
-  return { content, reasoning, remaining, error, awaitingModel, titleUpdate };
+  return { content, reasoning, remaining, error, awaitingModel, titleUpdate, done };
 }
 
 export class GoobyChat {
@@ -430,6 +436,12 @@ export class GoobyChat {
             message.id === assistantMessage.id ? { ...assistantMessage } : message
           );
           this.onScroll?.();
+        }
+        if (parsed.done && this.sending) {
+          // Primary response is finished; release the composer "sending" UI even
+          // though we keep draining the stream for the async title-gen event.
+          this.sending = false;
+          this.streamAbort = null;
         }
       }
 
