@@ -26,8 +26,9 @@ function messageForLlama(message: GoobyMessage): ChatMessage {
   };
 }
 
-function assistantDeltaFromSse(buffer: string): { content: string; remaining: string } {
+function assistantDeltaFromSse(buffer: string): { content: string; reasoning: string; remaining: string } {
   let content = '';
+  let reasoning = '';
   const parts = buffer.split('\n\n');
   const remaining = parts.pop() ?? '';
 
@@ -41,13 +42,14 @@ function assistantDeltaFromSse(buffer: string): { content: string; remaining: st
         const payload = JSON.parse(data);
         const delta = payload.choices?.[0]?.delta;
         if (typeof delta?.content === 'string') content += delta.content;
+        if (typeof delta?.reasoning_content === 'string') reasoning += delta.reasoning_content;
       } catch {
         // Ignore malformed upstream chunks but keep forwarding them to the client.
       }
     }
   }
 
-  return { content, remaining };
+  return { content, reasoning, remaining };
 }
 
 function sseEvent(event: 'status' | 'error', payload: Record<string, unknown>): Uint8Array {
@@ -128,6 +130,7 @@ export async function POST({ request }) {
     ...listMessages(conversationId).slice(-40).map(messageForLlama)
   ];
   let assistantContent = '';
+  let assistantReasoning = '';
   let parseBuffer = '';
   let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   const encoder = new TextEncoder();
@@ -147,6 +150,7 @@ export async function POST({ request }) {
           parseBuffer += chunk;
           const parsed = assistantDeltaFromSse(parseBuffer);
           assistantContent += parsed.content;
+          assistantReasoning += parsed.reasoning;
           parseBuffer = parsed.remaining;
           controller.enqueue(encoder.encode(chunk));
         }
@@ -154,11 +158,13 @@ export async function POST({ request }) {
         if (parseBuffer) {
           const parsed = assistantDeltaFromSse(`${parseBuffer}\n\n`);
           assistantContent += parsed.content;
+          assistantReasoning += parsed.reasoning;
         }
 
         const finalContent = assistantContent.trim();
+        const finalReasoning = assistantReasoning.trim();
         if (finalContent) {
-          addMessage(conversationId, 'assistant', finalContent, model);
+          addMessage(conversationId, 'assistant', finalContent, model, finalReasoning || null);
         }
 
         controller.close();

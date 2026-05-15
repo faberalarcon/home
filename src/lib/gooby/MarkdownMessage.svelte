@@ -14,6 +14,8 @@
 
   let highlighterReady = $state(false);
   let rafScheduled = false;
+  let pendingFlush = false;
+  let latestNext = content;
   let pendingContent = $state(content);
 
   onMount(() => {
@@ -28,21 +30,33 @@
 
   $effect(() => {
     const next = content;
+    latestNext = next;
     if (!streaming) {
       pendingContent = next;
+      rafScheduled = false;
+      pendingFlush = false;
       return;
     }
-    if (rafScheduled) return;
-    rafScheduled = true;
+    if (rafScheduled) {
+      pendingFlush = true;
+      return;
+    }
     if (typeof requestAnimationFrame === 'undefined') {
-      pendingContent = next;
-      rafScheduled = false;
+      pendingContent = latestNext;
       return;
     }
-    requestAnimationFrame(() => {
-      rafScheduled = false;
-      pendingContent = next;
-    });
+    rafScheduled = true;
+    pendingFlush = false;
+    const tick = () => {
+      pendingContent = latestNext;
+      if (pendingFlush) {
+        pendingFlush = false;
+        requestAnimationFrame(tick);
+      } else {
+        rafScheduled = false;
+      }
+    };
+    requestAnimationFrame(tick);
   });
 
   const html = $derived(

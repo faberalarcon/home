@@ -18,6 +18,7 @@ export interface GoobyMessage {
   conversationId: string;
   role: GoobyRole;
   content: string;
+  reasoning: string | null;
   model: string | null;
   createdAt: number;
   sequence: number;
@@ -67,6 +68,12 @@ sqlite.exec(`
   );
 `);
 
+// Idempotent column add for reasoning_content (pre-existing rows get NULL).
+const messageCols = sqlite.prepare('PRAGMA table_info(messages)').all() as Array<{ name: string }>;
+if (!messageCols.some((c) => c.name === 'reasoning_content')) {
+  sqlite.exec('ALTER TABLE messages ADD COLUMN reasoning_content TEXT');
+}
+
 sqlite
   .prepare('INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?, ?, ?)')
   .run('system_prompt', DEFAULT_GOOBY_SYSTEM_PROMPT, now());
@@ -95,6 +102,7 @@ function rowToMessage(row: any): GoobyMessage {
     conversationId: row.conversation_id,
     role: row.role,
     content: row.content,
+    reasoning: row.reasoning_content ?? null,
     model: row.model ?? null,
     createdAt: row.created_at,
     sequence: row.sequence
@@ -148,7 +156,7 @@ export function deleteConversation(id: string): boolean {
 export function listMessages(conversationId: string): GoobyMessage[] {
   return sqlite
     .prepare(
-      `SELECT id, conversation_id, role, content, model, created_at, sequence
+      `SELECT id, conversation_id, role, content, reasoning_content, model, created_at, sequence
        FROM messages
        WHERE conversation_id = ?
        ORDER BY sequence ASC`
@@ -161,7 +169,8 @@ export function addMessage(
   conversationId: string,
   role: GoobyRole,
   content: string,
-  model: string | null
+  model: string | null,
+  reasoning: string | null = null
 ): GoobyMessage {
   const row = sqlite
     .prepare('SELECT COALESCE(MAX(sequence), 0) + 1 AS next_sequence FROM messages WHERE conversation_id = ?')
@@ -172,6 +181,7 @@ export function addMessage(
     conversationId,
     role,
     content,
+    reasoning,
     model,
     createdAt: t,
     sequence: row.next_sequence
@@ -179,10 +189,10 @@ export function addMessage(
 
   sqlite
     .prepare(
-      `INSERT INTO messages (id, conversation_id, role, content, model, created_at, sequence)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO messages (id, conversation_id, role, content, reasoning_content, model, created_at, sequence)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(message.id, conversationId, role, content, model, t, message.sequence);
+    .run(message.id, conversationId, role, content, reasoning, model, t, message.sequence);
 
   if (role === 'user') {
     const conversation = getConversation(conversationId);

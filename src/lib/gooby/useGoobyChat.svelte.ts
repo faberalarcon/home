@@ -33,6 +33,7 @@ export type GoobyMessage = {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  reasoning?: string | null;
   model: string | null;
   createdAt: number;
 };
@@ -71,6 +72,7 @@ function readSseEvents(buffer: string): { events: SseEvent[]; remaining: string 
 
 type ChatChunkParse = {
   content: string;
+  reasoning: string;
   remaining: string;
   error: string | null;
   awaitingModel: boolean;
@@ -78,6 +80,7 @@ type ChatChunkParse = {
 
 function parseChatChunk(buffer: string): ChatChunkParse {
   let content = '';
+  let reasoning = '';
   let error: string | null = null;
   let awaitingModel = false;
   const { events, remaining } = readSseEvents(buffer);
@@ -93,11 +96,12 @@ function parseChatChunk(buffer: string): ChatChunkParse {
     }
     const delta = event.data?.choices?.[0]?.delta;
     if (typeof delta?.content === 'string') content += delta.content;
+    if (typeof delta?.reasoning_content === 'string') reasoning += delta.reasoning_content;
     if (typeof event.data?.error === 'string') error = event.data.error;
     if (typeof event.data?.error?.message === 'string') error = event.data.error.message;
   }
 
-  return { content, remaining, error, awaitingModel };
+  return { content, reasoning, remaining, error, awaitingModel };
 }
 
 export class GoobyChat {
@@ -349,6 +353,7 @@ export class GoobyChat {
       id: `local-assistant-${Date.now()}`,
       role: 'assistant',
       content: '',
+      reasoning: '',
       model: this.selectedModel,
       createdAt: Date.now()
     };
@@ -394,8 +399,11 @@ export class GoobyChat {
         const parsed = parseChatChunk(parseBuffer);
         parseBuffer = parsed.remaining;
         if (parsed.error) throw new Error(parsed.error);
-        if (parsed.content) {
-          assistantMessage.content += parsed.content;
+        if (parsed.content || parsed.reasoning) {
+          if (parsed.content) assistantMessage.content += parsed.content;
+          if (parsed.reasoning) {
+            assistantMessage.reasoning = (assistantMessage.reasoning ?? '') + parsed.reasoning;
+          }
           this.messages = this.messages.map((message) =>
             message.id === assistantMessage.id ? { ...assistantMessage } : message
           );

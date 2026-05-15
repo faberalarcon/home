@@ -193,6 +193,19 @@
   50% { opacity: 1; }
 }
 
+.gooby-markdown .gooby-table-pending {
+  margin: 0.6em 0;
+  padding: 0.5rem 0.75rem;
+  background: color-mix(in srgb, var(--color-paper-200) 60%, transparent);
+  border-radius: 0.4rem;
+  color: var(--color-ink-500);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+  white-space: pre;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
 .gooby-markdown .katex { font-size: 1.02em; }
 .gooby-markdown .katex-display {
   display: block;

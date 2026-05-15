@@ -12,7 +12,11 @@
   let { message, streaming, modelLabel }: Props = $props();
 
   const isAssistant = $derived(message.role === 'assistant');
-  const showThinking = $derived(isAssistant && streaming && !message.content.trim());
+  const hasReasoning = $derived(isAssistant && !!message.reasoning?.trim());
+  const contentEmpty = $derived(!message.content.trim());
+  const showThinking = $derived(isAssistant && streaming && contentEmpty && !hasReasoning);
+  const reasoningStreaming = $derived(streaming && contentEmpty);
+  const reasoningOpen = $derived(reasoningStreaming);
 </script>
 
 <article class="row" data-role={message.role}>
@@ -22,9 +26,17 @@
 
   <div class="body">
     {#if isAssistant}
+      {#if hasReasoning}
+        <details class="gooby-reasoning" open={reasoningOpen}>
+          <summary>Reasoning</summary>
+          <div class="gooby-reasoning-body">
+            <MarkdownMessage content={message.reasoning ?? ''} streaming={reasoningStreaming} />
+          </div>
+        </details>
+      {/if}
       {#if showThinking}
         <ThinkingIndicator />
-      {:else}
+      {:else if !contentEmpty}
         <MarkdownMessage content={message.content} {streaming} />
       {/if}
       {#if modelLabel}<p class="meta">{modelLabel}</p>{/if}
@@ -99,4 +111,35 @@
     text-transform: uppercase;
   }
 
+  :global(.gooby-reasoning) {
+    margin: 0 0 0.5rem;
+    border-left: 2px solid var(--color-paper-300);
+    padding-left: 0.7rem;
+  }
+  :global(.gooby-reasoning > summary) {
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-500);
+    list-style: none;
+    padding: 0.15rem 0;
+    user-select: none;
+  }
+  :global(.gooby-reasoning > summary::-webkit-details-marker) {
+    display: none;
+  }
+  :global(.gooby-reasoning > summary::before) {
+    content: '▸ ';
+    display: inline-block;
+  }
+  :global(.gooby-reasoning[open] > summary::before) {
+    content: '▾ ';
+  }
+  :global(.gooby-reasoning-body) {
+    margin-top: 0.4rem;
+    color: var(--color-ink-700);
+    font-size: 0.9em;
+  }
 </style>
