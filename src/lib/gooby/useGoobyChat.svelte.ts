@@ -123,11 +123,16 @@ function parseChatChunk(buffer: string): ChatChunkParse {
       continue;
     }
     const delta = event.data?.choices?.[0]?.delta;
+    let countedThisEvent = false;
     if (typeof delta?.content === 'string' && delta.content.length > 0) {
       content += delta.content;
       contentEventCount += 1;
+      countedThisEvent = true;
     }
-    if (typeof delta?.reasoning_content === 'string') reasoning += delta.reasoning_content;
+    if (typeof delta?.reasoning_content === 'string' && delta.reasoning_content.length > 0) {
+      reasoning += delta.reasoning_content;
+      if (!countedThisEvent) contentEventCount += 1;
+    }
     const rawUsage = event.data?.usage;
     if (rawUsage && typeof rawUsage === 'object') {
       const promptTokens = Number(rawUsage.prompt_tokens);
