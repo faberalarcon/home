@@ -14,7 +14,6 @@
   let scrollEl = $state<HTMLDivElement | null>(null);
   let sentinelEl = $state<HTMLDivElement | null>(null);
   let atBottom = $state(true);
-  let debounceTimer: number | null = null;
 
   function scrollToBottom(immediate = false) {
     if (!scrollEl) return;
@@ -31,30 +30,36 @@
     scrollEl.scrollTop = scrollEl.scrollHeight;
   }
 
+  function onUserScroll() {
+    if (!scrollEl) return;
+    const distFromBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
+    if (distFromBottom > 48) atBottom = false;
+    else if (distFromBottom < 4) atBottom = true;
+  }
+
   onMount(() => {
     chat.setScrollHandler(async () => {
       await tick();
-      if (chat.sending) scrollToBottom(true);
-      else if (atBottom) scrollToBottom();
+      if (atBottom) scrollToBottom(chat.sending);
     });
     jumpToBottom();
 
-    if (!sentinelEl) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (debounceTimer) window.clearTimeout(debounceTimer);
-        debounceTimer = window.setTimeout(() => {
-          atBottom = entry.isIntersecting;
-        }, 80);
-      },
-      { root: scrollEl, threshold: 0.01 }
-    );
-    observer.observe(sentinelEl);
+    scrollEl?.addEventListener('scroll', onUserScroll, { passive: true });
+
+    let observer: IntersectionObserver | null = null;
+    if (sentinelEl) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          atBottom = entries[0].isIntersecting;
+        },
+        { root: scrollEl, threshold: 0.01 }
+      );
+      observer.observe(sentinelEl);
+    }
 
     return () => {
-      observer.disconnect();
-      if (debounceTimer) window.clearTimeout(debounceTimer);
+      observer?.disconnect();
+      scrollEl?.removeEventListener('scroll', onUserScroll);
       chat.setScrollHandler(null);
     };
   });
@@ -103,7 +108,6 @@
     height: 100%;
     overflow-y: auto;
     padding: 1rem clamp(0.6rem, 3vw, 1.2rem) 1.25rem;
-    scroll-behavior: smooth;
   }
 
   .thread {
@@ -122,9 +126,5 @@
 
   .sentinel {
     height: 1px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .scroll { scroll-behavior: auto; }
   }
 </style>

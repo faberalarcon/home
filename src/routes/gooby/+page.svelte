@@ -18,6 +18,14 @@
   onMount(() => {
     chat.loadMessages(chat.selectedId);
     chat.refreshModels().catch(() => {});
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && !chat.sending) {
+        chat.loadMessages(chat.selectedId);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   });
 
   function onWindowKey(event: KeyboardEvent) {

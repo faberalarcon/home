@@ -133,6 +133,7 @@ export async function POST({ request }) {
   let assistantReasoning = '';
   let parseBuffer = '';
   let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  let clientClosed = false;
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
@@ -152,7 +153,14 @@ export async function POST({ request }) {
           assistantContent += parsed.content;
           assistantReasoning += parsed.reasoning;
           parseBuffer = parsed.remaining;
-          controller.enqueue(encoder.encode(chunk));
+
+          if (!clientClosed) {
+            try {
+              controller.enqueue(encoder.encode(chunk));
+            } catch {
+              clientClosed = true;
+            }
+          }
         }
 
         if (parseBuffer) {
@@ -167,17 +175,26 @@ export async function POST({ request }) {
           addMessage(conversationId, 'assistant', finalContent, model, finalReasoning || null);
         }
 
-        controller.close();
+        if (!clientClosed) {
+          try { controller.close(); } catch {}
+        }
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Chat stream failed';
-        controller.enqueue(sseEvent('error', { error: message }));
-        controller.close();
+        const partial = assistantContent.trim();
+        if (partial) {
+          addMessage(conversationId, 'assistant', partial, model, assistantReasoning.trim() || null);
+        }
+        if (!clientClosed) {
+          const message = error instanceof Error ? error.message : 'Chat stream failed';
+          try { controller.enqueue(sseEvent('error', { error: message })); } catch {}
+          try { controller.close(); } catch {}
+        }
       } finally {
         reader?.releaseLock();
       }
     },
     cancel() {
-      reader?.cancel().catch(() => {});
+      // Client gone — keep draining upstream and persist final to DB.
+      clientClosed = true;
     }
   });
 

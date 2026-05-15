@@ -120,6 +120,7 @@ export class GoobyChat {
   private streamAbort: AbortController | null = null;
   private switchAbort: AbortController | null = null;
   private onScroll: (() => void) | null = null;
+  private userStopped = false;
 
   constructor(init: GoobyChatInit) {
     this.conversations = init.conversations;
@@ -331,6 +332,7 @@ export class GoobyChat {
   }
 
   stop() {
+    this.userStopped = true;
     this.streamAbort?.abort();
   }
 
@@ -421,13 +423,17 @@ export class GoobyChat {
       await this.refreshConversations();
     } catch (err) {
       const aborted = err instanceof Error && err.name === 'AbortError';
-      if (aborted) {
+      if (aborted && this.userStopped) {
         assistantMessage.content = assistantMessage.content.trim()
           ? `${assistantMessage.content}\n\n_Stopped._`
           : '_Stopped._';
         this.messages = this.messages.map((message) =>
           message.id === assistantMessage.id ? { ...assistantMessage } : message
         );
+      } else if (aborted) {
+        // External abort (page hidden, navigation, mobile suspend).
+        // Server keeps generating and will persist; leave assistant message as-is.
+        // A visibilitychange-driven loadMessages() will reconcile on return.
       } else {
         this.error = err instanceof Error ? err.message : 'Chat request failed';
         assistantMessage.content = `Request failed: ${this.error}`;
@@ -438,6 +444,7 @@ export class GoobyChat {
     } finally {
       this.sending = false;
       this.streamAbort = null;
+      this.userStopped = false;
       await this.refreshModels({ preserveError: true }).catch(() => {});
     }
   }

@@ -16,7 +16,6 @@
   const contentEmpty = $derived(!message.content.trim());
   const showThinking = $derived(isAssistant && streaming && contentEmpty && !hasReasoning);
   const reasoningStreaming = $derived(streaming && contentEmpty);
-  const reasoningOpen = $derived(reasoningStreaming);
 </script>
 
 <article class="row" data-role={message.role}>
@@ -27,7 +26,7 @@
   <div class="body">
     {#if isAssistant}
       {#if hasReasoning}
-        <details class="gooby-reasoning" open={reasoningOpen}>
+        <details class="gooby-reasoning">
           <summary>Reasoning</summary>
           <div class="gooby-reasoning-body">
             <MarkdownMessage content={message.reasoning ?? ''} streaming={reasoningStreaming} />
