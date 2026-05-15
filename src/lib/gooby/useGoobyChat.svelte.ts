@@ -215,12 +215,10 @@ export class GoobyChat {
   }
 
   private statsFor(id: string): SessionStats {
-    let row = this.sessionStats[id];
-    if (!row) {
-      row = emptyStats();
-      this.sessionStats[id] = row;
+    if (!this.sessionStats[id]) {
+      this.sessionStats[id] = emptyStats();
     }
-    return row;
+    return this.sessionStats[id];
   }
 
   get currentStats(): SessionStats | null {
