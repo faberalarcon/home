@@ -5,6 +5,7 @@
   import ChatHeader from '$lib/gooby/components/ChatHeader.svelte';
   import ConversationDrawer from '$lib/gooby/components/ConversationDrawer.svelte';
   import MessageList from '$lib/gooby/components/MessageList.svelte';
+  import TokenStrip from '$lib/gooby/components/TokenStrip.svelte';
   import Composer from '$lib/gooby/components/Composer.svelte';
   import { GoobyChat } from '$lib/gooby/useGoobyChat.svelte';
   import type { PageData } from './$types';
@@ -62,6 +63,7 @@
     {/if}
 
     <MessageList {chat} />
+    <TokenStrip {chat} />
     <Composer {chat} />
   </section>
 </main>
@@ -93,6 +95,7 @@
 
   .frame :global(.head),
   .frame :global(.composer),
+  .frame :global(.strip),
   .alert {
     flex: 0 0 auto;
   }

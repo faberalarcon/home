@@ -528,7 +528,8 @@ export async function streamChatCompletion(model: string, messages: ChatMessage[
       body: JSON.stringify({
         model,
         messages,
-        stream: true
+        stream: true,
+        stream_options: { include_usage: true }
       })
     });
   } catch (error) {

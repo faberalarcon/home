@@ -72,22 +72,32 @@ function readSseEvents(buffer: string): { events: SseEvent[]; remaining: string 
 
 type TitleUpdate = { conversationId: string; title: string };
 
+type UsagePayload = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+};
+
 type ChatChunkParse = {
   content: string;
   reasoning: string;
+  contentEventCount: number;
   remaining: string;
   error: string | null;
   awaitingModel: boolean;
   titleUpdate: TitleUpdate | null;
+  usage: UsagePayload | null;
   done: boolean;
 };
 
 function parseChatChunk(buffer: string): ChatChunkParse {
   let content = '';
   let reasoning = '';
+  let contentEventCount = 0;
   let error: string | null = null;
   let awaitingModel = false;
   let titleUpdate: TitleUpdate | null = null;
+  let usage: UsagePayload | null = null;
   let done = false;
   const { events, remaining } = readSseEvents(buffer);
 
@@ -113,13 +123,49 @@ function parseChatChunk(buffer: string): ChatChunkParse {
       continue;
     }
     const delta = event.data?.choices?.[0]?.delta;
-    if (typeof delta?.content === 'string') content += delta.content;
+    if (typeof delta?.content === 'string' && delta.content.length > 0) {
+      content += delta.content;
+      contentEventCount += 1;
+    }
     if (typeof delta?.reasoning_content === 'string') reasoning += delta.reasoning_content;
+    const rawUsage = event.data?.usage;
+    if (rawUsage && typeof rawUsage === 'object') {
+      const promptTokens = Number(rawUsage.prompt_tokens);
+      const completionTokens = Number(rawUsage.completion_tokens);
+      const totalTokens = Number(rawUsage.total_tokens);
+      if (Number.isFinite(promptTokens) && Number.isFinite(completionTokens)) {
+        usage = {
+          promptTokens,
+          completionTokens,
+          totalTokens: Number.isFinite(totalTokens) ? totalTokens : promptTokens + completionTokens
+        };
+      }
+    }
     if (typeof event.data?.error === 'string') error = event.data.error;
     if (typeof event.data?.error?.message === 'string') error = event.data.error.message;
   }
 
-  return { content, reasoning, remaining, error, awaitingModel, titleUpdate, done };
+  return { content, reasoning, contentEventCount, remaining, error, awaitingModel, titleUpdate, usage, done };
+}
+
+export type SessionStats = {
+  promptTokens: number;
+  completionTokensTotal: number;
+  elapsedMsTotal: number;
+  liveCompletionTokens: number;
+  streamStartMs: number | null;
+};
+
+const PENDING_STATS_KEY = '__pending__';
+
+function emptyStats(): SessionStats {
+  return {
+    promptTokens: 0,
+    completionTokensTotal: 0,
+    elapsedMsTotal: 0,
+    liveCompletionTokens: 0,
+    streamStartMs: null
+  };
 }
 
 export class GoobyChat {
@@ -133,6 +179,7 @@ export class GoobyChat {
   sending = $state(false);
   switchingModel = $state(false);
   error = $state<string | null>(null);
+  sessionStats = $state<Record<string, SessionStats>>({});
 
   private fallbackDefaultModel: string;
   private streamAbort: AbortController | null = null;
@@ -165,6 +212,36 @@ export class GoobyChat {
 
   get selectedModelInfo(): LlamaModel | null {
     return this.models.find((model) => model.id === this.selectedModel) ?? null;
+  }
+
+  private statsFor(id: string): SessionStats {
+    let row = this.sessionStats[id];
+    if (!row) {
+      row = emptyStats();
+      this.sessionStats[id] = row;
+    }
+    return row;
+  }
+
+  get currentStats(): SessionStats | null {
+    if (!this.selectedId) return null;
+    return this.sessionStats[this.selectedId] ?? null;
+  }
+
+  get tokensUsed(): number {
+    const stats = this.currentStats;
+    if (!stats) return 0;
+    return stats.promptTokens + stats.liveCompletionTokens;
+  }
+
+  get tokensPerSecondAvg(): number | null {
+    const stats = this.currentStats;
+    if (!stats || stats.elapsedMsTotal <= 0 || stats.completionTokensTotal <= 0) return null;
+    return stats.completionTokensTotal / (stats.elapsedMsTotal / 1000);
+  }
+
+  get contextLimit(): number | null {
+    return this.selectedModelInfo?.contextSize ?? null;
   }
 
   get canSend(): boolean {
@@ -343,6 +420,7 @@ export class GoobyChat {
   async deleteConversation(id: string) {
     await fetch(`/gooby/api/conversations/${id}`, { method: 'DELETE' });
     this.conversations = this.conversations.filter((conversation) => conversation.id !== id);
+    delete this.sessionStats[id];
     if (this.selectedId === id) {
       this.selectedId = this.conversations[0]?.id ?? null;
       await this.loadMessages(this.selectedId);
@@ -383,6 +461,12 @@ export class GoobyChat {
     const controller = new AbortController();
     this.streamAbort = controller;
 
+    let statsKey = this.selectedId ?? PENDING_STATS_KEY;
+    const stats = this.statsFor(statsKey);
+    stats.streamStartMs = performance.now();
+    stats.liveCompletionTokens = 0;
+    let usageSeen = false;
+
     try {
       const res = await fetch('/gooby/api/chat', {
         method: 'POST',
@@ -396,7 +480,16 @@ export class GoobyChat {
       });
 
       const conversationId = res.headers.get('x-conversation-id');
-      if (conversationId) this.selectedId = conversationId;
+      if (conversationId) {
+        if (conversationId !== statsKey) {
+          this.sessionStats[conversationId] = stats;
+          if (statsKey === PENDING_STATS_KEY || !this.conversations.some((c) => c.id === statsKey)) {
+            delete this.sessionStats[statsKey];
+          }
+          statsKey = conversationId;
+        }
+        this.selectedId = conversationId;
+      }
       const responseModel = res.headers.get('x-gooby-model');
       if (responseModel && this.models.some((model) => model.id === responseModel)) {
         this.selectedModel = responseModel;
@@ -426,6 +519,20 @@ export class GoobyChat {
               ? { ...conversation, title: update.title }
               : conversation
           );
+        }
+        if (parsed.contentEventCount > 0) {
+          stats.liveCompletionTokens += parsed.contentEventCount;
+        }
+        if (parsed.usage) {
+          usageSeen = true;
+          const elapsed = stats.streamStartMs != null
+            ? Math.max(1, performance.now() - stats.streamStartMs)
+            : 0;
+          stats.promptTokens = parsed.usage.promptTokens;
+          stats.completionTokensTotal += parsed.usage.completionTokens;
+          if (elapsed > 0) stats.elapsedMsTotal += elapsed;
+          stats.liveCompletionTokens = 0;
+          stats.streamStartMs = null;
         }
         if (parsed.content || parsed.reasoning) {
           if (parsed.content) assistantMessage.content += parsed.content;
@@ -474,6 +581,18 @@ export class GoobyChat {
         );
       }
     } finally {
+      if (!usageSeen) {
+        const finalStats = this.sessionStats[statsKey];
+        if (finalStats) {
+          if (finalStats.streamStartMs != null && finalStats.liveCompletionTokens > 0) {
+            const elapsed = Math.max(1, performance.now() - finalStats.streamStartMs);
+            finalStats.elapsedMsTotal += elapsed;
+            finalStats.completionTokensTotal += finalStats.liveCompletionTokens;
+          }
+          finalStats.liveCompletionTokens = 0;
+          finalStats.streamStartMs = null;
+        }
+      }
       this.sending = false;
       this.streamAbort = null;
       this.userStopped = false;
