@@ -410,6 +410,22 @@ export async function waitForGoobyModelReady(
 
 const TITLE_SYSTEM_PROMPT = `You are a chat title generator. Read the conversation and output ONLY a short title that summarizes the topic. Rules: 3 to 6 words, plain text, no quotes, no trailing punctuation, no preamble, no explanation. Output the title and nothing else.`;
 
+export function extractTitleFromReasoning(raw: string): string | null {
+  if (typeof raw !== 'string') return null;
+  const lines = raw
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!lines.length) return null;
+  const labelRe = /(?:final\s+answer|answer|output|title|summary|result)\s*[:\-]\s*(.+)$/i;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const m = lines[i].match(labelRe);
+    if (m?.[1]?.trim()) return m[1].trim();
+  }
+  return lines[lines.length - 1];
+}
+
 export function sanitizeChatTitle(raw: string): string | null {
   if (typeof raw !== 'string') return null;
   let title = raw.replace(/\r\n/g, '\n').trim();
@@ -435,7 +451,9 @@ export function sanitizeChatTitle(raw: string): string | null {
     }
   }
   // Drop common preambles.
-  title = title.replace(/^(title|chat title)\s*[:\-]\s*/i, '').trim();
+  title = title
+    .replace(/^(title|chat title|summary|answer|final answer|output|input|result)\s*[:\-]\s*/i, '')
+    .trim();
   // Collapse whitespace.
   title = title.replace(/\s+/g, ' ');
   // Drop trailing punctuation.
@@ -474,14 +492,20 @@ export async function generateChatTitle(
     const message = payload?.choices?.[0]?.message;
     const content = typeof message?.content === 'string' ? message.content : '';
     const reasoning = typeof message?.reasoning_content === 'string' ? message.reasoning_content : '';
-    const raw = content.trim() || reasoning.trim();
-    if (!raw) {
+
+    let candidate: string | null = null;
+    if (content.trim()) {
+      candidate = content.trim();
+    } else if (reasoning.trim()) {
+      candidate = extractTitleFromReasoning(reasoning);
+    }
+    if (!candidate) {
       console.warn('[gooby] title gen empty content', { model });
       return null;
     }
-    const sanitized = sanitizeChatTitle(raw);
+    const sanitized = sanitizeChatTitle(candidate);
     if (!sanitized) {
-      console.warn('[gooby] title gen rejected by sanitizer', { model, raw: raw.slice(0, 200) });
+      console.warn('[gooby] title gen rejected by sanitizer', { model, raw: candidate.slice(0, 200) });
     }
     return sanitized;
   } catch (error) {

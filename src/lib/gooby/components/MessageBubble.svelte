@@ -14,7 +14,7 @@
   const isAssistant = $derived(message.role === 'assistant');
   const hasReasoning = $derived(isAssistant && !!message.reasoning?.trim());
   const contentEmpty = $derived(!message.content.trim());
-  const showThinking = $derived(isAssistant && streaming && contentEmpty && !hasReasoning);
+  const showThinking = $derived(isAssistant && streaming && contentEmpty);
   const reasoningStreaming = $derived(streaming && contentEmpty);
 </script>
 
