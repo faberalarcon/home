@@ -201,16 +201,7 @@ export function addMessage(
     )
     .run(message.id, conversationId, role, content, reasoning, model, t, message.sequence);
 
-  if (role === 'user') {
-    const conversation = getConversation(conversationId);
-    const shouldAutoTitle = !conversation || conversation.title === 'New chat';
-    const title = shouldAutoTitle ? content.replace(/\s+/g, ' ').trim().slice(0, 60) || 'New chat' : conversation.title;
-    sqlite
-      .prepare('UPDATE conversations SET title = ?, model = ?, updated_at = ? WHERE id = ?')
-      .run(title, model, t, conversationId);
-  } else {
-    touchConversation(conversationId, model);
-  }
+  touchConversation(conversationId, model);
 
   return message;
 }

@@ -414,8 +414,11 @@ export function sanitizeChatTitle(raw: string): string | null {
   if (typeof raw !== 'string') return null;
   let title = raw.replace(/\r\n/g, '\n').trim();
   if (!title) return null;
-  // Model rambled — bail out, caller keeps placeholder.
-  if (title.length > 120) return null;
+  // Strip reasoning blocks emitted inline by thinking models.
+  title = title.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  // Drop dangling/unclosed reasoning prefix if model ran out of tokens mid-think.
+  title = title.replace(/<think>[\s\S]*$/i, '').trim();
+  if (!title) return null;
   // Take only first line in case model added explanation below.
   title = title.split('\n')[0].trim();
   // Strip wrapping quotes / backticks (matched pairs).
@@ -451,11 +454,11 @@ export async function generateChatTitle(
     const response = await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: timeoutSignal(20_000),
+      signal: timeoutSignal(30_000),
       body: JSON.stringify({
         model,
         stream: false,
-        max_tokens: 32,
+        max_tokens: 64,
         temperature: 0.4,
         messages: [
           { role: 'system', content: TITLE_SYSTEM_PROMPT },
@@ -463,12 +466,26 @@ export async function generateChatTitle(
         ]
       })
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.warn('[gooby] title gen non-ok response', { status: response.status, model });
+      return null;
+    }
     const payload = await response.json().catch(() => null);
-    const raw = payload?.choices?.[0]?.message?.content;
-    if (typeof raw !== 'string') return null;
-    return sanitizeChatTitle(raw);
-  } catch {
+    const message = payload?.choices?.[0]?.message;
+    const content = typeof message?.content === 'string' ? message.content : '';
+    const reasoning = typeof message?.reasoning_content === 'string' ? message.reasoning_content : '';
+    const raw = content.trim() || reasoning.trim();
+    if (!raw) {
+      console.warn('[gooby] title gen empty content', { model });
+      return null;
+    }
+    const sanitized = sanitizeChatTitle(raw);
+    if (!sanitized) {
+      console.warn('[gooby] title gen rejected by sanitizer', { model, raw: raw.slice(0, 200) });
+    }
+    return sanitized;
+  } catch (error) {
+    console.warn('[gooby] title gen threw', error instanceof Error ? error.message : error);
     return null;
   }
 }

@@ -191,9 +191,11 @@ export async function POST({ request }) {
                   clientClosed = true;
                 }
               }
+            } else {
+              console.warn('[gooby] title gen returned null', { conversationId, model });
             }
-          } catch {
-            // Title gen failures are silent — placeholder slice stays.
+          } catch (error) {
+            console.error('[gooby] title gen threw', error);
           }
         }
 
