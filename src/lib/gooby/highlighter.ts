@@ -50,7 +50,7 @@ export function ensureHighlighter(): Promise<Highlighter> {
   if (highlighter) return Promise.resolve(highlighter);
   if (loading) return loading;
   loading = createHighlighter({
-    themes: ['github-light', 'github-dark'],
+    themes: ['github-light'],
     langs: [...LANGS]
   }).then((h) => {
     highlighter = h;
@@ -84,12 +84,7 @@ export function highlightToHtml(code: string, lang: string): string | null {
   try {
     return highlighter.codeToHtml(code, {
       lang: resolveLang(lang),
-      themes: {
-        light: 'github-light',
-        dark: 'github-dark'
-      },
-      defaultColor: false,
-      cssVariablePrefix: '--shiki-'
+      theme: 'github-light'
     });
   } catch {
     return null;

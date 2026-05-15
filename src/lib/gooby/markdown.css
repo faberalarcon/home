@@ -4,10 +4,14 @@
   line-height: 1.6;
   word-wrap: break-word;
   overflow-wrap: anywhere;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .gooby-markdown > :first-child { margin-top: 0; }
 .gooby-markdown > :last-child { margin-bottom: 0; }
+.gooby-markdown > * { max-width: 100%; }
+.gooby-markdown p { min-width: 0; }
 
 .gooby-markdown p {
   margin: 0.6em 0;
@@ -116,7 +120,10 @@
   border: 1px solid var(--color-paper-300);
   background: var(--color-paper-100);
   font-size: 0.85rem;
+  min-width: 0;
+  max-width: 100%;
 }
+.gooby-markdown .gooby-table-wrap { max-width: 100%; }
 .gooby-markdown .gooby-code-head {
   display: flex;
   align-items: center;
@@ -159,9 +166,11 @@
   margin: 0;
   padding: 0.75rem 0.95rem;
   overflow-x: auto;
+  max-width: 100%;
   line-height: 1.55;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
   font-size: 0.85rem;
+  background: transparent;
 }
 .gooby-markdown .gooby-code-block code {
   font-family: inherit;
@@ -169,21 +178,11 @@
   padding: 0;
   border: 0;
   color: inherit;
+  white-space: pre;
 }
 
-.gooby-markdown .gooby-code-block .shiki,
 .gooby-markdown .gooby-code-block pre.shiki {
   background: transparent !important;
-  color: var(--shiki-light);
-}
-.gooby-markdown .gooby-code-block .shiki span {
-  color: var(--shiki-light);
-}
-
-@media (prefers-color-scheme: dark) {
-  .gooby-markdown .gooby-code-block .shiki,
-  .gooby-markdown .gooby-code-block pre.shiki { color: var(--shiki-dark); }
-  .gooby-markdown .gooby-code-block .shiki span { color: var(--shiki-dark); }
 }
 
 .gooby-markdown .gooby-code-block[data-streaming='1'] pre {
@@ -196,8 +195,10 @@
 
 .gooby-markdown .katex { font-size: 1.02em; }
 .gooby-markdown .katex-display {
+  display: block;
   margin: 0.9em 0;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0.2em 0;
+  max-width: 100%;
 }

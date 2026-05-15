@@ -14,7 +14,7 @@
 
   let highlighterReady = $state(false);
   let rafScheduled = false;
-  let pendingContent = $state('');
+  let pendingContent = $state(content);
 
   onMount(() => {
     pendingContent = content;
@@ -34,6 +34,11 @@
     }
     if (rafScheduled) return;
     rafScheduled = true;
+    if (typeof requestAnimationFrame === 'undefined') {
+      pendingContent = next;
+      rafScheduled = false;
+      return;
+    }
     requestAnimationFrame(() => {
       rafScheduled = false;
       pendingContent = next;

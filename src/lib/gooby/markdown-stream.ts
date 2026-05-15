@@ -46,13 +46,7 @@ const marked = new Marked({
   breaks: true
 });
 
-marked.use(
-  markedKatex({
-    throwOnError: false,
-    nonStandard: true,
-    output: 'html'
-  })
-);
+marked.use(markedKatex({ throwOnError: false, nonStandard: true }));
 
 marked.use({
   renderer: {
