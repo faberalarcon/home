@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies, request, getC
         httpOnly: true,
         secure: isSecureRequest(url, request.headers.get('x-forwarded-proto')),
         maxAge: 24 * 60 * 60,
-        sameSite: 'strict'
+        sameSite: 'lax'
       });
       throw redirect(303, appPath(next));
     }
@@ -77,7 +77,7 @@ export const actions: Actions = {
       httpOnly: true,
       secure: isSecureRequest(url, request.headers.get('x-forwarded-proto')),
       maxAge: 24 * 60 * 60,
-      sameSite: 'strict'
+      sameSite: 'lax'
     });
 
     throw redirect(303, appPath(next));
