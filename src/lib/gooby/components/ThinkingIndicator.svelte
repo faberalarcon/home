@@ -40,7 +40,11 @@
 </script>
 
 <p class="thinking" aria-live="polite">
-  <span class="phrase">{phrase}</span>
+  <span class="phrase" aria-label={phrase}>
+    {#each phrase.split('') as ch, i (i + ch)}
+      <span class="ch" aria-hidden="true" style="--i:{i}">{ch === ' ' ? ' ' : ch}</span>
+    {/each}
+  </span>
   <span class="dots" aria-hidden="true">
     <span></span><span></span><span></span>
   </span>
@@ -61,6 +65,16 @@
 
   .phrase {
     animation: phrase-fade 2.8s infinite ease-in-out;
+    white-space: pre;
+  }
+
+  .ch {
+    display: inline-block;
+    will-change: transform, color;
+    animation:
+      letter-shine 1.8s ease-in-out infinite,
+      letter-dance 1.4s ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * 70ms), calc(var(--i, 0) * 70ms);
   }
 
   @keyframes phrase-fade {
@@ -69,6 +83,19 @@
     92%      { opacity: 1; transform: translateY(0); }
     96%      { opacity: 0; transform: translateY(-2px); }
     0%       { opacity: 0; transform: translateY(4px); }
+  }
+
+  @keyframes letter-shine {
+    0%, 100% { color: var(--color-ink-700); text-shadow: none; }
+    50%      {
+      color: var(--color-warm-500);
+      text-shadow: 0 0 6px color-mix(in oklab, var(--color-warm-400) 50%, transparent);
+    }
+  }
+
+  @keyframes letter-dance {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
   }
 
   .dots {
@@ -99,6 +126,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .phrase { animation: none; }
+    .ch { animation: none; color: var(--color-ink-700); text-shadow: none; }
     .dots span { animation: none; opacity: 0.6; }
   }
 </style>

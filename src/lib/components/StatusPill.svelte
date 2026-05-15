@@ -41,10 +41,11 @@
     border-radius: 999px;
     background: color-mix(in oklab, var(--pill-color) 8%, var(--color-paper-50));
     color: var(--pill-color);
-    font-family: var(--font-body);
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
+    font-family: var(--font-display);
+    font-feature-settings: 'zero';
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     line-height: 1;
     text-transform: uppercase;
     white-space: nowrap;

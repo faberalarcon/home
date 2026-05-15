@@ -1,5 +1,26 @@
 import type { LlamaModel, LlamaStatus } from './llama';
 
+const STORED_MODEL_KEY = 'gooby:selectedModel';
+
+function readStoredModel(): string | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    return localStorage.getItem(STORED_MODEL_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredModel(modelId: string) {
+  if (typeof localStorage === 'undefined') return;
+  if (!modelId) return;
+  try {
+    localStorage.setItem(STORED_MODEL_KEY, modelId);
+  } catch {
+    // ignore
+  }
+}
+
 export type GoobyConversation = {
   id: string;
   title: string;
@@ -101,8 +122,14 @@ export class GoobyChat {
     this.models = init.llama.models;
     this.selectedId = init.conversations[0]?.id ?? null;
     this.fallbackDefaultModel = init.llama.defaultModel ?? init.llama.models[0]?.id ?? '';
-    this.selectedModel = this.fallbackDefaultModel;
+    const stored = readStoredModel();
+    const storedAvailable = stored && this.models.some((model) => model.id === stored);
+    this.selectedModel = storedAvailable ? (stored as string) : this.fallbackDefaultModel;
     this.error = init.llama.error;
+  }
+
+  private persistSelected() {
+    writeStoredModel(this.selectedModel);
   }
 
   setScrollHandler(handler: (() => void) | null) {
@@ -176,6 +203,7 @@ export class GoobyChat {
           if (data.phase === 'ready') {
             reachedTerminal = true;
             this.error = null;
+            this.persistSelected();
           } else if (data.phase === 'failed') {
             reachedTerminal = true;
             this.error = typeof data.error === 'string' ? data.error : 'Model failed to load';
@@ -239,7 +267,7 @@ export class GoobyChat {
       const conversationModel = payload.conversation?.model;
       if (conversationModel && this.models.some((model) => model.id === conversationModel)) {
         this.selectedModel = conversationModel;
-      } else {
+      } else if (!this.selectedModel || !this.models.some((model) => model.id === this.selectedModel)) {
         this.selectedModel = this.fallbackDefaultModel || this.models[0]?.id || this.selectedModel;
       }
       this.onScroll?.();
@@ -347,6 +375,7 @@ export class GoobyChat {
       const responseModel = res.headers.get('x-gooby-model');
       if (responseModel && this.models.some((model) => model.id === responseModel)) {
         this.selectedModel = responseModel;
+        this.persistSelected();
       }
 
       if (!res.ok || !res.body) {

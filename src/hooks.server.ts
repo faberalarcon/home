@@ -155,8 +155,13 @@ export const handle: Handle = async ({ event, resolve }) => {
         return json({ error: 'Authentication required' }, { status: 401 });
       }
 
-      const next = `${path}${event.url.search}`;
-      throw redirect(303, `${withDrinksBase('/login')}?next=${encodeURIComponent(next)}`);
+      const pw = event.url.searchParams.get('pw');
+      const cleanedSearch = new URLSearchParams(event.url.searchParams);
+      cleanedSearch.delete('pw');
+      const cleanedQs = cleanedSearch.toString();
+      const next = `${path}${cleanedQs ? `?${cleanedQs}` : ''}`;
+      const loginUrl = `${withDrinksBase('/login')}?next=${encodeURIComponent(next)}${pw ? `&pw=${encodeURIComponent(pw)}` : ''}`;
+      throw redirect(303, loginUrl);
     }
 
     if (path.startsWith('/admin') && path !== '/admin/login') {
@@ -185,8 +190,13 @@ export const handle: Handle = async ({ event, resolve }) => {
         );
       }
 
-      const next = `${event.url.pathname}${event.url.search}`;
-      throw redirect(303, `/gooby/login?next=${encodeURIComponent(next)}`);
+      const pw = event.url.searchParams.get('pw');
+      const cleanedSearch = new URLSearchParams(event.url.searchParams);
+      cleanedSearch.delete('pw');
+      const cleanedQs = cleanedSearch.toString();
+      const next = `${event.url.pathname}${cleanedQs ? `?${cleanedQs}` : ''}`;
+      const loginUrl = `/gooby/login?next=${encodeURIComponent(next)}${pw ? `&pw=${encodeURIComponent(pw)}` : ''}`;
+      throw redirect(303, loginUrl);
     }
   } else {
     event.locals.sitePasswordEnabled = false;

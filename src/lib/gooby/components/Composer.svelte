@@ -70,7 +70,7 @@
       <button class="action send" type="submit" disabled={!chat.canSend} aria-label="Send message">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
           <path
-            d="M5 12l14-7-4 7 4 7-14-7z"
+            d="M19 12L5 5l4 7-4 7 14-7z"
             fill="none"
             stroke="currentColor"
             stroke-width="2"

@@ -188,7 +188,12 @@ export async function fetchGoobyModels(): Promise<LlamaModel[]> {
 
 export function chooseGoobyDefaultModel(models: LlamaModel[]): string | null {
   const goobyModels = filterGoobyModels(models);
-  return goobyModels.find((model) => model.id === GOOBY_DEFAULT_MODEL_ID)?.id ?? goobyModels[0]?.id ?? null;
+  return (
+    goobyModels.find((model) => model.status === 'loaded')?.id ??
+    goobyModels.find((model) => model.id === GOOBY_DEFAULT_MODEL_ID)?.id ??
+    goobyModels[0]?.id ??
+    null
+  );
 }
 
 export function resolveGoobyModel(modelId: string | null | undefined, models: LlamaModel[] = []): string | null {
