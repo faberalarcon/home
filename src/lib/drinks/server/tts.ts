@@ -1,5 +1,7 @@
 import { getSetting } from './db/settings';
 import { callService, getLightState } from './ha';
+import { generateOrderQuip, generateMilestoneQuip } from './tts-llm';
+import { markDrinksActive } from './llm-priority';
 
 // Message pools per milestone category, cycled in order.
 // Keys are checked against the milestone's haTriggerEvent first (exact match),
@@ -155,9 +157,12 @@ function isRateLimited(profileId: number): boolean {
 
 // Sequential queue — processes one job at a time so announcements don't overlap
 type TtsJob = {
+  profileId: number;
   profileName: string;
   drinkName: string;
-  firedMilestones: Array<{ threshold: number; scope: string; haTriggerEvent?: string }>;
+  allTimeCount: number;
+  todayCount: number;
+  firedMilestones: Array<{ name: string; threshold: number; scope: string; haTriggerEvent?: string }>;
 };
 
 const queue: TtsJob[] = [];
@@ -266,10 +271,27 @@ async function ttsCall(message: string): Promise<void> {
 }
 
 async function doAnnounce(job: TtsJob): Promise<void> {
-  const base = `${job.profileName} ordered a ${job.drinkName}.`;
+  const llmOrder = await generateOrderQuip({
+    profileName: job.profileName,
+    drinkName: job.drinkName,
+    allTimeCount: job.allTimeCount,
+    todayCount: job.todayCount
+  });
+  const base = llmOrder ?? `${job.profileName} ordered a ${job.drinkName}.`;
 
   let extra: string | null = null;
   for (const m of job.firedMilestones) {
+    const llmMilestone = await generateMilestoneQuip({
+      milestoneName: m.name,
+      scope: m.scope,
+      threshold: m.threshold,
+      profileName: job.profileName,
+      drinkName: job.drinkName
+    });
+    if (llmMilestone) {
+      extra = llmMilestone;
+      break;
+    }
     const key = milestoneKey(m.threshold, m.scope, m.haTriggerEvent ?? '');
     if (key) {
       extra = nextMessage(key);
@@ -289,12 +311,15 @@ export function announceDrinkOrder(
   profileId: number,
   profileName: string,
   drinkName: string,
-  firedMilestones: Array<{ threshold: number; scope: string; haTriggerEvent?: string }>
+  allTimeCount: number,
+  todayCount: number,
+  firedMilestones: Array<{ name: string; threshold: number; scope: string; haTriggerEvent?: string }>
 ): void {
+  markDrinksActive();
   if (isRateLimited(profileId)) {
     console.log(`[tts] rate limit hit for profile ${profileId}, dropping announcement`);
     return;
   }
-  queue.push({ profileName, drinkName, firedMilestones });
+  queue.push({ profileId, profileName, drinkName, allTimeCount, todayCount, firedMilestones });
   processQueue().catch((err) => console.error('[tts] queue error:', err));
 }

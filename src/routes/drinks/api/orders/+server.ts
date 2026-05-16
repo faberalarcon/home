@@ -154,7 +154,9 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     profile.id,
     profile.name,
     drinkName,
-    firedMilestones.map((m) => ({ threshold: m.threshold, scope: m.scope, haTriggerEvent: m.haTriggerEvent }))
+    countAllTime,
+    countToday,
+    firedMilestones.map((m) => ({ name: m.name, threshold: m.threshold, scope: m.scope, haTriggerEvent: m.haTriggerEvent }))
   );
 
   // Broadcast each inserted order via SSE

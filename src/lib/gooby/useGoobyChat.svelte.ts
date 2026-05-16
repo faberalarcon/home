@@ -188,6 +188,7 @@ export class GoobyChat {
   sending = $state(false);
   switchingModel = $state(false);
   error = $state<string | null>(null);
+  pendingOverrideModel = $state<string | null>(null);
   sessionStats = $state<Record<string, SessionStats>>({});
 
   private fallbackDefaultModel: string;
@@ -271,8 +272,25 @@ export class GoobyChat {
 
   async selectModel(modelId: string) {
     if (this.sending || modelId === this.selectedModel) return;
+    await this.swapModel(modelId, false);
+  }
+
+  async confirmOverrideModelSwap() {
+    if (!this.pendingOverrideModel || this.sending) return;
+    const model = this.pendingOverrideModel;
+    this.pendingOverrideModel = null;
+    await this.swapModel(model, true);
+  }
+
+  dismissOverridePrompt() {
+    this.pendingOverrideModel = null;
+    this.error = null;
+  }
+
+  private async swapModel(modelId: string, override: boolean) {
     this.selectedModel = modelId;
     this.error = null;
+    this.pendingOverrideModel = null;
     this.switchingModel = true;
 
     this.switchAbort?.abort();
@@ -285,9 +303,22 @@ export class GoobyChat {
       const res = await fetch('/gooby/api/models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: modelId }),
+        body: JSON.stringify({ model: modelId, override }),
         signal: controller.signal
       });
+
+      if (res.status === 409) {
+        const payload = await res.json().catch(() => null);
+        if (payload?.error === 'drinks_active') {
+          this.pendingOverrideModel = modelId;
+          this.error = typeof payload.message === 'string'
+            ? payload.message
+            : 'Drinks session active — override?';
+          return;
+        }
+        this.error = payload?.message ?? payload?.error ?? 'Model switch conflict';
+        return;
+      }
 
       if (!res.ok) {
         const payload = await res.json().catch(() => null);

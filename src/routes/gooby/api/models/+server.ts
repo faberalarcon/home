@@ -5,6 +5,7 @@ import {
   isGoobyModelId,
   probeGoobyModelLoad
 } from '$lib/gooby/llama';
+import { isDrinksActive, clearDrinksActive } from '$lib/drinks/server/llm-priority';
 
 const SWITCH_POLL_MS = 1_500;
 const SWITCH_MAX_MS = 190_000;
@@ -20,9 +21,19 @@ export async function GET() {
 export async function POST({ request }) {
   const body = await request.json().catch(() => ({}));
   const model = typeof body.model === 'string' ? body.model : '';
+  const override = body.override === true;
   if (!isGoobyModelId(model)) {
     return json({ error: 'Unknown model' }, { status: 400 });
   }
+
+  if (isDrinksActive() && !override) {
+    return json(
+      { error: 'drinks_active', message: 'Drinks session active — override?' },
+      { status: 409 }
+    );
+  }
+
+  if (override) clearDrinksActive();
 
   const encoder = new TextEncoder();
   const label = goobyModelOption(model)?.displayLabel ?? model;

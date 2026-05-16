@@ -18,7 +18,15 @@
   let showCart = $state(false);
 
   onMount(() => {
-    if (!$selectedProfile) goto(appPath('/'));
+    if (!$selectedProfile) {
+      goto(appPath('/'));
+      return;
+    }
+    fetch(appPath('/api/tts/preload'), { method: 'POST' }).catch(() => {});
+    const beat = setInterval(() => {
+      fetch(appPath('/api/tts/heartbeat'), { method: 'POST' }).catch(() => {});
+    }, 30_000);
+    return () => clearInterval(beat);
   });
 
   const filtered = $derived(

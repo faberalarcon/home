@@ -15,6 +15,14 @@
 {#if form?.testError}
   <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.testError}</div>
 {/if}
+{#if form?.quip}
+  <div class="mb-4 px-4 py-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-sm text-emerald-300">
+    <span class="opacity-70 mr-2">Quip:</span>{form.quip}
+  </div>
+{/if}
+{#if form?.quipError}
+  <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.quipError}</div>
+{/if}
 
 <form method="POST" action="?/save" class="space-y-6 max-w-lg">
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
@@ -123,6 +131,87 @@
         class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
       />
       <p class="text-xs text-slate-500 mt-1">When set, flashes this light a random color on every TTS announcement.</p>
+    </div>
+  </div>
+
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+    <h2 class="text-base font-semibold">LLM Quips (beta)</h2>
+    <p class="text-xs text-slate-500">
+      Generates a one-line announcement from a small local model on llama.cpp for every order and milestone.
+      Falls back to the hardcoded pool on timeout, error, or if the wrong model is loaded.
+      The order page preloads the target model on mount and heartbeats every 30 seconds; Gooby will see a
+      409 with an "Override" button while a drinks session is active.
+    </p>
+
+    <div class="flex items-center gap-2">
+      <input
+        id="ttsLlmEnabled" name="ttsLlmEnabled" type="checkbox"
+        checked={data.ttsLlmEnabled}
+        class="rounded"
+      />
+      <label for="ttsLlmEnabled" class="text-sm text-slate-300">Enable LLM-generated quips</label>
+    </div>
+
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="ttsLlmModel">Target model</label>
+      <input
+        id="ttsLlmModel" name="ttsLlmModel" type="text"
+        value={data.ttsLlmModel}
+        placeholder="gemma4:e2b"
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+      />
+      <p class="text-xs text-slate-500 mt-1">
+        Must be a model id known to llama-swap. Small/fast models recommended:
+        <code class="text-slate-400">gemma4:e2b</code>, <code class="text-slate-400">gemma4:e4b</code>.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-3 gap-3">
+      <div>
+        <label class="block text-sm text-slate-400 mb-1" for="ttsLlmTimeoutMs">Timeout (ms)</label>
+        <input
+          id="ttsLlmTimeoutMs" name="ttsLlmTimeoutMs" type="number" min="500" max="15000" step="100"
+          value={data.ttsLlmTimeoutMs}
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+        />
+      </div>
+      <div>
+        <label class="block text-sm text-slate-400 mb-1" for="ttsLlmMaxTokens">Max tokens</label>
+        <input
+          id="ttsLlmMaxTokens" name="ttsLlmMaxTokens" type="number" min="8" max="256" step="1"
+          value={data.ttsLlmMaxTokens}
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+        />
+      </div>
+      <div>
+        <label class="block text-sm text-slate-400 mb-1" for="ttsLlmPreloadTtlS">Preload TTL (s)</label>
+        <input
+          id="ttsLlmPreloadTtlS" name="ttsLlmPreloadTtlS" type="number" min="10" max="600" step="5"
+          value={data.ttsLlmPreloadTtlS}
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="ttsLlmSystemPrompt">System prompt</label>
+      <textarea
+        id="ttsLlmSystemPrompt" name="ttsLlmSystemPrompt" rows="8"
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-slate-500"
+      >{data.ttsLlmSystemPrompt}</textarea>
+      <p class="text-xs text-slate-500 mt-1">
+        Keep under ~250 tokens. The user prompt the server adds is a single short line with the profile, drink, today count, all-time count (or the milestone details).
+      </p>
+    </div>
+
+    <div>
+      <button
+        type="submit" formaction="?/testQuip"
+        class="px-3 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition"
+      >
+        Test quip
+      </button>
+      <span class="ml-2 text-xs text-slate-500">Save first if you've changed the prompt.</span>
     </div>
   </div>
 

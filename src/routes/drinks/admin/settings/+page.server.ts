@@ -15,6 +15,7 @@ import {
 import { makeSessionToken } from '$lib/drinks/server/auth';
 import { appPath } from '$lib/drinks/app-paths';
 import { validateOutboundUrl } from '$lib/drinks/server/url-allowlist';
+import { generateOrderQuip } from '$lib/drinks/server/tts-llm';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -30,7 +31,13 @@ export const load: PageServerLoad = async ({ url }) => {
     ttsEntityId: getSetting('tts_entity_id') ?? '',
     ttsEngineId: getSetting('tts_engine_id') ?? '',
     ttsService: getSetting('tts_service') ?? 'tts/speak',
-    lightsEntityId: getSetting('lights_entity_id') ?? ''
+    lightsEntityId: getSetting('lights_entity_id') ?? '',
+    ttsLlmEnabled: (getSetting('tts_llm_enabled') ?? 'false') === 'true',
+    ttsLlmModel: getSetting('tts_llm_model') ?? 'gemma4:e2b',
+    ttsLlmTimeoutMs: getSetting('tts_llm_timeout_ms') ?? '3000',
+    ttsLlmMaxTokens: getSetting('tts_llm_max_tokens') ?? '60',
+    ttsLlmPreloadTtlS: getSetting('tts_llm_preload_ttl_s') ?? '60',
+    ttsLlmSystemPrompt: getSetting('tts_llm_system_prompt') ?? ''
   };
 };
 
@@ -61,7 +68,33 @@ export const actions: Actions = {
     setSetting('tts_service', ttsService);
     setSetting('lights_entity_id', lightsEntityId);
 
+    const ttsLlmEnabled = fd.get('ttsLlmEnabled') === 'on' ? 'true' : 'false';
+    const ttsLlmModel = ((fd.get('ttsLlmModel') as string | null) ?? '').trim() || 'gemma4:e2b';
+    const ttsLlmTimeoutMs = ((fd.get('ttsLlmTimeoutMs') as string | null) ?? '').trim() || '3000';
+    const ttsLlmMaxTokens = ((fd.get('ttsLlmMaxTokens') as string | null) ?? '').trim() || '60';
+    const ttsLlmPreloadTtlS = ((fd.get('ttsLlmPreloadTtlS') as string | null) ?? '').trim() || '60';
+    const ttsLlmSystemPrompt = ((fd.get('ttsLlmSystemPrompt') as string | null) ?? '').trim();
+    setSetting('tts_llm_enabled', ttsLlmEnabled);
+    setSetting('tts_llm_model', ttsLlmModel);
+    setSetting('tts_llm_timeout_ms', ttsLlmTimeoutMs);
+    setSetting('tts_llm_max_tokens', ttsLlmMaxTokens);
+    setSetting('tts_llm_preload_ttl_s', ttsLlmPreloadTtlS);
+    if (ttsLlmSystemPrompt) setSetting('tts_llm_system_prompt', ttsLlmSystemPrompt);
+
     return { saved: true };
+  },
+
+  testQuip: async () => {
+    const quip = await generateOrderQuip({
+      profileName: 'Faber',
+      drinkName: 'Negroni',
+      allTimeCount: 7,
+      todayCount: 2
+    });
+    if (!quip) {
+      return fail(502, { quipError: 'No quip returned — check that tts_llm_enabled is true and the target model is loaded on llama.cpp.' });
+    }
+    return { quip };
   },
 
   test: async ({ request }) => {

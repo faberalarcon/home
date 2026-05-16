@@ -59,7 +59,17 @@
     <ChatHeader {chat} onOpenDrawer={() => (drawerOpen = true)} />
 
     {#if chat.error}
-      <p class="alert" role="alert">{chat.error}</p>
+      <p class="alert" role="alert">
+        {chat.error}
+        {#if chat.pendingOverrideModel}
+          <button type="button" class="alert-action" onclick={() => chat.confirmOverrideModelSwap()}>
+            Override
+          </button>
+          <button type="button" class="alert-action alert-action--ghost" onclick={() => chat.dismissOverridePrompt()}>
+            Cancel
+          </button>
+        {/if}
+      </p>
     {/if}
 
     <MessageList {chat} />
@@ -113,5 +123,24 @@
     font-size: 0.85rem;
     font-weight: 700;
     border-bottom: 1px solid color-mix(in oklab, var(--color-danger-text) 22%, var(--color-paper-300));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .alert-action {
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .alert-action--ghost {
+    opacity: 0.7;
   }
 </style>
