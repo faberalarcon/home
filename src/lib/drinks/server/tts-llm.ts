@@ -69,6 +69,7 @@ export function sanitizeQuip(raw: string): string | null {
 export interface OrderQuipContext {
   profileName: string;
   drinkName: string;
+  itemCategory: string;
   allTimeCount: number;
   todayCount: number;
 }
@@ -79,6 +80,7 @@ export interface MilestoneQuipContext {
   threshold: number;
   profileName: string;
   drinkName: string;
+  itemCategory: string;
 }
 
 async function callLlama(userPrompt: string): Promise<string | null> {
@@ -144,12 +146,12 @@ async function callLlama(userPrompt: string): Promise<string | null> {
 
 export async function generateOrderQuip(ctx: OrderQuipContext): Promise<string | null> {
   if (!isEnabled()) return null;
-  const userPrompt = `Order: ${ctx.profileName} just ordered a ${ctx.drinkName}. They've had ${ctx.todayCount} today, ${ctx.allTimeCount} all-time.`;
+  const userPrompt = `Order: ${ctx.profileName} just ordered ${ctx.drinkName} (category: ${ctx.itemCategory}). They've had ${ctx.todayCount} today, ${ctx.allTimeCount} all-time.`;
   return callLlama(userPrompt);
 }
 
 export async function generateMilestoneQuip(ctx: MilestoneQuipContext): Promise<string | null> {
   if (!isEnabled()) return null;
-  const userPrompt = `Milestone "${ctx.milestoneName}" hit: scope ${ctx.scope}, threshold ${ctx.threshold}. ${ctx.profileName} ordered a ${ctx.drinkName}.`;
+  const userPrompt = `Milestone "${ctx.milestoneName}" hit: scope ${ctx.scope}, threshold ${ctx.threshold}. ${ctx.profileName} ordered ${ctx.drinkName} (category: ${ctx.itemCategory}).`;
   return callLlama(userPrompt);
 }

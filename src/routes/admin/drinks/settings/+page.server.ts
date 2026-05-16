@@ -80,7 +80,8 @@ export const actions: Actions = {
   testQuip: async () => {
     const quip = await generateOrderQuip({
       profileName: 'Faber',
-      drinkName: 'Negroni',
+      drinkName: 'pretzels',
+      itemCategory: 'snack',
       allTimeCount: 7,
       todayCount: 2
     });

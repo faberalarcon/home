@@ -131,10 +131,12 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     }
   }
 
-  // TTS — announce all drinks in one message
+  // TTS — announce all items in one message
   const drinkName = drinkRows.length === 1
     ? drinkRows[0].name
     : drinkRows.slice(0, -1).map((d) => d.name).join(', ') + ' and ' + drinkRows[drinkRows.length - 1].name;
+
+  const itemCategory = Array.from(new Set(drinkRows.map((d) => d.category))).join(', ');
 
   for (const m of firedMilestones) {
     const ttsExtra = previewMilestoneText(m.threshold, m.scope, m.haTriggerEvent);
@@ -154,6 +156,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     profile.id,
     profile.name,
     drinkName,
+    itemCategory,
     countAllTime,
     countToday,
     firedMilestones.map((m) => ({ name: m.name, threshold: m.threshold, scope: m.scope, haTriggerEvent: m.haTriggerEvent }))

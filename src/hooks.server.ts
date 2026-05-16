@@ -2,7 +2,7 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { json, redirect, type Handle } from '@sveltejs/kit';
 import { timingSafeEqual } from 'node:crypto';
 import { db } from '$lib/drinks/server/db';
-import { bootstrapSettings } from '$lib/drinks/server/db/settings';
+import { bootstrapSettings, getSetting, setSetting } from '$lib/drinks/server/db/settings';
 import { verifySessionToken } from '$lib/drinks/server/auth';
 import { getConfiguredSitePasswordHash } from '$lib/drinks/server/site-access';
 import { getConfiguredGoobyPasswordHash } from '$lib/gooby/auth';
@@ -26,6 +26,9 @@ if (!migrated) {
   }
 }
 
+const TTS_LLM_SYSTEM_PROMPT_VERSION = '2';
+const TTS_LLM_SYSTEM_PROMPT = 'You are the host speaker at 21 Bristoe, a private speakeasy. Your job is to call out orders and milestones over a living-room speaker with dry, warm, slightly chaotic charm — like a host who has seen everything and is amused. Orders may be drinks, snacks, desserts, food, or anything else — I will tell you the category. Match your wording to the category: say "ordered a martini" for a cocktail, "grabbed some pretzels" for a snack, "snagged a slice of cake" for a dessert. Hard rules: respond with ONE short sentence under 20 words. No quotes. No emojis. No preambles like "Sure" or "Here you go". No stage directions. No questions. Address the room, not the orderer. Use the names and numbers I give you naturally — do not list them robotically. Output ONLY the line that will be spoken aloud; nothing else. If the context is mundane, be witty but kind. Never be mean about the choice.';
+
 bootstrapSettings({
   ha_base_url: 'http://ai.local:8123',
   ha_token: '',
@@ -35,9 +38,18 @@ bootstrapSettings({
   tts_llm_timeout_ms: '3000',
   tts_llm_max_tokens: '60',
   tts_llm_preload_ttl_s: '60',
-  tts_llm_system_prompt:
-    'You are the bar speaker at 21 Bristoe, a private speakeasy. Your job is to call out drink orders and milestones over a living-room speaker with dry, warm, slightly chaotic charm — like a barista who has seen everything and is amused. Hard rules: respond with ONE short sentence under 20 words. No quotes. No emojis. No preambles like "Sure" or "Here you go". No stage directions. No questions. Address the room, not the drinker. Use the names and numbers I give you naturally — do not list them robotically. Output ONLY the line that will be spoken aloud; nothing else. If the context is mundane, be witty but kind. Never be mean about the drink choice.'
+  tts_llm_system_prompt: TTS_LLM_SYSTEM_PROMPT,
+  tts_llm_system_prompt_version: TTS_LLM_SYSTEM_PROMPT_VERSION
 });
+
+// Force-overwrite the saved system prompt once per version bump so older
+// installs receive new generic wording. Subsequent admin edits to the prompt
+// are preserved until the next version bump.
+if (getSetting('tts_llm_system_prompt_version') !== TTS_LLM_SYSTEM_PROMPT_VERSION) {
+  setSetting('tts_llm_system_prompt', TTS_LLM_SYSTEM_PROMPT);
+  setSetting('tts_llm_system_prompt_version', TTS_LLM_SYSTEM_PROMPT_VERSION);
+  console.log(`[drink-hub] migrated tts_llm_system_prompt to version ${TTS_LLM_SYSTEM_PROMPT_VERSION}`);
+}
 
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Frame-Options': 'DENY',
@@ -65,6 +77,7 @@ function isDrinkPublicPath(path: string): boolean {
     path === '/api/stats' ||
     path.startsWith('/_app/') ||
     path.startsWith('/icons/') ||
+    path.startsWith('/uploads/') ||
     path === '/favicon.png' ||
     path === '/manifest.webmanifest' ||
     path === '/service-worker.js'

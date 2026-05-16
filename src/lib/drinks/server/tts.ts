@@ -160,6 +160,7 @@ type TtsJob = {
   profileId: number;
   profileName: string;
   drinkName: string;
+  itemCategory: string;
   allTimeCount: number;
   todayCount: number;
   firedMilestones: Array<{ name: string; threshold: number; scope: string; haTriggerEvent?: string }>;
@@ -315,10 +316,11 @@ async function doAnnounce(job: TtsJob): Promise<void> {
   const llmOrder = await generateOrderQuip({
     profileName: job.profileName,
     drinkName: job.drinkName,
+    itemCategory: job.itemCategory,
     allTimeCount: job.allTimeCount,
     todayCount: job.todayCount
   });
-  const base = llmOrder ?? `${job.profileName} ordered a ${job.drinkName}.`;
+  const base = llmOrder ?? `${job.profileName} ordered ${job.drinkName}.`;
 
   let extra: string | null = null;
   for (const m of job.firedMilestones) {
@@ -327,7 +329,8 @@ async function doAnnounce(job: TtsJob): Promise<void> {
       scope: m.scope,
       threshold: m.threshold,
       profileName: job.profileName,
-      drinkName: job.drinkName
+      drinkName: job.drinkName,
+      itemCategory: job.itemCategory
     });
     if (llmMilestone) {
       extra = llmMilestone;
@@ -352,6 +355,7 @@ export function announceDrinkOrder(
   profileId: number,
   profileName: string,
   drinkName: string,
+  itemCategory: string,
   allTimeCount: number,
   todayCount: number,
   firedMilestones: Array<{ name: string; threshold: number; scope: string; haTriggerEvent?: string }>
@@ -361,6 +365,6 @@ export function announceDrinkOrder(
     console.log(`[tts] rate limit hit for profile ${profileId}, dropping announcement`);
     return;
   }
-  queue.push({ profileId, profileName, drinkName, allTimeCount, todayCount, firedMilestones });
+  queue.push({ profileId, profileName, drinkName, itemCategory, allTimeCount, todayCount, firedMilestones });
   processQueue().catch((err) => console.error('[tts] queue error:', err));
 }
