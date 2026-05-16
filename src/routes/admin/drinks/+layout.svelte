@@ -35,6 +35,16 @@
 
 <svelte:window onkeydown={onKey} />
 
+<svelte:head>
+  <style>
+    html, body {
+      background: #0f1419;
+      color: #c9d2dc;
+      color-scheme: dark;
+    }
+  </style>
+</svelte:head>
+
 <div class="admin-shell mx-auto max-w-4xl min-h-screen flex flex-col">
   {#if data.haWarning}
     <div class="bg-red-950/50 border-b border-red-800/60 px-4 py-2 text-xs text-red-300 flex items-center gap-2">
@@ -119,6 +129,25 @@
 </div>
 
 <style>
+  /* Force a self-contained dark theme on this admin section regardless of
+     system prefers-color-scheme or the global drinks.css compat layer.
+     Tailwind slate utilities in pages assume a dark surface; pin local
+     paper/ink tokens so the compat overrides (which remap slate->paper)
+     resolve to dark values inside this shell. */
+  .admin-shell {
+    --color-paper-50:  #0f1419;
+    --color-paper-100: #161b22;
+    --color-paper-200: #1f2630;
+    --color-paper-300: #30384a;
+    --color-ink-900:   #f0f4f8;
+    --color-ink-700:   #c9d2dc;
+    --color-ink-500:   #94a3b8;
+    --color-ink-300:   #64748b;
+    background: #0f1419;
+    color: #c9d2dc;
+    color-scheme: dark;
+  }
+
   /* Prevent iOS Safari from zooming when focusing inputs on mobile. */
   @media (max-width: 767px) {
     .admin-shell :global(input:not([type='checkbox']):not([type='radio']):not([type='color'])),

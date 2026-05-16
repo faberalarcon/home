@@ -180,6 +180,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   if (event.url.pathname === '/') {
     response.headers.set('Cache-Control', 'no-store');
+  } else if (event.url.pathname.startsWith('/admin')) {
+    // Admin pages must never be cached: stale HTML can render a form whose
+    // action points at a legacy URL, which then 308s across origins and gets
+    // the Origin header stripped, tripping the CSRF check.
+    response.headers.set('Cache-Control', 'no-store');
   } else if (
     event.url.pathname === '/stats/' ||
     event.url.pathname === '/stats/drinks' ||
