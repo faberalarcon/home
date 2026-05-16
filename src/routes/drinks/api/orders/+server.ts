@@ -6,7 +6,8 @@ import { fireEvent } from '$lib/drinks/server/ha';
 import { evaluateMilestones } from '$lib/drinks/server/milestones';
 import { broadcast } from '$lib/drinks/server/stream';
 import { checkRateLimit } from '$lib/drinks/server/ratelimit';
-import { announceDrinkOrder, previewMilestoneText } from '$lib/drinks/server/tts';
+import { announceDrinkOrder, formatItemsForSpeech, previewMilestoneText } from '$lib/drinks/server/tts';
+import type { OrderItem } from '$lib/drinks/server/tts-llm';
 import type { RequestHandler } from './$types';
 
 const MAX_CART_SIZE = 20;
@@ -131,12 +132,18 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     }
   }
 
-  // TTS — announce all items in one message
-  const drinkName = drinkRows.length === 1
-    ? drinkRows[0].name
-    : drinkRows.slice(0, -1).map((d) => d.name).join(', ') + ' and ' + drinkRows[drinkRows.length - 1].name;
+  // TTS — group cart into distinct items with quantities so the LLM (and the
+  // fallback speech) can phrase each one correctly. Order preserved from cart.
+  const itemsMap = new Map<number, OrderItem>();
+  for (const d of drinkRows) {
+    const existing = itemsMap.get(d.id);
+    if (existing) existing.quantity += 1;
+    else itemsMap.set(d.id, { name: d.name, category: d.category, quantity: 1 });
+  }
+  const items: OrderItem[] = Array.from(itemsMap.values());
 
-  const itemCategory = Array.from(new Set(drinkRows.map((d) => d.category))).join(', ');
+  const allPureDrinks = items.every((i) => i.category === 'drink');
+  const spokenItems = formatItemsForSpeech(items);
 
   for (const m of firedMilestones) {
     const ttsExtra = previewMilestoneText(m.threshold, m.scope, m.haTriggerEvent);
@@ -147,18 +154,17 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
       profile: profile.name,
       drink: drinkRows[0].name,
       tts_text: ttsExtra
-        ? `${profile.name} ordered a ${drinkName}. ${ttsExtra}`
-        : `${profile.name} ordered a ${drinkName}.`
+        ? `${profile.name} ordered ${spokenItems}. ${ttsExtra}`
+        : `${profile.name} ordered ${spokenItems}.`
     });
   }
 
   announceDrinkOrder(
     profile.id,
     profile.name,
-    drinkName,
-    itemCategory,
-    countAllTime,
-    countToday,
+    items,
+    allPureDrinks ? countAllTime : undefined,
+    allPureDrinks ? countToday : undefined,
     firedMilestones.map((m) => ({ name: m.name, threshold: m.threshold, scope: m.scope, haTriggerEvent: m.haTriggerEvent }))
   );
 

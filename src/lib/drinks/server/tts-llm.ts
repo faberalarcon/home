@@ -66,12 +66,17 @@ export function sanitizeQuip(raw: string): string | null {
   return s;
 }
 
+export interface OrderItem {
+  name: string;
+  category: string;
+  quantity: number;
+}
+
 export interface OrderQuipContext {
   profileName: string;
-  drinkName: string;
-  itemCategory: string;
-  allTimeCount: number;
-  todayCount: number;
+  items: OrderItem[];
+  allTimeCount?: number;
+  todayCount?: number;
 }
 
 export interface MilestoneQuipContext {
@@ -79,8 +84,16 @@ export interface MilestoneQuipContext {
   scope: string;
   threshold: number;
   profileName: string;
-  drinkName: string;
-  itemCategory: string;
+  items: OrderItem[];
+}
+
+function formatItemsForPrompt(items: OrderItem[]): string {
+  if (items.length === 1) {
+    const it = items[0];
+    const qtyPrefix = it.quantity > 1 ? `${it.quantity} × ` : '';
+    return `${qtyPrefix}${it.name} (category: ${it.category})`;
+  }
+  return items.map((it) => `${it.quantity} × ${it.name} (${it.category})`).join(', ');
 }
 
 async function callLlama(userPrompt: string): Promise<string | null> {
@@ -146,12 +159,21 @@ async function callLlama(userPrompt: string): Promise<string | null> {
 
 export async function generateOrderQuip(ctx: OrderQuipContext): Promise<string | null> {
   if (!isEnabled()) return null;
-  const userPrompt = `Order: ${ctx.profileName} just ordered ${ctx.drinkName} (category: ${ctx.itemCategory}). They've had ${ctx.todayCount} today, ${ctx.allTimeCount} all-time.`;
-  return callLlama(userPrompt);
+  const itemsPart = formatItemsForPrompt(ctx.items);
+  const lead = ctx.items.length === 1
+    ? `Order: ${ctx.profileName} just ordered ${itemsPart}.`
+    : `Order: ${ctx.profileName} just ordered: ${itemsPart}.`;
+  const countsPart =
+    ctx.todayCount !== undefined && ctx.allTimeCount !== undefined
+      ? ` They've had ${ctx.todayCount} today, ${ctx.allTimeCount} all-time.`
+      : '';
+  return callLlama(`${lead}${countsPart}`);
 }
 
 export async function generateMilestoneQuip(ctx: MilestoneQuipContext): Promise<string | null> {
   if (!isEnabled()) return null;
-  const userPrompt = `Milestone "${ctx.milestoneName}" hit: scope ${ctx.scope}, threshold ${ctx.threshold}. ${ctx.profileName} ordered ${ctx.drinkName} (category: ${ctx.itemCategory}).`;
+  const itemsPart = formatItemsForPrompt(ctx.items);
+  const orderedPhrase = ctx.items.length === 1 ? `ordered ${itemsPart}` : `ordered: ${itemsPart}`;
+  const userPrompt = `Milestone "${ctx.milestoneName}" hit: scope ${ctx.scope}, threshold ${ctx.threshold}. ${ctx.profileName} ${orderedPhrase}.`;
   return callLlama(userPrompt);
 }

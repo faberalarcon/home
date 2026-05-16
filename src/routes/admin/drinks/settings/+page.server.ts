@@ -80,10 +80,7 @@ export const actions: Actions = {
   testQuip: async () => {
     const quip = await generateOrderQuip({
       profileName: 'Faber',
-      drinkName: 'pretzels',
-      itemCategory: 'snack',
-      allTimeCount: 7,
-      todayCount: 2
+      items: [{ name: 'pretzels', category: 'snack', quantity: 1 }]
     });
     if (!quip) {
       return fail(502, { quipError: 'No quip returned — check that tts_llm_enabled is true and the target model is loaded on llama.cpp.' });

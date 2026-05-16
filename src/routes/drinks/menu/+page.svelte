@@ -48,6 +48,23 @@
     return cart.filter((d) => d.id === drinkId).length;
   }
 
+  const submitLabel = $derived.by(() => {
+    if (!cart.length) return 'Order';
+    const distinct: Array<{ name: string; count: number }> = [];
+    for (const d of cart) {
+      const existing = distinct.find((x) => x.name === d.name);
+      if (existing) existing.count += 1;
+      else distinct.push({ name: d.name, count: 1 });
+    }
+    const itemized =
+      distinct.length === 1 && distinct[0].count === 1
+        ? `Order ${distinct[0].name}`
+        : `Order ${distinct.map((d) => `${d.count} × ${d.name}`).join(', ')}`;
+    return itemized.length > 40
+      ? `Order ${cart.length} item${cart.length === 1 ? '' : 's'}`
+      : itemized;
+  });
+
   function addToCart(drink: Drink) {
     cart = [...cart, drink];
     if (navigator.vibrate) navigator.vibrate(15);
@@ -215,7 +232,7 @@
           onclick={submitCart}
           disabled={submitting}
         >
-          {submitting ? '…' : `Order ${cart.length} drink${cart.length === 1 ? '' : 's'}`}
+          {submitting ? '…' : submitLabel}
         </button>
       </div>
     </div>

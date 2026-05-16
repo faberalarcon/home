@@ -1,6 +1,6 @@
 import { getSetting } from './db/settings';
 import { callService, getLightState } from './ha';
-import { generateOrderQuip, generateMilestoneQuip } from './tts-llm';
+import { generateOrderQuip, generateMilestoneQuip, type OrderItem } from './tts-llm';
 import { markDrinksActive } from './llm-priority';
 
 // Message pools per milestone category, cycled in order.
@@ -159,12 +159,23 @@ function isRateLimited(profileId: number): boolean {
 type TtsJob = {
   profileId: number;
   profileName: string;
-  drinkName: string;
-  itemCategory: string;
-  allTimeCount: number;
-  todayCount: number;
+  items: OrderItem[];
+  allTimeCount?: number;
+  todayCount?: number;
   firedMilestones: Array<{ name: string; threshold: number; scope: string; haTriggerEvent?: string }>;
 };
+
+/**
+ * Natural-language join of items for TTS fallback / HA event payload.
+ * 1× Martini → "martini"; 2× Flan → "2 flan"; mixed → oxford-comma list with "and".
+ */
+export function formatItemsForSpeech(items: OrderItem[]): string {
+  const parts = items.map((it) => (it.quantity > 1 ? `${it.quantity} ${it.name}` : it.name));
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+  return `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`;
+}
 
 const queue: TtsJob[] = [];
 let processing = false;
@@ -315,12 +326,11 @@ export async function runTtsTest(message: string): Promise<{ ok: true } | { ok: 
 async function doAnnounce(job: TtsJob): Promise<void> {
   const llmOrder = await generateOrderQuip({
     profileName: job.profileName,
-    drinkName: job.drinkName,
-    itemCategory: job.itemCategory,
+    items: job.items,
     allTimeCount: job.allTimeCount,
     todayCount: job.todayCount
   });
-  const base = llmOrder ?? `${job.profileName} ordered ${job.drinkName}.`;
+  const base = llmOrder ?? `${job.profileName} ordered ${formatItemsForSpeech(job.items)}.`;
 
   let extra: string | null = null;
   for (const m of job.firedMilestones) {
@@ -329,8 +339,7 @@ async function doAnnounce(job: TtsJob): Promise<void> {
       scope: m.scope,
       threshold: m.threshold,
       profileName: job.profileName,
-      drinkName: job.drinkName,
-      itemCategory: job.itemCategory
+      items: job.items
     });
     if (llmMilestone) {
       extra = llmMilestone;
@@ -354,10 +363,9 @@ export async function speakText(message: string): Promise<void> {
 export function announceDrinkOrder(
   profileId: number,
   profileName: string,
-  drinkName: string,
-  itemCategory: string,
-  allTimeCount: number,
-  todayCount: number,
+  items: OrderItem[],
+  allTimeCount: number | undefined,
+  todayCount: number | undefined,
   firedMilestones: Array<{ name: string; threshold: number; scope: string; haTriggerEvent?: string }>
 ): void {
   markDrinksActive();
@@ -365,6 +373,6 @@ export function announceDrinkOrder(
     console.log(`[tts] rate limit hit for profile ${profileId}, dropping announcement`);
     return;
   }
-  queue.push({ profileId, profileName, drinkName, itemCategory, allTimeCount, todayCount, firedMilestones });
+  queue.push({ profileId, profileName, items, allTimeCount, todayCount, firedMilestones });
   processQueue().catch((err) => console.error('[tts] queue error:', err));
 }
