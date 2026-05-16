@@ -17,6 +17,7 @@ const TAILNET_V4 = '100.64.0.0/10';
 const TAILNET_V6 = 'fd7a:115c:a1e0::/48';
 
 function isOnTailnet(event: Parameters<Handle>[0]['event']): boolean {
+  if (event.request.headers.get('x-tailscale-serve') === '1') return true;
   const headerIp = event.request.headers.get('x-real-ip')
     ?? event.request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     ?? '';
