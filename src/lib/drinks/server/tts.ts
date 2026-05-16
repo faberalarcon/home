@@ -241,17 +241,29 @@ async function flashLights(): Promise<void> {
   // If lights were already off, leave them off
 }
 
-async function ttsCall(message: string): Promise<void> {
+type TtsConfig = {
+  domain: string;
+  service: string;
+  serviceData: Record<string, string>;
+};
+
+function buildTtsConfig(message: string): { ok: true; config: TtsConfig } | { ok: false; reason: string } {
   const enabled = getSetting('tts_enabled');
-  if (!enabled || enabled === 'false' || enabled === '0') return;
+  if (!enabled || enabled === 'false' || enabled === '0') {
+    return { ok: false, reason: 'tts_enabled is off' };
+  }
 
   const mediaPlayerId = (getSetting('tts_entity_id') ?? '').trim();
-  if (!mediaPlayerId) return;
+  if (!mediaPlayerId) {
+    return { ok: false, reason: 'tts_entity_id is empty — set it in /admin/drinks/settings' };
+  }
 
   const engineId = (getSetting('tts_engine_id') ?? '').trim();
   const svcRaw = (getSetting('tts_service') ?? 'tts/speak').trim();
   const slash = svcRaw.indexOf('/');
-  if (slash < 1) return;
+  if (slash < 1) {
+    return { ok: false, reason: `tts_service "${svcRaw}" is malformed (expected "domain/service")` };
+  }
   const domain = svcRaw.slice(0, slash);
   const service = svcRaw.slice(slash + 1);
 
@@ -260,6 +272,17 @@ async function ttsCall(message: string): Promise<void> {
       ? { entity_id: engineId, media_player_entity_id: mediaPlayerId, message }
       : { entity_id: mediaPlayerId, message };
 
+  return { ok: true, config: { domain, service, serviceData } };
+}
+
+async function ttsCall(message: string): Promise<void> {
+  const built = buildTtsConfig(message);
+  if (!built.ok) {
+    console.warn(`[tts] skipped: ${built.reason}`);
+    return;
+  }
+  const { domain, service, serviceData } = built.config;
+
   // Fire TTS and light flash in parallel — light flash is non-critical
   const [result] = await Promise.all([
     callService(domain, service, serviceData),
@@ -267,6 +290,24 @@ async function ttsCall(message: string): Promise<void> {
   ]);
   if (!result.success) {
     console.error(`[tts] ${domain}/${service} failed: ${result.error}`);
+  }
+}
+
+/** Speak a fixed test message and return a structured result for surfacing in the admin UI. */
+export async function runTtsTest(message: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const built = buildTtsConfig(message);
+  if (!built.ok) {
+    return { ok: false, error: built.reason };
+  }
+  const { domain, service, serviceData } = built.config;
+  try {
+    const result = await callService(domain, service, serviceData);
+    if (!result.success) {
+      return { ok: false, error: `${domain}/${service}: ${result.error}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 

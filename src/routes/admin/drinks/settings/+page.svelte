@@ -23,6 +23,12 @@
 {#if form?.quipError}
   <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">{form.quipError}</div>
 {/if}
+{#if form?.ttsTestOk}
+  <div class="mb-4 px-4 py-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-sm text-emerald-300">✓ TTS test sent — listen on the configured speaker.</div>
+{/if}
+{#if form?.ttsTestError}
+  <div class="mb-4 px-4 py-3 rounded-lg bg-red-950/60 border border-red-800 text-sm text-red-300">TTS test failed: {form.ttsTestError}</div>
+{/if}
 
 <form method="POST" action="?/save" class="space-y-6 max-w-lg">
   <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
@@ -131,6 +137,16 @@
         class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-500"
       />
       <p class="text-xs text-slate-500 mt-1">When set, flashes this light a random color on every TTS announcement.</p>
+    </div>
+
+    <div>
+      <button
+        type="submit" formaction="?/testTts"
+        class="px-3 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition"
+      >
+        Test TTS now
+      </button>
+      <span class="ml-2 text-xs text-slate-500">Save first if you changed the entity ID or service.</span>
     </div>
   </div>
 

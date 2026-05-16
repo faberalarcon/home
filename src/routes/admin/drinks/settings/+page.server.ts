@@ -3,6 +3,7 @@ import { fail } from '@sveltejs/kit';
 import { getConfiguredSitePasswordHash } from '$lib/drinks/server/site-access';
 import { validateOutboundUrl } from '$lib/drinks/server/url-allowlist';
 import { generateOrderQuip } from '$lib/drinks/server/tts-llm';
+import { runTtsTest } from '$lib/drinks/server/tts';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -66,6 +67,14 @@ export const actions: Actions = {
     if (ttsLlmSystemPrompt) setSetting('tts_llm_system_prompt', ttsLlmSystemPrompt);
 
     return { saved: true };
+  },
+
+  testTts: async () => {
+    const result = await runTtsTest('Living room speaker test from admin.');
+    if (!result.ok) {
+      return fail(400, { ttsTestError: result.error });
+    }
+    return { ttsTestOk: true };
   },
 
   testQuip: async () => {
