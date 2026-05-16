@@ -130,10 +130,9 @@
         <BristoeCard variant={cardVariant(service.severity)} class="service-card">
           <div class="service-card__top">
             <p>{service.label}</p>
-            <StatusPill status={service.severity} label={service.value} />
+            <StatusPill status={service.severity} label="" />
           </div>
-          <h2>{service.value}</h2>
-          <p class="service-card__detail">{service.detail}</p>
+          <h2 class="service-card__detail">{service.detail}</h2>
         </BristoeCard>
       {/each}
     </div>
@@ -592,16 +591,15 @@
   :global(.service-card h2) {
     margin: 0.7rem 0 0;
     font-family: var(--font-mono);
-    font-size: clamp(1.35rem, 2vw, 1.85rem);
-    line-height: 1;
+    font-size: clamp(1.05rem, 1.55vw, 1.35rem);
+    line-height: 1.25;
     color: var(--color-ink-900);
+    white-space: normal;
+    text-wrap: balance;
   }
 
   .service-card__detail {
-    margin: 0.8rem 0 0;
-    font-size: 0.85rem;
-    line-height: 1.35;
-    color: var(--color-ink-500);
+    margin: 0.7rem 0 0;
   }
 
   .ops-layout {

@@ -12,7 +12,7 @@
     home: '',
     drinks: 'Drinks',
     stats: 'Stats',
-    gooby: 'GoobyGPT'
+    gooby: 'GPT'
   };
 
   const suffix = $derived(suffixBySite[site]);

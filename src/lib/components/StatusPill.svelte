@@ -20,12 +20,13 @@
     class: className = ''
   }: Props = $props();
 
-  const text = $derived(label ?? labels[status]);
+  const fallback = $derived(labels[status]);
+  const text = $derived(label === undefined ? fallback : label);
 </script>
 
-<span class={`status-pill ${className}`.trim()} data-status={status}>
+<span class={`status-pill ${className}`.trim()} data-status={status} aria-label={fallback}>
   <span class="status-pill__dot" aria-hidden="true"></span>
-  <span>{text}</span>
+  {#if text}<span>{text}</span>{/if}
 </span>
 
 <style>

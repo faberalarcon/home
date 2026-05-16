@@ -159,6 +159,7 @@ export type SessionStats = {
   lastReplyTokens: number;
   elapsedMsTotal: number;
   liveCompletionTokens: number;
+  liveElapsedMs: number;
   streamStartMs: number | null;
 };
 
@@ -171,6 +172,7 @@ function emptyStats(): SessionStats {
     lastReplyTokens: 0,
     elapsedMsTotal: 0,
     liveCompletionTokens: 0,
+    liveElapsedMs: 0,
     streamStartMs: null
   };
 }
@@ -244,8 +246,14 @@ export class GoobyChat {
 
   get tokensPerSecondAvg(): number | null {
     const stats = this.currentStats;
-    if (!stats || stats.elapsedMsTotal <= 0 || stats.completionTokensTotal <= 0) return null;
-    return stats.completionTokensTotal / (stats.elapsedMsTotal / 1000);
+    if (!stats) return null;
+    if (stats.streamStartMs != null && stats.liveElapsedMs > 0 && stats.liveCompletionTokens > 0) {
+      return stats.liveCompletionTokens / (stats.liveElapsedMs / 1000);
+    }
+    if (stats.elapsedMsTotal > 0 && stats.completionTokensTotal > 0) {
+      return stats.completionTokensTotal / (stats.elapsedMsTotal / 1000);
+    }
+    return null;
   }
 
   get contextLimit(): number | null {
@@ -473,6 +481,7 @@ export class GoobyChat {
     const stats = this.statsFor(statsKey);
     stats.streamStartMs = performance.now();
     stats.liveCompletionTokens = 0;
+    stats.liveElapsedMs = 0;
     let usageSeen = false;
 
     try {
@@ -530,6 +539,9 @@ export class GoobyChat {
         }
         if (parsed.contentEventCount > 0) {
           stats.liveCompletionTokens += parsed.contentEventCount;
+          if (stats.streamStartMs != null) {
+            stats.liveElapsedMs = Math.max(1, performance.now() - stats.streamStartMs);
+          }
         }
         if (parsed.usage) {
           usageSeen = true;
@@ -541,6 +553,7 @@ export class GoobyChat {
           stats.lastReplyTokens = parsed.usage.completionTokens;
           if (elapsed > 0) stats.elapsedMsTotal += elapsed;
           stats.liveCompletionTokens = 0;
+          stats.liveElapsedMs = 0;
           stats.streamStartMs = null;
         }
         if (parsed.content || parsed.reasoning) {
@@ -600,6 +613,7 @@ export class GoobyChat {
             finalStats.lastReplyTokens = finalStats.liveCompletionTokens;
           }
           finalStats.liveCompletionTokens = 0;
+          finalStats.liveElapsedMs = 0;
           finalStats.streamStartMs = null;
         }
       }

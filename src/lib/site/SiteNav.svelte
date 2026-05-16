@@ -15,7 +15,7 @@
     { key: 'home', label: 'Home', href: '/' },
     { key: 'drinks', label: 'Drinks', href: '/drinks/' },
     { key: 'stats', label: 'Stats', href: '/stats/' },
-    { key: 'gooby', label: 'GoobyGPT', href: '/gooby/' },
+    { key: 'gooby', label: 'GPT', href: '/gooby/' },
     { key: 'gallery', label: 'Gallery', href: '/gallery/' }
   ];
 
@@ -131,6 +131,7 @@
     align-items: center;
     justify-content: center;
     min-height: 2rem;
+    min-width: 5.5rem;
     padding: 0.28rem 0.68rem;
     border: 1px solid rgba(241, 244, 247, 0.22);
     border-radius: var(--radius-sm, 0.5rem);
@@ -196,8 +197,11 @@
     }
 
     .site-nav__pill {
+      width: 100%;
+      min-width: 0;
       min-height: 2.6rem;
-      justify-content: flex-start;
+      justify-content: center;
+      text-align: center;
       padding: 0.65rem 0.85rem;
       font-size: 0.72rem;
       letter-spacing: 0.08em;

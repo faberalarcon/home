@@ -1,6 +1,7 @@
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { json, redirect, type Handle } from '@sveltejs/kit';
 import { timingSafeEqual } from 'node:crypto';
+import { dev } from '$app/environment';
 import { db } from '$lib/drinks/server/db';
 import { bootstrapSettings } from '$lib/drinks/server/db/settings';
 import { verifySessionToken } from '$lib/drinks/server/auth';
@@ -10,6 +11,23 @@ import {
 } from '$lib/drinks/server/admin-password';
 import { getConfiguredSitePasswordHash } from '$lib/drinks/server/site-access';
 import { getConfiguredGoobyPasswordHash } from '$lib/gooby/auth';
+import { isInCidr } from '$lib/site/cidr';
+
+const TAILNET_V4 = '100.64.0.0/10';
+const TAILNET_V6 = 'fd7a:115c:a1e0::/48';
+
+function isOnTailnet(event: Parameters<Handle>[0]['event']): boolean {
+  const headerIp = event.request.headers.get('x-real-ip')
+    ?? event.request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? '';
+  let ip = headerIp;
+  if (!ip) {
+    try { ip = event.getClientAddress(); } catch { ip = ''; }
+  }
+  if (!ip) return false;
+  const stripped = ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+  return isInCidr(stripped, TAILNET_V4) || isInCidr(stripped, TAILNET_V6);
+}
 
 const isProduction = process.env.NODE_ENV === 'production';
 const rootAdminSecret = process.env.ADMIN_SHARED_SECRET ?? '';
@@ -81,6 +99,7 @@ function isDrinkPublicPath(path: string): boolean {
     path === '/api/health' ||
     path === '/api/stats' ||
     path === '/admin/login' ||
+    path === '/admin-blocked' ||
     path.startsWith('/_app/') ||
     path.startsWith('/icons/') ||
     path === '/favicon.png' ||
@@ -137,6 +156,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   if (event.url.pathname.startsWith('/drinks')) {
     const path = drinkRoutePath(event.url.pathname);
+
+    if ((path === '/admin' || path.startsWith('/admin/')) && path !== '/admin-blocked') {
+      if (!dev && !isOnTailnet(event)) {
+        throw redirect(303, withDrinksBase('/admin-blocked'));
+      }
+    }
+
     const sitePasswordHash = getConfiguredSitePasswordHash();
     const siteToken = event.cookies.get('site_session');
     const adminToken = event.cookies.get('admin_session');
@@ -164,7 +190,7 @@ export const handle: Handle = async ({ event, resolve }) => {
       throw redirect(303, loginUrl);
     }
 
-    if (path.startsWith('/admin') && path !== '/admin/login') {
+    if ((path === '/admin' || path.startsWith('/admin/')) && path !== '/admin/login') {
       if (!event.locals.drinkAdminAuthenticated) {
         throw redirect(303, withDrinksBase('/admin/login'));
       }
