@@ -70,7 +70,6 @@ ensure_root_env() {
     {
         printf '# Created by deploy/deploy.sh during unified home repo migration.\n'
         printf '# Keep this file untracked; it supplies docker compose production secrets.\n'
-        printf 'ORIGIN=https://21bristoe.com\n'
         printf 'CSRF_TRUSTED_ORIGINS=https://21bristoe.com,https://admin.21bristoe.com\n'
         printf 'DRINK_HUB_DATA_DIR=%s\n' "$DRINK_HUB_DATA_DIR"
         printf 'MEDIA_DIR=%s\n' "$MEDIA_DIR"

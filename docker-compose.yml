@@ -24,7 +24,6 @@ services:
       - DATABASE_PATH=/app/data/drink-hub.db
       - UPLOADS_DIR=/var/www/21bristoe-media
       - BODY_SIZE_LIMIT=104857600
-      - ORIGIN=${ORIGIN:-https://21bristoe.com}
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-https://21bristoe.com,https://admin.21bristoe.com}
       - PROTOCOL_HEADER=x-forwarded-proto
       - HOST_HEADER=x-forwarded-host
