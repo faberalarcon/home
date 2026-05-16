@@ -17,8 +17,6 @@ NGINX_CONF_REPO="$REPO_DIR/deploy/nginx/21bristoe.com.ssl.conf"
 NGINX_CONF_LIVE="/etc/nginx/sites-available/21bristoe.com"
 ADMIN_NGINX_CONF_REPO="$REPO_DIR/deploy/nginx/admin.21bristoe.com.conf"
 ADMIN_NGINX_CONF_LIVE="/etc/nginx/sites-available/admin.21bristoe.com"
-TSNET_NGINX_CONF_REPO="$REPO_DIR/deploy/nginx/ai.tail9b2fcb.ts.net.conf"
-TSNET_NGINX_CONF_LIVE="/etc/nginx/sites-available/ai.tail9b2fcb.ts.net"
 LEGACY_NGINX_SITES=("drink-hub.21bristoe.com" "stats.21bristoe.com")
 LEGACY_CONTAINERS=("drink-hub" "21bristoe-stats")
 
@@ -171,8 +169,6 @@ echo "      Unified site container running."
 echo "[5/7] Installing and testing nginx config..."
 sudo cp "$NGINX_CONF_REPO" "$NGINX_CONF_LIVE"
 sudo cp "$ADMIN_NGINX_CONF_REPO" "$ADMIN_NGINX_CONF_LIVE"
-sudo cp "$TSNET_NGINX_CONF_REPO" "$TSNET_NGINX_CONF_LIVE"
-sudo ln -sf "$TSNET_NGINX_CONF_LIVE" "/etc/nginx/sites-enabled/ai.tail9b2fcb.ts.net"
 for site in "${LEGACY_NGINX_SITES[@]}"; do
     retire_legacy_nginx_site "$site"
 done
