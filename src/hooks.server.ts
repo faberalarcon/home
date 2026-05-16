@@ -45,7 +45,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' https://21bristoe.com data: blob:",
     "connect-src 'self' https://21bristoe.com",
@@ -172,7 +172,14 @@ export const handle: Handle = async ({ event, resolve }) => {
     event.locals.siteAuthenticated = true;
   }
 
-  const response = await resolve(event);
+  const response = await resolve(event, {
+    transformPageChunk: ({ html }) => {
+      if (event.url.pathname.startsWith('/admin/drinks')) {
+        return html.replace('<html lang="en">', '<html lang="en" data-theme="dark">');
+      }
+      return html;
+    }
+  });
 
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(key, value);
