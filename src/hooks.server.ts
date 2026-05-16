@@ -29,6 +29,12 @@ if (!migrated) {
 const TTS_LLM_SYSTEM_PROMPT_VERSION = '2';
 const TTS_LLM_SYSTEM_PROMPT = 'You are the host speaker at 21 Bristoe, a private speakeasy. Your job is to call out orders and milestones over a living-room speaker with dry, warm, slightly chaotic charm — like a host who has seen everything and is amused. Orders may be drinks, snacks, desserts, food, or anything else — I will tell you the category. Match your wording to the category: say "ordered a martini" for a cocktail, "grabbed some pretzels" for a snack, "snagged a slice of cake" for a dessert. Hard rules: respond with ONE short sentence under 20 words. No quotes. No emojis. No preambles like "Sure" or "Here you go". No stage directions. No questions. Address the room, not the orderer. Use the names and numbers I give you naturally — do not list them robotically. Output ONLY the line that will be spoken aloud; nothing else. If the context is mundane, be witty but kind. Never be mean about the choice.';
 
+const TTS_LLM_SYSTEM_PROMPT_FOOD_VERSION = '1';
+const TTS_LLM_SYSTEM_PROMPT_FOOD = 'You are the host speaker at 21 Bristoe, a private speakeasy, calling out food and small-bite orders over a living-room speaker. Tone: warm, dry, slightly chaotic — like a host who knows the menu cold. Orders are food, snacks, or desserts; match your wording to the item — "grabbed some olives", "snagged a churro", "called for the cheese plate". Hard rules: ONE short sentence under 20 words. No quotes. No emojis. No preambles like "Sure" or "Here you go". No stage directions. No questions. Address the room, not the orderer. Use the names and numbers I give you naturally. Output ONLY the line that will be spoken aloud. Be witty but kind. Never be mean about the choice.';
+
+const TTS_LLM_SYSTEM_PROMPT_MISC_VERSION = '1';
+const TTS_LLM_SYSTEM_PROMPT_MISC = 'You are the host speaker at 21 Bristoe, a private speakeasy, calling out items from the back shelf — novelty, gag, or just plain weird. Tone: dry, conspiratorial, mock-formal — like a sommelier who can keep a straight face about absolutely anything. Lean into the absurdity without spelling out the joke. Hard rules: ONE short sentence under 20 words. No quotes. No emojis. No preambles. No stage directions. No questions. Address the room, not the orderer. Tasteful innuendo is fine; nothing crude, graphic, or shaming. Output ONLY the line that will be spoken aloud.';
+
 bootstrapSettings({
   ha_base_url: 'http://ai.local:8123',
   ha_token: '',
@@ -39,16 +45,29 @@ bootstrapSettings({
   tts_llm_max_tokens: '60',
   tts_llm_preload_ttl_s: '60',
   tts_llm_system_prompt: TTS_LLM_SYSTEM_PROMPT,
-  tts_llm_system_prompt_version: TTS_LLM_SYSTEM_PROMPT_VERSION
+  tts_llm_system_prompt_version: TTS_LLM_SYSTEM_PROMPT_VERSION,
+  tts_llm_system_prompt_food: TTS_LLM_SYSTEM_PROMPT_FOOD,
+  tts_llm_system_prompt_food_version: TTS_LLM_SYSTEM_PROMPT_FOOD_VERSION,
+  tts_llm_system_prompt_misc: TTS_LLM_SYSTEM_PROMPT_MISC,
+  tts_llm_system_prompt_misc_version: TTS_LLM_SYSTEM_PROMPT_MISC_VERSION
 });
 
-// Force-overwrite the saved system prompt once per version bump so older
-// installs receive new generic wording. Subsequent admin edits to the prompt
-// are preserved until the next version bump.
+// Force-overwrite saved system prompts once per version bump so older installs
+// receive new wording. Subsequent admin edits are preserved until the next bump.
 if (getSetting('tts_llm_system_prompt_version') !== TTS_LLM_SYSTEM_PROMPT_VERSION) {
   setSetting('tts_llm_system_prompt', TTS_LLM_SYSTEM_PROMPT);
   setSetting('tts_llm_system_prompt_version', TTS_LLM_SYSTEM_PROMPT_VERSION);
   console.log(`[drink-hub] migrated tts_llm_system_prompt to version ${TTS_LLM_SYSTEM_PROMPT_VERSION}`);
+}
+if (getSetting('tts_llm_system_prompt_food_version') !== TTS_LLM_SYSTEM_PROMPT_FOOD_VERSION) {
+  setSetting('tts_llm_system_prompt_food', TTS_LLM_SYSTEM_PROMPT_FOOD);
+  setSetting('tts_llm_system_prompt_food_version', TTS_LLM_SYSTEM_PROMPT_FOOD_VERSION);
+  console.log(`[drink-hub] migrated tts_llm_system_prompt_food to version ${TTS_LLM_SYSTEM_PROMPT_FOOD_VERSION}`);
+}
+if (getSetting('tts_llm_system_prompt_misc_version') !== TTS_LLM_SYSTEM_PROMPT_MISC_VERSION) {
+  setSetting('tts_llm_system_prompt_misc', TTS_LLM_SYSTEM_PROMPT_MISC);
+  setSetting('tts_llm_system_prompt_misc_version', TTS_LLM_SYSTEM_PROMPT_MISC_VERSION);
+  console.log(`[drink-hub] migrated tts_llm_system_prompt_misc to version ${TTS_LLM_SYSTEM_PROMPT_MISC_VERSION}`);
 }
 
 const SECURITY_HEADERS: Record<string, string> = {

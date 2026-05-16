@@ -210,13 +210,35 @@
     </div>
 
     <div>
-      <label class="block text-sm text-slate-400 mb-1" for="ttsLlmSystemPrompt">System prompt</label>
+      <label class="block text-sm text-slate-400 mb-1" for="ttsLlmSystemPrompt">Default / drinks prompt</label>
       <textarea
         id="ttsLlmSystemPrompt" name="ttsLlmSystemPrompt" rows="8"
         class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-slate-500"
       >{data.ttsLlmSystemPrompt}</textarea>
       <p class="text-xs text-slate-500 mt-1">
-        Keep under ~250 tokens. The user prompt the server adds is a single short line with the profile, drink, today count, all-time count (or the milestone details).
+        Used for drinks (cocktail, beer, wine, spirit, liquor, coffee, non-alcoholic) and any mixed-category cart. Also used for milestone quips. Keep under ~250 tokens.
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="ttsLlmSystemPromptFood">Food prompt <span class="text-slate-600">(food / snack / dessert)</span></label>
+      <textarea
+        id="ttsLlmSystemPromptFood" name="ttsLlmSystemPromptFood" rows="8"
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-slate-500"
+      >{data.ttsLlmSystemPromptFood}</textarea>
+      <p class="text-xs text-slate-500 mt-1">
+        Used when every item in the cart is food, snack, or dessert. Clear to fall back to the default prompt.
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-sm text-slate-400 mb-1" for="ttsLlmSystemPromptMisc">Novelty / misc prompt <span class="text-slate-600">(novelty / other)</span></label>
+      <textarea
+        id="ttsLlmSystemPromptMisc" name="ttsLlmSystemPromptMisc" rows="8"
+        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-slate-500"
+      >{data.ttsLlmSystemPromptMisc}</textarea>
+      <p class="text-xs text-slate-500 mt-1">
+        Used when every item in the cart is novelty (or other). Clear to fall back to the default prompt.
       </p>
     </div>
 

@@ -26,8 +26,23 @@ function maxTokens(): number {
   return Number.isFinite(v) && v > 0 ? v : 60;
 }
 
-function systemPrompt(): string {
+const FOOD_CATEGORIES = new Set(['food', 'snack', 'dessert']);
+const MISC_CATEGORIES = new Set(['novelty', 'other']);
+
+function defaultSystemPrompt(): string {
   return (getSetting('tts_llm_system_prompt') ?? '').trim();
+}
+
+function resolveSystemPrompt(items: OrderItem[]): string {
+  const fallback = defaultSystemPrompt();
+  if (items.length === 0) return fallback;
+  if (items.every((i) => FOOD_CATEGORIES.has(i.category))) {
+    return (getSetting('tts_llm_system_prompt_food') ?? '').trim() || fallback;
+  }
+  if (items.every((i) => MISC_CATEGORIES.has(i.category))) {
+    return (getSetting('tts_llm_system_prompt_misc') ?? '').trim() || fallback;
+  }
+  return fallback;
 }
 
 export function sanitizeQuip(raw: string): string | null {
@@ -96,8 +111,8 @@ function formatItemsForPrompt(items: OrderItem[]): string {
   return items.map((it) => `${it.quantity} × ${it.name} (${it.category})`).join(', ');
 }
 
-async function callLlama(userPrompt: string): Promise<string | null> {
-  const sys = systemPrompt();
+async function callLlama(systemPromptText: string, userPrompt: string): Promise<string | null> {
+  const sys = systemPromptText.trim();
   if (!sys) return null;
   const model = targetModel();
 
@@ -159,6 +174,8 @@ async function callLlama(userPrompt: string): Promise<string | null> {
 
 export async function generateOrderQuip(ctx: OrderQuipContext): Promise<string | null> {
   if (!isEnabled()) return null;
+  const sys = resolveSystemPrompt(ctx.items);
+  if (!sys) return null;
   const itemsPart = formatItemsForPrompt(ctx.items);
   const lead = ctx.items.length === 1
     ? `Order: ${ctx.profileName} just ordered ${itemsPart}.`
@@ -167,13 +184,15 @@ export async function generateOrderQuip(ctx: OrderQuipContext): Promise<string |
     ctx.todayCount !== undefined && ctx.allTimeCount !== undefined
       ? ` They've had ${ctx.todayCount} today, ${ctx.allTimeCount} all-time.`
       : '';
-  return callLlama(`${lead}${countsPart}`);
+  return callLlama(sys, `${lead}${countsPart}`);
 }
 
 export async function generateMilestoneQuip(ctx: MilestoneQuipContext): Promise<string | null> {
   if (!isEnabled()) return null;
+  const sys = defaultSystemPrompt();
+  if (!sys) return null;
   const itemsPart = formatItemsForPrompt(ctx.items);
   const orderedPhrase = ctx.items.length === 1 ? `ordered ${itemsPart}` : `ordered: ${itemsPart}`;
   const userPrompt = `Milestone "${ctx.milestoneName}" hit: scope ${ctx.scope}, threshold ${ctx.threshold}. ${ctx.profileName} ${orderedPhrase}.`;
-  return callLlama(userPrompt);
+  return callLlama(sys, userPrompt);
 }

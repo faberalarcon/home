@@ -22,7 +22,9 @@ export const load: PageServerLoad = async () => {
     ttsLlmTimeoutMs: getSetting('tts_llm_timeout_ms') ?? '3000',
     ttsLlmMaxTokens: getSetting('tts_llm_max_tokens') ?? '60',
     ttsLlmPreloadTtlS: getSetting('tts_llm_preload_ttl_s') ?? '60',
-    ttsLlmSystemPrompt: getSetting('tts_llm_system_prompt') ?? ''
+    ttsLlmSystemPrompt: getSetting('tts_llm_system_prompt') ?? '',
+    ttsLlmSystemPromptFood: getSetting('tts_llm_system_prompt_food') ?? '',
+    ttsLlmSystemPromptMisc: getSetting('tts_llm_system_prompt_misc') ?? ''
   };
 };
 
@@ -59,12 +61,16 @@ export const actions: Actions = {
     const ttsLlmMaxTokens = ((fd.get('ttsLlmMaxTokens') as string | null) ?? '').trim() || '60';
     const ttsLlmPreloadTtlS = ((fd.get('ttsLlmPreloadTtlS') as string | null) ?? '').trim() || '60';
     const ttsLlmSystemPrompt = ((fd.get('ttsLlmSystemPrompt') as string | null) ?? '').trim();
+    const ttsLlmSystemPromptFood = ((fd.get('ttsLlmSystemPromptFood') as string | null) ?? '').trim();
+    const ttsLlmSystemPromptMisc = ((fd.get('ttsLlmSystemPromptMisc') as string | null) ?? '').trim();
     setSetting('tts_llm_enabled', ttsLlmEnabled);
     setSetting('tts_llm_model', ttsLlmModel);
     setSetting('tts_llm_timeout_ms', ttsLlmTimeoutMs);
     setSetting('tts_llm_max_tokens', ttsLlmMaxTokens);
     setSetting('tts_llm_preload_ttl_s', ttsLlmPreloadTtlS);
     if (ttsLlmSystemPrompt) setSetting('tts_llm_system_prompt', ttsLlmSystemPrompt);
+    if (ttsLlmSystemPromptFood) setSetting('tts_llm_system_prompt_food', ttsLlmSystemPromptFood);
+    if (ttsLlmSystemPromptMisc) setSetting('tts_llm_system_prompt_misc', ttsLlmSystemPromptMisc);
 
     return { saved: true };
   },
