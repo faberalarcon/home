@@ -3,7 +3,7 @@ import { milestones, drinks, profiles } from '$lib/drinks/server/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import { speakText, nextMilestoneMessage } from '$lib/drinks/server/tts';
-import { appPath } from '$lib/drinks/app-paths';
+import { adminPath } from '$lib/drinks/app-paths';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -52,7 +52,7 @@ export const actions: Actions = {
         .run();
     }
 
-    redirect(303, appPath('/admin/milestones'));
+    redirect(303, adminPath('/milestones'));
   },
 
   delete: async ({ request }) => {
@@ -60,7 +60,7 @@ export const actions: Actions = {
     const id = Number(fd.get('id'));
     if (!id) return fail(400, { error: 'Missing id' });
     db.delete(milestones).where(eq(milestones.id, id)).run();
-    redirect(303, appPath('/admin/milestones'));
+    redirect(303, adminPath('/milestones'));
   },
 
   testTts: async ({ request }) => {

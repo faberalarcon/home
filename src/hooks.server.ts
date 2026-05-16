@@ -1,33 +1,11 @@
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { json, redirect, type Handle } from '@sveltejs/kit';
 import { timingSafeEqual } from 'node:crypto';
-import { dev } from '$app/environment';
 import { db } from '$lib/drinks/server/db';
 import { bootstrapSettings } from '$lib/drinks/server/db/settings';
 import { verifySessionToken } from '$lib/drinks/server/auth';
-import {
-  bootstrapAdminPassword,
-  isAdminPasswordConfigured
-} from '$lib/drinks/server/admin-password';
 import { getConfiguredSitePasswordHash } from '$lib/drinks/server/site-access';
 import { getConfiguredGoobyPasswordHash } from '$lib/gooby/auth';
-import { isInCidr } from '$lib/site/cidr';
-
-const TAILNET_V4 = '100.64.0.0/10';
-const TAILNET_V6 = 'fd7a:115c:a1e0::/48';
-
-function isOnTailnet(event: Parameters<Handle>[0]['event']): boolean {
-  const headerIp = event.request.headers.get('x-real-ip')
-    ?? event.request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    ?? '';
-  let ip = headerIp;
-  if (!ip) {
-    try { ip = event.getClientAddress(); } catch { ip = ''; }
-  }
-  if (!ip) return false;
-  const stripped = ip.startsWith('::ffff:') ? ip.slice(7) : ip;
-  return isInCidr(stripped, TAILNET_V4) || isInCidr(stripped, TAILNET_V6);
-}
 
 const isProduction = process.env.NODE_ENV === 'production';
 const rootAdminSecret = process.env.ADMIN_SHARED_SECRET ?? '';
@@ -61,26 +39,6 @@ bootstrapSettings({
     'You are the bar speaker at 21 Bristoe, a private speakeasy. Your job is to call out drink orders and milestones over a living-room speaker with dry, warm, slightly chaotic charm — like a barista who has seen everything and is amused. Hard rules: respond with ONE short sentence under 20 words. No quotes. No emojis. No preambles like "Sure" or "Here you go". No stage directions. No questions. Address the room, not the drinker. Use the names and numbers I give you naturally — do not list them robotically. Output ONLY the line that will be spoken aloud; nothing else. If the context is mundane, be witty but kind. Never be mean about the drink choice.'
 });
 
-const adminBootstrap = bootstrapAdminPassword();
-if (adminBootstrap.generatedPassword) {
-  console.log('');
-  console.log('==============================================================');
-  console.log('[drink-hub] INITIAL ADMIN PASSWORD: ' + adminBootstrap.generatedPassword);
-  console.log(`[drink-hub] Log in at ${withDrinksBase('/admin/login')} and change it immediately.`);
-  console.log('==============================================================');
-  console.log('');
-} else if (adminBootstrap.source === 'env') {
-  console.log('[drink-hub] admin password seeded from ADMIN_PASSWORD env var');
-}
-
-if (process.env.ADMIN_PIN || process.env.ADMIN_PIN_HASH) {
-  console.warn(
-    '[drink-hub] ADMIN_PIN / ADMIN_PIN_HASH are deprecated and ignored. ' +
-      'Use ADMIN_PASSWORD (or let the server generate a temp password) and ' +
-      `manage the credential from ${withDrinksBase('/admin/settings')}.`
-  );
-}
-
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',
@@ -105,8 +63,6 @@ function isDrinkPublicPath(path: string): boolean {
     path === '/login' ||
     path === '/api/health' ||
     path === '/api/stats' ||
-    path === '/admin/login' ||
-    path === '/admin-blocked' ||
     path.startsWith('/_app/') ||
     path.startsWith('/icons/') ||
     path === '/favicon.png' ||
@@ -145,7 +101,7 @@ function verifyRootAdminProxy(event: Parameters<Handle>[0]['event']): boolean {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
-  event.locals.rootAdminAuthenticated = false;
+  event.locals.rootAdminAuthenticated = verifyRootAdminProxy(event);
   event.locals.goobyPasswordEnabled = false;
   event.locals.goobyAuthenticated = false;
 
@@ -154,7 +110,6 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   if (event.url.pathname.startsWith('/admin/')) {
-    event.locals.rootAdminAuthenticated = verifyRootAdminProxy(event);
     if (!event.locals.rootAdminAuthenticated) {
       console.warn(`[admin] blocked request without trusted proxy auth: ${event.request.method} ${event.url.pathname}`);
       return json({ error: 'Forbidden' }, { status: 403 });
@@ -164,24 +119,13 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (event.url.pathname.startsWith('/drinks')) {
     const path = drinkRoutePath(event.url.pathname);
 
-    if ((path === '/admin' || path.startsWith('/admin/')) && path !== '/admin-blocked') {
-      if (!dev && !isOnTailnet(event)) {
-        throw redirect(303, withDrinksBase('/admin-blocked'));
-      }
-    }
-
     const sitePasswordHash = getConfiguredSitePasswordHash();
     const siteToken = event.cookies.get('site_session');
-    const adminToken = event.cookies.get('admin_session');
 
     event.locals.sitePasswordEnabled = !!sitePasswordHash;
     event.locals.siteAuthenticated = event.locals.sitePasswordEnabled
       ? verifySessionToken(siteToken, 'site')
       : true;
-    event.locals.drinkAdminAuthenticated = isAdminPasswordConfigured()
-      ? verifySessionToken(adminToken, 'admin')
-      : false;
-    event.locals.adminAuthenticated = event.locals.drinkAdminAuthenticated;
 
     if (event.locals.sitePasswordEnabled && !event.locals.siteAuthenticated && !isDrinkPublicPath(path)) {
       if (path.startsWith('/api/')) {
@@ -196,12 +140,6 @@ export const handle: Handle = async ({ event, resolve }) => {
       const loginUrl = `${withDrinksBase('/login')}?next=${encodeURIComponent(next)}${pw ? `&pw=${encodeURIComponent(pw)}` : ''}`;
       throw redirect(303, loginUrl);
     }
-
-    if ((path === '/admin' || path.startsWith('/admin/')) && path !== '/admin/login') {
-      if (!event.locals.drinkAdminAuthenticated) {
-        throw redirect(303, withDrinksBase('/admin/login'));
-      }
-    }
   } else if (event.url.pathname.startsWith('/gooby')) {
     const goobyPasswordHash = getConfiguredGoobyPasswordHash();
     const goobyToken = event.cookies.get('gooby_session');
@@ -212,8 +150,6 @@ export const handle: Handle = async ({ event, resolve }) => {
       : false;
     event.locals.sitePasswordEnabled = false;
     event.locals.siteAuthenticated = true;
-    event.locals.drinkAdminAuthenticated = false;
-    event.locals.adminAuthenticated = false;
 
     if ((!event.locals.goobyPasswordEnabled || !event.locals.goobyAuthenticated) && !isGoobyPublicPath(event.url.pathname)) {
       if (event.url.pathname.startsWith('/gooby/api/')) {
@@ -234,8 +170,6 @@ export const handle: Handle = async ({ event, resolve }) => {
   } else {
     event.locals.sitePasswordEnabled = false;
     event.locals.siteAuthenticated = true;
-    event.locals.drinkAdminAuthenticated = false;
-    event.locals.adminAuthenticated = false;
   }
 
   const response = await resolve(event);

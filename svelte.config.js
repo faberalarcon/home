@@ -6,8 +6,7 @@ const defaultTrustedOrigins = [
   'https://www.21bristoe.com',
   'https://admin.21bristoe.com',
   'https://drink-hub.21bristoe.com',
-  'https://stats.21bristoe.com',
-  'https://ai.tail9b2fcb.ts.net'
+  'https://stats.21bristoe.com'
 ];
 
 const envTrustedOrigins = (process.env.CSRF_TRUSTED_ORIGINS ?? '')

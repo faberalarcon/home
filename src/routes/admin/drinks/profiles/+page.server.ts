@@ -3,7 +3,7 @@ import { profiles } from '$lib/drinks/server/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import { saveImage } from '$lib/drinks/server/uploads';
-import { appPath } from '$lib/drinks/app-paths';
+import { adminPath } from '$lib/drinks/app-paths';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -59,7 +59,7 @@ export const actions: Actions = {
       }
     }
 
-    redirect(303, appPath('/admin/profiles'));
+    redirect(303, adminPath('/profiles'));
   },
 
   delete: async ({ request }) => {
@@ -72,6 +72,6 @@ export const actions: Actions = {
       // FK constraint — profile has orders; deactivate instead
       db.update(profiles).set({ active: false }).where(eq(profiles.id, id)).run();
     }
-    redirect(303, appPath('/admin/profiles'));
+    redirect(303, adminPath('/profiles'));
   }
 };

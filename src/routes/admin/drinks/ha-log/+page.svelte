@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { appPath } from '$lib/drinks/app-paths';
+  import { adminPath } from '$lib/drinks/app-paths';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -22,7 +22,7 @@
 <div class="flex gap-2 mb-4">
   {#each [['', 'All'], ['success', 'Success'], ['failure', 'Failure']] as [val, label]}
     <a
-      href={`${appPath('/admin/ha-log')}${val ? `?filter=${val}` : ''}`}
+      href={`${adminPath('/ha-log')}${val ? `?filter=${val}` : ''}`}
       class="text-xs px-3 py-1.5 rounded-full border transition {(data.filter ?? '') === val
         ? 'bg-slate-700 border-slate-600 text-white'
         : 'border-slate-700 text-slate-400 hover:text-slate-200'}"

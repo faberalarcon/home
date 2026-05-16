@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { appPath, assetPath, thumbPath } from '$lib/drinks/app-paths';
+  import { adminPath, assetPath, thumbPath } from '$lib/drinks/app-paths';
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -31,14 +31,14 @@
     <h1 class="text-2xl font-semibold">Menu Items</h1>
     {#if data.inactiveCount > 0}
       <a
-        href={`${appPath('/admin/drinks')}${data.showInactive ? '' : '?inactive=1'}`}
+        href={`${adminPath('/drinks')}${data.showInactive ? '' : '?inactive=1'}`}
         class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400 hover:text-slate-200 transition"
       >
         {data.showInactive ? 'Hide inactive' : `+${data.inactiveCount} hidden`}
       </a>
     {/if}
   </div>
-  <a href={appPath('/admin/drinks')} class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New item</a>
+  <a href={adminPath('/drinks')} class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New item</a>
 </div>
 
 {#if form?.error}
@@ -84,7 +84,7 @@
             <td class="px-4 py-3 text-right">
               <div class="flex items-center justify-end gap-3">
                 <a
-                  href={`${appPath('/admin/drinks')}?edit=${d.id}${data.showInactive ? '&inactive=1' : ''}`}
+                  href={`${adminPath('/drinks')}?edit=${d.id}${data.showInactive ? '&inactive=1' : ''}`}
                   class="text-slate-400 hover:text-white text-xs"
                 >Edit</a>
                 <form method="POST" action="?/toggleActive" class="contents">
@@ -131,7 +131,7 @@
       {/if}
       <div class="flex flex-wrap gap-2">
         <a
-          href={`${appPath('/admin/drinks')}?edit=${d.id}${data.showInactive ? '&inactive=1' : ''}`}
+          href={`${adminPath('/drinks')}?edit=${d.id}${data.showInactive ? '&inactive=1' : ''}`}
           class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700"
         >Edit</a>
         <form method="POST" action="?/toggleActive" class="contents">
@@ -288,7 +288,7 @@
         {data.editing ? 'Save changes' : 'Create item'}
       </button>
       {#if data.editing}
-        <a href={appPath('/admin/drinks')} class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">
+        <a href={adminPath('/drinks')} class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">
           Cancel
         </a>
       {/if}

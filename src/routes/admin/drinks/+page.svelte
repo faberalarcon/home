@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { appPath } from '$lib/drinks/app-paths';
+  import { adminPath } from '$lib/drinks/app-paths';
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -35,7 +35,7 @@
     <div class="text-sm font-medium mb-1">Home Assistant</div>
     <div class="text-sm font-semibold {haClass[data.haStatus]}">{haLabel[data.haStatus]}</div>
     {#if data.failedEvents > 0}
-      <a href={`${appPath('/admin/ha-log')}?filter=failure`} class="text-xs text-amber-400 hover:underline mt-1 block">
+      <a href={`${adminPath('/ha-log')}?filter=failure`} class="text-xs text-amber-400 hover:underline mt-1 block">
         {data.failedEvents} failed event{data.failedEvents === 1 ? '' : 's'}
       </a>
     {/if}
@@ -48,14 +48,14 @@
 
 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
   {#each [
-    { href: '/admin/drinks', label: 'Manage items', desc: 'Add, edit, or remove items from the menu' },
-    { href: '/admin/profiles', label: 'Manage profiles', desc: 'Household members and guests' },
-    { href: '/admin/milestones', label: 'Milestones', desc: 'Configure HA trigger thresholds' },
-    { href: '/admin/settings', label: 'Settings', desc: 'HA connection, site name' },
-    { href: '/admin/ha-log', label: 'HA event log', desc: 'Recent event dispatch history' },
+    { href: '/drinks', label: 'Manage items', desc: 'Add, edit, or remove items from the menu' },
+    { href: '/profiles', label: 'Manage profiles', desc: 'Household members and guests' },
+    { href: '/milestones', label: 'Milestones', desc: 'Configure HA trigger thresholds' },
+    { href: '/settings', label: 'Settings', desc: 'HA connection, site name' },
+    { href: '/ha-log', label: 'HA event log', desc: 'Recent event dispatch history' },
   ] as card}
     <a
-      href={appPath(card.href)}
+      href={adminPath(card.href)}
       class="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-4 transition"
     >
       <div class="font-medium mb-1">{card.label}</div>

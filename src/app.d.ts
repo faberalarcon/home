@@ -6,8 +6,6 @@ declare global {
       siteAuthenticated: boolean;
       goobyPasswordEnabled: boolean;
       goobyAuthenticated: boolean;
-      adminAuthenticated: boolean;
-      drinkAdminAuthenticated: boolean;
       rootAdminAuthenticated: boolean;
     }
   }

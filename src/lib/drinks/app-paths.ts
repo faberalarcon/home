@@ -1,4 +1,5 @@
 const base = '/drinks';
+const adminBase = '/admin/drinks';
 
 export function appPath(path = '/'): string {
   if (!path.startsWith('/')) return path;
@@ -10,9 +11,25 @@ export function appAction(path: string, action: string): string {
   return `${appPath(path)}?/${action}`;
 }
 
+export function adminPath(path = '/'): string {
+  if (!path.startsWith('/')) return path;
+  if (path === '/') return adminBase;
+  return `${adminBase}${path}`;
+}
+
+export function adminAction(path: string, action: string): string {
+  return `${adminPath(path)}?/${action}`;
+}
+
 export function routePath(pathname: string): string {
   if (pathname === base) return '/';
   if (pathname.startsWith(`${base}/`)) return pathname.slice(base.length);
+  return pathname;
+}
+
+export function adminRoutePath(pathname: string): string {
+  if (pathname === adminBase) return '/';
+  if (pathname.startsWith(`${adminBase}/`)) return pathname.slice(adminBase.length);
   return pathname;
 }
 

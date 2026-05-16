@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { appPath, assetPath, thumbPath } from '$lib/drinks/app-paths';
+  import { adminPath, assetPath, thumbPath } from '$lib/drinks/app-paths';
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -14,7 +14,7 @@
 
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-semibold">Profiles</h1>
-  <a href={appPath('/admin/profiles')} class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New profile</a>
+  <a href={adminPath('/profiles')} class="text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition">+ New profile</a>
 </div>
 
 {#if form?.error}
@@ -62,7 +62,7 @@
           </td>
           <td class="px-4 py-3 text-center">{p.active ? '✓' : '–'}</td>
           <td class="px-4 py-3 text-right">
-            <a href={`${appPath('/admin/profiles')}?edit=${p.id}`} class="text-slate-400 hover:text-white text-xs mr-3">Edit</a>
+            <a href={`${adminPath('/profiles')}?edit=${p.id}`} class="text-slate-400 hover:text-white text-xs mr-3">Edit</a>
             <form method="POST" action="?/delete" class="inline" onsubmit={(e) => { if (!confirm(`Delete ${p.name}?`)) e.preventDefault(); }}>
               <input type="hidden" name="id" value={p.id} />
               <button type="submit" class="text-red-500 hover:text-red-400 text-xs">Delete</button>
@@ -99,7 +99,7 @@
         </div>
       </div>
       <div class="flex flex-wrap gap-2">
-        <a href={`${appPath('/admin/profiles')}?edit=${p.id}`} class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700">Edit</a>
+        <a href={`${adminPath('/profiles')}?edit=${p.id}`} class="text-sm px-3 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700">Edit</a>
         <form method="POST" action="?/delete" class="contents" onsubmit={(e) => { if (!confirm(`Delete ${p.name}?`)) e.preventDefault(); }}>
           <input type="hidden" name="id" value={p.id} />
           <button type="submit" class="text-sm px-3 py-2 rounded-lg bg-red-950/60 border border-red-800 text-red-300 hover:bg-red-900/60">Delete</button>
@@ -204,7 +204,7 @@
         {data.editing ? 'Save changes' : 'Create profile'}
       </button>
       {#if data.editing}
-        <a href={appPath('/admin/profiles')} class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">
+        <a href={adminPath('/profiles')} class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm hover:bg-slate-700 transition">
           Cancel
         </a>
       {/if}

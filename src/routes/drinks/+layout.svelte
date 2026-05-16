@@ -50,7 +50,7 @@
         <a href={appPath('/menu')} aria-current={currentPath === '/menu' ? 'page' : undefined}>Menu</a>
         <a href={appPath('/recent')} aria-current={currentPath === '/recent' ? 'page' : undefined}>Recent</a>
         <a href={appPath('/stats')} aria-current={currentPath === '/stats' ? 'page' : undefined}>Leaderboard</a>
-        <a href={appPath('/admin')} aria-current={currentPath.startsWith('/admin') ? 'page' : undefined}>Admin</a>
+        <a href="/admin/drinks/">Admin</a>
         {#if $selectedProfile}
           <button
             class="drink-shell__profile"

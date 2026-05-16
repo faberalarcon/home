@@ -7,7 +7,7 @@ import type { RequestHandler } from './$types';
 
 // Soft-delete an order (status → 'deleted'). Admin only.
 export const DELETE: RequestHandler = ({ params, locals }) => {
-  if (!locals.adminAuthenticated) throw error(403, 'Admin access required');
+  if (!locals.rootAdminAuthenticated) throw error(403, 'Admin access required');
 
   const id = Number(params.id);
   if (!id) throw error(400, 'Invalid id');
@@ -32,7 +32,7 @@ export const DELETE: RequestHandler = ({ params, locals }) => {
 
 // Restore a soft-deleted order. Admin only.
 export const PUT: RequestHandler = ({ params, locals }) => {
-  if (!locals.adminAuthenticated) throw error(403, 'Admin access required');
+  if (!locals.rootAdminAuthenticated) throw error(403, 'Admin access required');
 
   const id = Number(params.id);
   if (!id) throw error(400, 'Invalid id');
