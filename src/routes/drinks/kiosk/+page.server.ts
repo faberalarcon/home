@@ -24,12 +24,13 @@ export const load: PageServerLoad = async () => {
     .from(orders)
     .innerJoin(profiles, eq(orders.profileId, profiles.id))
     .innerJoin(drinks, eq(orders.drinkId, drinks.id))
+    .where(sql`${orders.status} != 'deleted'`)
     .orderBy(desc(orders.createdAt))
     .limit(10)
     .all();
 
   const todayTotal = db.select({ c: count() }).from(orders)
-    .where(sql`${orders.createdAt} >= ${dayStart}`)
+    .where(sql`${orders.createdAt} >= ${dayStart} AND ${orders.status} != 'deleted'`)
     .get()?.c ?? 0;
 
   const leaderRaw = db
@@ -43,7 +44,7 @@ export const load: PageServerLoad = async () => {
     })
     .from(orders)
     .innerJoin(profiles, eq(orders.profileId, profiles.id))
-    .where(sql`${orders.createdAt} >= ${dayStart}`)
+    .where(sql`${orders.createdAt} >= ${dayStart} AND ${orders.status} != 'deleted'`)
     .groupBy(profiles.id)
     .orderBy(desc(sql`count(*)`))
     .limit(3)
@@ -55,7 +56,7 @@ export const load: PageServerLoad = async () => {
       .select({ abv: drinks.abv, volumeMl: drinks.volumeMl, orderedAtSec: orders.createdAt })
       .from(orders)
       .innerJoin(drinks, eq(orders.drinkId, drinks.id))
-      .where(sql`${orders.profileId} = ${p.id} AND ${orders.createdAt} >= ${dayStart}`)
+      .where(sql`${orders.profileId} = ${p.id} AND ${orders.createdAt} >= ${dayStart} AND ${orders.status} != 'deleted'`)
       .all()
       .map((d) => ({ ...d, orderedAtSec: Math.floor((d.orderedAtSec?.getTime() ?? 0) / 1000) }));
 
@@ -67,7 +68,7 @@ export const load: PageServerLoad = async () => {
     .select({ name: drinks.name, c: sql<number>`count(*)` })
     .from(orders)
     .innerJoin(drinks, eq(orders.drinkId, drinks.id))
-    .where(sql`${orders.createdAt} >= ${dayStart}`)
+    .where(sql`${orders.createdAt} >= ${dayStart} AND ${orders.status} != 'deleted'`)
     .groupBy(drinks.id)
     .orderBy(desc(sql`count(*)`))
     .limit(1)

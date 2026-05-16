@@ -1,8 +1,10 @@
 import { writable } from 'svelte/store';
 
-export const pageTitle = writable('drink-hub');
+const DEFAULT_TITLE = '21 Bristoe drinks';
+
+export const pageTitle = writable(DEFAULT_TITLE);
 
 export function setTitle(title: string, revertMs?: number) {
   pageTitle.set(title);
-  if (revertMs) setTimeout(() => pageTitle.set('drink-hub'), revertMs);
+  if (revertMs) setTimeout(() => pageTitle.set(DEFAULT_TITLE), revertMs);
 }

@@ -86,6 +86,19 @@
       newOrderPulse = true;
       setTimeout(() => (newOrderPulse = false), 1000);
     });
+
+    source.addEventListener('order.deleted', (e) => {
+      const ev = JSON.parse(e.data);
+      if (typeof ev.counts?.today === 'number') todayTotal = ev.counts.today;
+      recentOrders = recentOrders.filter((o) => o.id !== ev.orderId);
+      if (typeof ev.profileId === 'number') {
+        leaderToday = leaderToday
+          .map((p) => (p.id === ev.profileId ? { ...p, c: Math.max(0, p.c - 1) } : p))
+          .filter((p) => p.c > 0)
+          .sort((a, b) => b.c - a.c)
+          .slice(0, 3);
+      }
+    });
   });
 
   onDestroy(() => {
@@ -96,7 +109,7 @@
 </script>
 
 <svelte:head>
-  <title>drink-hub — kiosk</title>
+  <title>21 Bristoe — Kiosk</title>
 </svelte:head>
 
 <!-- Full-screen kiosk, no scroll -->

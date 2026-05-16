@@ -2,6 +2,7 @@ import { db } from '$lib/drinks/server/db';
 import { orders, profiles, drinks } from '$lib/drinks/server/db/schema';
 import { eq, sql, desc, and, lt } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
+import { broadcast } from '$lib/drinks/server/stream';
 import type { PageServerLoad, Actions } from './$types';
 
 const PAGE_SIZE = 50;
@@ -46,7 +47,24 @@ export const actions: Actions = {
     const fd = await request.formData();
     const id = Number(fd.get('id'));
     if (!id) return fail(400, { error: 'Missing id' });
+    const existing = db.select().from(orders).where(eq(orders.id, id)).get();
+    if (!existing) return fail(404, { error: 'Order not found' });
+    if (existing.status === 'deleted') return { deleted: true };
+
     db.update(orders).set({ status: 'deleted' }).where(eq(orders.id, id)).run();
+
+    const dayStart = Math.floor(new Date(new Date().toDateString()).getTime() / 1000);
+    const countAllTime = db.select({ c: sql<number>`count(*)` }).from(orders)
+      .where(sql`${orders.status} != 'deleted'`).get()?.c ?? 0;
+    const countToday = db.select({ c: sql<number>`count(*)` }).from(orders)
+      .where(sql`${orders.createdAt} >= ${dayStart} AND ${orders.status} != 'deleted'`)
+      .get()?.c ?? 0;
+
+    broadcast('order.deleted', {
+      orderId: id,
+      profileId: existing.profileId,
+      counts: { allTime: countAllTime, today: countToday }
+    });
     return { deleted: true };
   },
 

@@ -36,6 +36,7 @@
 <svelte:window onkeydown={onKey} />
 
 <svelte:head>
+  <title>21 Bristoe — Drinks Admin</title>
   <style>
     html, body {
       background: #0f1419;
@@ -68,7 +69,7 @@
         <line x1="3" y1="18" x2="21" y2="18" />
       </svg>
     </button>
-    <a href={appPath('/')} class="text-lg font-semibold tracking-tight">🍹 drink-hub</a>
+    <a href={appPath('/')} class="text-lg font-semibold tracking-tight">🍹 21 Bristoe drinks</a>
     <span class="text-slate-600 select-none">/</span>
     <span class="text-sm text-slate-300 font-medium">Admin</span>
   </header>
