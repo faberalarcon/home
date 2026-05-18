@@ -204,14 +204,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     event.locals.siteAuthenticated = true;
   }
 
-  const response = await resolve(event, {
-    transformPageChunk: ({ html }) => {
-      if (event.url.pathname.startsWith('/admin/drinks')) {
-        return html.replace('<html lang="en">', '<html lang="en" data-theme="dark">');
-      }
-      return html;
-    }
-  });
+  const response = await resolve(event);
 
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(key, value);

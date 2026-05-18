@@ -1,4 +1,4 @@
-import { hashSitePassword } from '$lib/drinks/server/auth';
+import { hashSitePassword, verifySitePasswordHash } from '$lib/drinks/server/auth';
 
 export function getConfiguredSitePasswordHash(): string {
   const envHash = process.env.SITE_PASSWORD_HASH?.trim();
@@ -12,7 +12,7 @@ export function getConfiguredSitePasswordHash(): string {
 export function verifySitePassword(password: string): boolean {
   const stored = getConfiguredSitePasswordHash();
   if (!stored || !password) return false;
-  return hashSitePassword(password) === stored;
+  return verifySitePasswordHash(password, stored);
 }
 
 export function normalizeNextPath(next: string | null | undefined): string {

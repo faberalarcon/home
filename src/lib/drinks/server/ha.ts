@@ -1,23 +1,57 @@
+import { fetch, type Dispatcher } from 'undici';
 import { db } from './db/index';
 import { haEventsLog } from './db/schema';
 import { getSetting, setSetting } from './db/settings';
-import { validateOutboundUrl } from './url-allowlist';
+import { buildPinnedDispatcher, validateOutboundUrl } from './url-allowlist';
 
 const TIMEOUT_MS = 3000;
 
-async function resolveHaTarget(path: string): Promise<{ url: string; token: string } | { error: string }> {
+type ResolvedHaTarget = { url: string; token: string; dispatcher: Dispatcher };
+
+async function resolveHaTarget(path: string): Promise<ResolvedHaTarget | { error: string }> {
   const baseUrl = getSetting('ha_base_url') ?? '';
   const token = getSetting('ha_token') ?? '';
   if (!token) return { error: 'no token configured' };
   if (!baseUrl) return { error: 'no base URL configured' };
 
   const check = await validateOutboundUrl(baseUrl);
-  if (!check.ok || !check.url) {
+  if (!check.ok || !check.url || !check.addresses?.length) {
     return { error: check.error ?? 'invalid HA base URL' };
   }
 
   const clean = `${check.url.origin}${check.url.pathname.replace(/\/$/, '')}`;
-  return { url: `${clean}${path}`, token };
+  return { url: `${clean}${path}`, token, dispatcher: buildPinnedDispatcher(check.addresses) };
+}
+
+/**
+ * Shared HA health probe — validates the base URL, pins DNS, and issues a
+ * single bearer-authenticated GET to /api/. Returns the upstream Response
+ * (caller closes it) or an error string. Used by admin pages so we don't
+ * duplicate the validation/pinning logic.
+ */
+export async function haHealthFetch(
+  baseUrl: string,
+  token: string,
+  timeoutMs: number
+): Promise<{ ok: true; status: number } | { ok: false; error: string }> {
+  if (!baseUrl || !token) return { ok: false, error: 'URL and token are required' };
+  const check = await validateOutboundUrl(baseUrl);
+  if (!check.ok || !check.url || !check.addresses?.length) {
+    return { ok: false, error: check.error ?? 'invalid HA base URL' };
+  }
+  const dispatcher = buildPinnedDispatcher(check.addresses);
+  const cleanOrigin = `${check.url.origin}${check.url.pathname.replace(/\/$/, '')}`;
+  try {
+    const res = await fetch(`${cleanOrigin}/api/`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(timeoutMs),
+      dispatcher
+    });
+    if (res.ok) return { ok: true, status: res.status };
+    return { ok: false, error: `HTTP ${res.status} ${res.statusText}` };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 /**
@@ -38,7 +72,8 @@ export async function probeHa(timeoutMs = 2000): Promise<'ok' | 'degraded' | 'un
   try {
     const res = await fetch(resolved.url, {
       headers: { Authorization: `Bearer ${resolved.token}` },
-      signal: AbortSignal.timeout(timeoutMs)
+      signal: AbortSignal.timeout(timeoutMs),
+      dispatcher: resolved.dispatcher
     });
     return res.ok ? 'ok' : 'degraded';
   } catch {
@@ -55,7 +90,7 @@ export async function callService(
     `/api/services/${encodeURIComponent(domain)}/${encodeURIComponent(service)}`
   );
   if ('error' in resolved) return { success: false, error: resolved.error };
-  const { url, token } = resolved;
+  const { url, token, dispatcher } = resolved;
 
   try {
     const controller = new AbortController();
@@ -64,7 +99,8 @@ export async function callService(
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-      signal: controller.signal
+      signal: controller.signal,
+      dispatcher
     });
     clearTimeout(timer);
     if (res.ok) return { success: true };
@@ -82,14 +118,14 @@ export async function getLightState(entityId: string): Promise<{
 } | null> {
   const resolved = await resolveHaTarget(`/api/states/${encodeURIComponent(entityId)}`);
   if ('error' in resolved) return null;
-  const { url, token } = resolved;
+  const { url, token, dispatcher } = resolved;
 
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     const res = await fetch(
       url,
-      { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
+      { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal, dispatcher }
     );
     clearTimeout(timer);
     if (!res.ok) return null;
@@ -123,7 +159,7 @@ export async function fireEvent(
 
   const resolved = await resolveHaTarget(`/api/events/${encodeURIComponent(eventType)}`);
   if ('error' in resolved) return logAndReturn(false, resolved.error);
-  const { url, token } = resolved;
+  const { url, token, dispatcher } = resolved;
 
   let success = false;
   let errorMsg: string | undefined;
@@ -139,7 +175,8 @@ export async function fireEvent(
         'Content-Type': 'application/json'
       },
       body: payloadJson,
-      signal: controller.signal
+      signal: controller.signal,
+      dispatcher
     });
 
     clearTimeout(timer);

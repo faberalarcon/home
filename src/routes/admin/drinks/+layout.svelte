@@ -37,13 +37,6 @@
 
 <svelte:head>
   <title>21 Bristoe — Drinks Admin</title>
-  <style>
-    html, body {
-      background: #0f1419;
-      color: #c9d2dc;
-      color-scheme: dark;
-    }
-  </style>
 </svelte:head>
 
 <div class="admin-shell mx-auto max-w-4xl min-h-screen flex flex-col">
@@ -130,25 +123,6 @@
 </div>
 
 <style>
-  /* Force a self-contained dark theme on this admin section regardless of
-     system prefers-color-scheme or the global drinks.css compat layer.
-     Tailwind slate utilities in pages assume a dark surface; pin local
-     paper/ink tokens so the compat overrides (which remap slate->paper)
-     resolve to dark values inside this shell. */
-  .admin-shell {
-    --color-paper-50:  #0f1419;
-    --color-paper-100: #161b22;
-    --color-paper-200: #1f2630;
-    --color-paper-300: #30384a;
-    --color-ink-900:   #f0f4f8;
-    --color-ink-700:   #c9d2dc;
-    --color-ink-500:   #94a3b8;
-    --color-ink-300:   #64748b;
-    background: #0f1419;
-    color: #c9d2dc;
-    color-scheme: dark;
-  }
-
   /* Prevent iOS Safari from zooming when focusing inputs on mobile. */
   @media (max-width: 767px) {
     .admin-shell :global(input:not([type='checkbox']):not([type='radio']):not([type='color'])),

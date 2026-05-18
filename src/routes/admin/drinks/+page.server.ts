@@ -2,6 +2,7 @@ import { db } from '$lib/drinks/server/db';
 import { orders, drinks, profiles, haEventsLog } from '$lib/drinks/server/db/schema';
 import { eq, sql, count } from 'drizzle-orm';
 import { getSetting, setStatsResetAt } from '$lib/drinks/server/db/settings';
+import { haHealthFetch } from '$lib/drinks/server/ha';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -15,15 +16,9 @@ export const load: PageServerLoad = async () => {
 
   let haStatus: 'ok' | 'error' | 'unconfigured' = 'unconfigured';
   if (haToken && haBaseUrl) {
-    try {
-      const res = await fetch(`${haBaseUrl.replace(/\/$/, '')}/api/`, {
-        headers: { Authorization: `Bearer ${haToken}` },
-        signal: AbortSignal.timeout(3000)
-      });
-      haStatus = res.ok ? 'ok' : 'error';
-    } catch {
-      haStatus = 'error';
-    }
+    // Route through haHealthFetch so the bearer token never reaches a DNS-rebound IP.
+    const probe = await haHealthFetch(haBaseUrl, haToken, 3000);
+    haStatus = probe.ok ? 'ok' : 'error';
   }
 
   return { totalOrders, activeDrinks, activeProfiles, failedEvents, haStatus };

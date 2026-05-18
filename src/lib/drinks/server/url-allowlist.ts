@@ -1,11 +1,63 @@
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
+import { Agent, type Dispatcher } from 'undici';
 
 export interface UrlValidationResult {
   ok: boolean;
   error?: string;
   /** Parsed URL, only set when ok === true. */
   url?: URL;
+  /** IP addresses the hostname resolved to at validation time, only when ok === true. */
+  addresses?: string[];
+}
+
+/**
+ * Build an undici Agent whose connect-time DNS lookup always returns one of
+ * the IPs already validated by validateOutboundUrl, so a malicious authoritative
+ * DNS server cannot rebind the hostname to a loopback / metadata address between
+ * validation and fetch. Pass the returned dispatcher to fetch():
+ *
+ *   fetch(url, { dispatcher: buildPinnedDispatcher(addresses) })
+ */
+export function buildPinnedDispatcher(addresses: string[]): Dispatcher {
+  if (!addresses.length) {
+    throw new Error('buildPinnedDispatcher requires at least one validated address');
+  }
+  const picked = addresses[0];
+  const family = isIP(picked);
+  if (family !== 4 && family !== 6) {
+    throw new Error(`buildPinnedDispatcher: invalid address ${picked}`);
+  }
+  return new Agent({
+    connect: {
+      // The custom lookup ignores the hostname entirely and only ever returns
+      // the pre-validated IP — defeating DNS rebinding. Node 22's happy-eyeballs
+      // connect calls lookup with { all: true }, expecting the callback to be
+      // invoked with an array of { address, family }. Support both shapes.
+      lookup: (
+        _hostname: string,
+        options: { all?: boolean } | undefined,
+        cb: (
+          err: NodeJS.ErrnoException | null,
+          address: string | Array<{ address: string; family: number }>,
+          family?: number
+        ) => void
+      ) => {
+        if (options && options.all) {
+          (cb as (err: NodeJS.ErrnoException | null, results: Array<{ address: string; family: number }>) => void)(
+            null,
+            [{ address: picked, family }]
+          );
+        } else {
+          (cb as (err: NodeJS.ErrnoException | null, address: string, family: number) => void)(
+            null,
+            picked,
+            family
+          );
+        }
+      }
+    }
+  });
 }
 
 function ipv4ToInt(ip: string): number | null {
@@ -131,5 +183,5 @@ export async function validateOutboundUrl(raw: string): Promise<UrlValidationRes
     }
   }
 
-  return { ok: true, url };
+  return { ok: true, url, addresses };
 }

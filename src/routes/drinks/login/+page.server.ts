@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { hashSitePassword, makeSessionToken } from '$lib/drinks/server/auth';
-import { getConfiguredSitePasswordHash, isSecureRequest, normalizeNextPath } from '$lib/drinks/server/site-access';
+import { makeSessionToken } from '$lib/drinks/server/auth';
+import { getConfiguredSitePasswordHash, isSecureRequest, normalizeNextPath, verifySitePassword } from '$lib/drinks/server/site-access';
 import { checkRateLimit } from '$lib/drinks/server/ratelimit';
 import { appPath } from '$lib/drinks/app-paths';
 import { readVisitorCount } from '$lib/site/visitors.server';
@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies, request, getC
   if (pw && storedHash) {
     const ip = getClientAddress();
     const rateCheck = checkRateLimit('login', ip);
-    if (rateCheck.allowed && hashSitePassword(pw.trim()) === storedHash) {
+    if (rateCheck.allowed && verifySitePassword(pw.trim())) {
       cookies.set('site_session', makeSessionToken('site'), {
         path: appPath('/'),
         httpOnly: true,
@@ -67,7 +67,7 @@ export const actions: Actions = {
       return fail(429, { error: 'Too many login attempts. Try again later.', next });
     }
 
-    if (hashSitePassword(password) !== storedHash) {
+    if (!verifySitePassword(password)) {
       console.warn(`[auth] site-login failed ip=${ip} at=${new Date().toISOString()}`);
       return fail(401, { error: 'Incorrect password.', next });
     }

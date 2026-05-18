@@ -2,6 +2,7 @@ import { getSetting, setSetting } from '$lib/drinks/server/db/settings';
 import { fail } from '@sveltejs/kit';
 import { getConfiguredSitePasswordHash } from '$lib/drinks/server/site-access';
 import { validateOutboundUrl } from '$lib/drinks/server/url-allowlist';
+import { haHealthFetch } from '$lib/drinks/server/ha';
 import { generateOrderQuip } from '$lib/drinks/server/tts-llm';
 import { runTtsTest } from '$lib/drinks/server/tts';
 import type { PageServerLoad, Actions } from './$types';
@@ -113,25 +114,12 @@ export const actions: Actions = {
       });
     }
 
-    const check = await validateOutboundUrl(targetUrl);
-    if (!check.ok || !check.url) {
-      return fail(400, { testError: `Invalid HA base URL: ${check.error}` });
+    const probe = await haHealthFetch(targetUrl, token, 5000);
+    if (probe.ok) {
+      return { testOk: true };
     }
-
-    const cleanOrigin = `${check.url.origin}${check.url.pathname.replace(/\/$/, '')}`;
-
-    try {
-      const res = await fetch(`${cleanOrigin}/api/`, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(5000)
-      });
-      if (res.ok) {
-        return { testOk: true };
-      }
-      return fail(502, { testError: `HA returned HTTP ${res.status} ${res.statusText}` });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      return fail(502, { testError: `Connection failed: ${msg}` });
-    }
+    // Distinguish validation failure (4xx-like) from network failure (5xx-like).
+    const isValidation = /^Invalid HA base URL|^URL|^Host /i.test(probe.error);
+    return fail(isValidation ? 400 : 502, { testError: probe.error });
   }
 };

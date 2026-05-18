@@ -22,7 +22,11 @@ interface RateBucket {
 const rateBuckets = new Map<string, RateBucket>();
 
 function clientIp(event: RequestEvent) {
-  return event.request.headers.get('x-real-ip') || event.getClientAddress();
+  // Only trust SvelteKit's getClientAddress(), which honors ADDRESS_HEADER /
+  // XFF_DEPTH from adapter-node when configured. Reading X-Real-IP directly
+  // from the inbound request would let any client rotate the value to bypass
+  // per-IP rate limits and forge audit-log attribution.
+  return event.getClientAddress();
 }
 
 export function checkAdminRateLimit(event: RequestEvent, kind: 'api' | 'upload') {
