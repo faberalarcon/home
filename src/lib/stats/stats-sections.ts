@@ -5,6 +5,7 @@ export type StatsSection = {
 
 export const statsSections: StatsSection[] = [
   { href: '/', label: 'Overview' },
+  { href: '/brief', label: 'Brief' },
   { href: '/house', label: 'House' },
   { href: '/drinks', label: 'Drinks' },
   { href: '/visitors', label: 'Visitors' },

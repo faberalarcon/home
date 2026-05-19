@@ -71,6 +71,18 @@ export const haEventsLog = sqliteTable('ha_events_log', {
     .default(sql`(unixepoch())`)
 });
 
+export const dailyBriefs = sqliteTable('daily_briefs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  date: text('date').notNull().unique(),
+  narrative: text('narrative').notNull(),
+  payload: text('payload').notNull(),
+  model: text('model'),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`)
+});
+
 export type Profile = typeof profiles.$inferSelect;
 export type Drink = typeof drinks.$inferSelect;
 export type Order = typeof orders.$inferSelect;
+export type DailyBrief = typeof dailyBriefs.$inferSelect;

@@ -1,0 +1,18 @@
+[Unit]
+Description=21 Bristoe daily narrative brief
+# POSTs to /admin/api/brief on the unified site container to generate
+# yesterday's narrative summary, persist it, and fire Home Assistant notify.
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/21bristoe-admin.env
+ExecStart=/usr/bin/curl --fail --show-error --silent \
+  --max-time 90 --retry 3 --retry-delay 10 --retry-all-errors \
+  -X POST \
+  -H "X-Admin-Auth: ${ADMIN_SHARED_SECRET}" \
+  -o /tmp/21bristoe-brief.last.json \
+  http://127.0.0.1:6173/admin/api/brief
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=21bristoe-brief

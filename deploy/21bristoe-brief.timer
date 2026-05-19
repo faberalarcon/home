@@ -1,0 +1,13 @@
+[Unit]
+Description=Generate the daily 21 Bristoe narrative brief
+Requires=21bristoe-brief.service
+
+[Timer]
+# Fire at 08:00 every day. Persistent=true means if the host was off at 8am,
+# the brief runs on next boot instead of being silently skipped.
+OnCalendar=*-*-* 08:00:00
+AccuracySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

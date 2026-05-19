@@ -131,6 +131,20 @@ if [[ "$MODE" != "--local" ]]; then
     STATS_HEALTH=$(curl -s "$BASE/stats/api/health" 2>/dev/null || echo "")
     check "Stats health JSON" "$(echo "$STATS_HEALTH" | python3 -c 'import sys,json; json.load(sys.stdin); print("valid")' 2>/dev/null || echo "invalid")" "valid"
 
+    BRIEF_CODE=$(curl -so /dev/null -w '%{http_code}' "$BASE/stats/brief" 2>/dev/null || echo "error")
+    if [[ "$BRIEF_CODE" == "200" ]]; then
+        echo "  PASS  /stats/brief reachable ($BRIEF_CODE)"
+        ((PASS++)) || true
+    else
+        echo "  FAIL  /stats/brief reachable"
+        echo "        Expected: 200"
+        echo "        Got:      $BRIEF_CODE"
+        ((FAIL++)) || true
+    fi
+
+    BRIEF_LIST=$(curl -s "$BASE/stats/api/brief" 2>/dev/null || echo "")
+    check "Stats brief list JSON" "$(echo "$BRIEF_LIST" | python3 -c 'import sys,json; d=json.load(sys.stdin); print("valid") if isinstance(d.get("briefs"), list) else print("invalid")' 2>/dev/null || echo "invalid")" "valid"
+
     GOOBY_CODE=$(curl -so /dev/null -w '%{http_code}' "$BASE/gooby/login" 2>/dev/null || echo "error")
     if [[ "$GOOBY_CODE" == "200" || "$GOOBY_CODE" == "303" ]]; then
         echo "  PASS  /gooby/login reachable ($GOOBY_CODE)"

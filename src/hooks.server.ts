@@ -35,6 +35,9 @@ const TTS_LLM_SYSTEM_PROMPT_FOOD = 'You are the host speaker at 21 Bristoe, a pr
 const TTS_LLM_SYSTEM_PROMPT_MISC_VERSION = '1';
 const TTS_LLM_SYSTEM_PROMPT_MISC = 'You are the host speaker at 21 Bristoe, a private speakeasy, calling out items from the back shelf — novelty, gag, or just plain weird. Tone: dry, conspiratorial, mock-formal — like a sommelier who can keep a straight face about absolutely anything. Lean into the absurdity without spelling out the joke. Hard rules: ONE short sentence under 20 words. No quotes. No emojis. No preambles. No stage directions. No questions. Address the room, not the orderer. Tasteful innuendo is fine; nothing crude, graphic, or shaming. Output ONLY the line that will be spoken aloud.';
 
+const DAILY_BRIEF_SYSTEM_PROMPT_VERSION = '1';
+const DAILY_BRIEF_SYSTEM_PROMPT = 'You are the steward of 21 Bristoe writing a one-paragraph daily brief for the household. Tone: warm, dry, observational — like a butler who has seen the whole day at once and is now reporting back. Use the structured facts I give you. Mention the drink count and top drink if non-zero; otherwise skip drinks. Mention the weather only if notable (rain, extreme temps). Mention Pi peak temp only if above 70C. Mention HA errors only if non-zero. Hard rules: 2-4 sentences total, under 60 words, no lists, no emojis, no quotes, no preamble. Output ONLY the brief paragraph.';
+
 bootstrapSettings({
   ha_base_url: 'http://ai.local:8123',
   ha_token: '',
@@ -49,7 +52,11 @@ bootstrapSettings({
   tts_llm_system_prompt_food: TTS_LLM_SYSTEM_PROMPT_FOOD,
   tts_llm_system_prompt_food_version: TTS_LLM_SYSTEM_PROMPT_FOOD_VERSION,
   tts_llm_system_prompt_misc: TTS_LLM_SYSTEM_PROMPT_MISC,
-  tts_llm_system_prompt_misc_version: TTS_LLM_SYSTEM_PROMPT_MISC_VERSION
+  tts_llm_system_prompt_misc_version: TTS_LLM_SYSTEM_PROMPT_MISC_VERSION,
+  daily_brief_model: 'gemma4-26b-heretic-128k',
+  daily_brief_notify_service: '',
+  daily_brief_system_prompt: DAILY_BRIEF_SYSTEM_PROMPT,
+  daily_brief_system_prompt_version: DAILY_BRIEF_SYSTEM_PROMPT_VERSION
 });
 
 // Force-overwrite saved system prompts once per version bump so older installs
@@ -68,6 +75,11 @@ if (getSetting('tts_llm_system_prompt_misc_version') !== TTS_LLM_SYSTEM_PROMPT_M
   setSetting('tts_llm_system_prompt_misc', TTS_LLM_SYSTEM_PROMPT_MISC);
   setSetting('tts_llm_system_prompt_misc_version', TTS_LLM_SYSTEM_PROMPT_MISC_VERSION);
   console.log(`[drink-hub] migrated tts_llm_system_prompt_misc to version ${TTS_LLM_SYSTEM_PROMPT_MISC_VERSION}`);
+}
+if (getSetting('daily_brief_system_prompt_version') !== DAILY_BRIEF_SYSTEM_PROMPT_VERSION) {
+  setSetting('daily_brief_system_prompt', DAILY_BRIEF_SYSTEM_PROMPT);
+  setSetting('daily_brief_system_prompt_version', DAILY_BRIEF_SYSTEM_PROMPT_VERSION);
+  console.log(`[brief] migrated daily_brief_system_prompt to version ${DAILY_BRIEF_SYSTEM_PROMPT_VERSION}`);
 }
 
 const SECURITY_HEADERS: Record<string, string> = {
