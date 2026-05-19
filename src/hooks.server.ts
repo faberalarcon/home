@@ -160,7 +160,7 @@ const SECURITY_HEADERS: Record<string, string> = {
     "base-uri 'self'",
     "form-action 'self'"
   ].join('; '),
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+  'Permissions-Policy': 'camera=(), microphone=(self), geolocation=(), interest-cohort=()'
 };
 
 function isDrinkPublicPath(path: string): boolean {

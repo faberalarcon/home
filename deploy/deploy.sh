@@ -182,13 +182,47 @@ echo "[6/7] Reloading nginx..."
 sudo systemctl reload nginx
 echo "      nginx reloaded."
 
-echo "[7/7] Retiring legacy admin service if present..."
+echo "[7/8] Retiring legacy admin service if present..."
 if systemctl list-unit-files 21bristoe-admin.service >/dev/null 2>&1; then
     sudo systemctl disable --now 21bristoe-admin || true
     echo "      Legacy admin service stopped."
 else
     echo "      Legacy admin service not installed."
 fi
+
+echo "[8/8] Installing systemd timers (brief, rag-reindex)..."
+TIMER_UNITS=(21bristoe-brief 21bristoe-rag-reindex)
+TIMERS_RELOADED=0
+for unit in "${TIMER_UNITS[@]}"; do
+    src_svc="$REPO_DIR/deploy/${unit}.service"
+    src_tmr="$REPO_DIR/deploy/${unit}.timer"
+    if [[ ! -f "$src_svc" || ! -f "$src_tmr" ]]; then
+        echo "      Skipping ${unit}: source unit files missing."
+        continue
+    fi
+    changed=0
+    if ! sudo cmp -s "$src_svc" "/etc/systemd/system/${unit}.service" 2>/dev/null; then
+        sudo cp "$src_svc" "/etc/systemd/system/${unit}.service"
+        changed=1
+    fi
+    if ! sudo cmp -s "$src_tmr" "/etc/systemd/system/${unit}.timer" 2>/dev/null; then
+        sudo cp "$src_tmr" "/etc/systemd/system/${unit}.timer"
+        changed=1
+    fi
+    if [[ $changed -eq 1 ]]; then
+        TIMERS_RELOADED=1
+        echo "      Updated ${unit} unit files."
+    fi
+done
+if [[ $TIMERS_RELOADED -eq 1 ]]; then
+    sudo systemctl daemon-reload
+fi
+for unit in "${TIMER_UNITS[@]}"; do
+    if systemctl list-unit-files "${unit}.timer" >/dev/null 2>&1; then
+        sudo systemctl enable --now "${unit}.timer" >/dev/null
+    fi
+done
+echo "      Timers installed and enabled."
 
 echo ""
 echo "==> Running validation checks..."

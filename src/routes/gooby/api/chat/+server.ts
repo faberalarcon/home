@@ -21,7 +21,7 @@ import {
   waitForGoobyModelReady,
   type ChatMessage
 } from '$lib/gooby/llama';
-import { isRagEnabled, retrieve } from '$lib/gooby/server/rag';
+import { buildLiveContextBlock, isRagEnabled, retrieve } from '$lib/gooby/server/rag';
 import { clearChatActive, markChatActive } from '$lib/drinks/server/llm-priority';
 
 function messageForLlama(message: GoobyMessage): ChatMessage {
@@ -141,24 +141,32 @@ export async function POST({ request }) {
   ];
 
   let ragContext: string | null = null;
+  let liveContext: string | null = null;
   if (useSiteContext) {
-    try {
-      const chunks = await retrieve(prompt);
-      if (chunks.length > 0) {
-        ragContext = chunks
-          .map((c) => `[${c.sourceType}] ${c.text}`)
-          .join('\n\n');
-      }
-    } catch (err) {
-      console.warn('[gooby-rag] retrieve failed:', err instanceof Error ? err.message : err);
+    const [chunksResult, liveResult] = await Promise.allSettled([
+      retrieve(prompt),
+      buildLiveContextBlock()
+    ]);
+    if (chunksResult.status === 'fulfilled' && chunksResult.value.length > 0) {
+      ragContext = chunksResult.value
+        .map((c) => `[${c.sourceType}] ${c.text}`)
+        .join('\n\n');
+    } else if (chunksResult.status === 'rejected') {
+      console.warn('[gooby-rag] retrieve failed:', chunksResult.reason instanceof Error ? chunksResult.reason.message : chunksResult.reason);
+    }
+    if (liveResult.status === 'fulfilled') {
+      liveContext = liveResult.value;
+    } else {
+      console.warn('[gooby-rag] live context failed:', liveResult.reason);
     }
   }
 
-  const messages: ChatMessage[] = ragContext
-    ? [
-        { role: 'system', content: `Site context (use only what's relevant):\n${ragContext}` },
-        ...baseMessages
-      ]
+  const contextParts: string[] = [];
+  if (liveContext) contextParts.push(`Live site state (current snapshot):\n${liveContext}`);
+  if (ragContext) contextParts.push(`Site context (use only what's relevant):\n${ragContext}`);
+
+  const messages: ChatMessage[] = contextParts.length > 0
+    ? [{ role: 'system', content: contextParts.join('\n\n') }, ...baseMessages]
     : baseMessages;
 
   markChatActive(240);

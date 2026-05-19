@@ -313,6 +313,60 @@ function buildStatsSnapshotItems(): CorpusItem[] {
   return [{ sourceType: 'stats_snapshot', sourceId: 'last7d', text }];
 }
 
+function buildHomepageItems(cfg: any): CorpusItem[] {
+  const hero = cfg.hero || {};
+  const sec = cfg.sectionText || {};
+  const items: CorpusItem[] = [];
+
+  const subtitle = hero.subtitle || 'Home of Faber, Kasey & Limón';
+  const location = hero.location || 'Meades Crossing · Taneytown, Maryland';
+  items.push({
+    sourceType: 'home_content',
+    sourceId: 'hero',
+    text: `21 Bristoe is a household site for Faber, Kasey, and their golden retriever Limón. Subtitle: ${subtitle}. Location: ${location}.`
+  });
+
+  const wt = sec.welcome || {};
+  const para1 = wt.para1 || "We're Faber and Kasey, and we've made our home here in Meades Crossing — a neighborhood in Taneytown, Maryland that we're proud to be part of.";
+  const para2 = wt.para2 || "Whether it's a quiet evening on the back porch, a morning walk through the neighborhood, or hosting friends over a good meal and a great drink, 21 Bristoe is where life happens for us.";
+  const para3 = wt.para3 || "This little corner of the internet is our household portal — a place to share what we're up to, what we love, and yes, plenty of Limón content.";
+  items.push({
+    sourceType: 'home_content',
+    sourceId: 'welcome',
+    text: `${para1} ${para2} ${para3}`
+  });
+
+  const nt = sec.neighborhood || {};
+  const ndesc = nt.description || 'Meades Crossing in Taneytown, Maryland — a slice of real community in the heart of Carroll County.';
+  items.push({
+    sourceType: 'home_content',
+    sourceId: 'neighborhood-intro',
+    text: `Neighborhood: ${ndesc}`
+  });
+
+  const qLinks = Array.isArray(cfg.quickLinks) && cfg.quickLinks.length > 0
+    ? cfg.quickLinks
+    : [
+        { title: 'Drink Hub', description: 'Browse cocktail recipes, home bar inventory, and drink recommendations.', href: '/drinks/' },
+        { title: 'Stats Dashboard', description: 'Live house status, weather, backups, drink activity, and household trends.', href: '/stats/' },
+        { title: 'Gallery', description: 'Photos from around the house, the neighborhood, and life at 21 Bristoe.', href: '/gallery/' },
+        { title: 'Guest Info', description: 'Parking, front-door notes, guest Wi-Fi, and what to expect when you arrive.', href: '#visitor-guide' }
+      ];
+  const qlText = qLinks
+    .filter((l: any) => l && l.title)
+    .map((l: any) => `${l.title} (${l.href || ''}): ${l.description || ''}`)
+    .join(' | ');
+  if (qlText) {
+    items.push({
+      sourceType: 'home_content',
+      sourceId: 'quick-links',
+      text: `Site sections: ${qlText}`
+    });
+  }
+
+  return items;
+}
+
 function gatherCorpus(): CorpusItem[] {
   const cfg = readSiteConfig();
   const raw = [
@@ -322,6 +376,7 @@ function gatherCorpus(): CorpusItem[] {
     ...buildAdminTipItems(cfg),
     ...buildAdminNeighborhoodItems(cfg),
     ...buildAdminLimonItems(cfg),
+    ...buildHomepageItems(cfg),
     ...buildStatsSnapshotItems()
   ];
   const max = maxChunkChars();
@@ -432,4 +487,81 @@ export async function retrieve(query: string, k?: number): Promise<RetrievedChun
 export function chunkCount(): number {
   const row = db.select({ n: sql<number>`count(*)` }).from(goobyEmbeddings).get();
   return Number(row?.n ?? 0);
+}
+
+function fmtTs(unixSec: number | null | undefined): string {
+  if (!unixSec) return '—';
+  const d = new Date(unixSec * 1000);
+  return d.toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', month: 'short', day: 'numeric' });
+}
+
+function piMetricsLine(): Promise<string> {
+  return import('$lib/stats/server/pi-metrics')
+    .then(({ getPiMetrics }) => getPiMetrics('1d'))
+    .then((m) => {
+      if (!m.available || !m.latest) return 'Pi metrics: unavailable.';
+      const l = m.latest;
+      const cpu = l.cpuPct != null ? `${l.cpuPct}%` : 'n/a';
+      const temp = l.tempC != null ? `${l.tempC}°C` : 'n/a';
+      const mem = `${Math.round(l.memUsedMb)}/${Math.round(l.memTotalMb)}MB (${l.memPct}%)`;
+      const load = l.load1.toFixed(2);
+      return `Pi metrics (now): CPU ${cpu}, temp ${temp}, mem ${mem}, load1 ${load}, sampled ${fmtTs(Math.floor(l.t / 1000))}.`;
+    })
+    .catch(() => 'Pi metrics: unavailable.');
+}
+
+function recentOrdersLine(): string {
+  const cutoff = Math.floor(Date.now() / 1000) - 86_400;
+  const rows = db
+    .select({ name: drinks.name, createdAt: orders.createdAt })
+    .from(orders)
+    .innerJoin(drinks, sql`${drinks.id} = ${orders.drinkId}`)
+    .where(sql`${orders.createdAt} >= ${cutoff}`)
+    .orderBy(sql`${orders.createdAt} desc`)
+    .limit(20)
+    .all() as Array<{ name: string; createdAt: any }>;
+  if (rows.length === 0) return 'Recent drink orders (24h): none.';
+  const lines = rows
+    .map((r) => {
+      const ts = r.createdAt instanceof Date ? Math.floor(r.createdAt.getTime() / 1000) : Number(r.createdAt);
+      return `${r.name} @ ${fmtTs(ts)}`;
+    })
+    .join('; ');
+  return `Recent drink orders (last 24h, ${rows.length}): ${lines}.`;
+}
+
+function backupsLine(): Promise<string> {
+  return import('$lib/stats/server/backups')
+    .then(({ readBackupManifest }) => readBackupManifest())
+    .then((m) => {
+      if (!m.available) return 'Backups: manifest unavailable.';
+      const tiers = Object.values(m.tiers)
+        .map((t) => `${t.tier}: last ${t.last?.status ?? 'none'} (streak ${t.successStreak})`)
+        .join('; ');
+      const drive = m.drive?.mounted
+        ? `drive mounted, ${Math.round((m.drive.freeBytes / 1e9) * 10) / 10}GB free of ${Math.round((m.drive.totalBytes / 1e9) * 10) / 10}GB`
+        : 'drive not mounted';
+      return `Backups: ${tiers}. ${drive}.`;
+    })
+    .catch(() => 'Backups: unavailable.');
+}
+
+function visitorLine(): Promise<string> {
+  return import('$lib/stats/server/visitors')
+    .then(({ getUniqueVisitorCount }) => getUniqueVisitorCount())
+    .then((v) => {
+      if (!v) return 'Visitor count: unavailable.';
+      return `Unique visitors all-time: ${v.count}.`;
+    })
+    .catch(() => 'Visitor count: unavailable.');
+}
+
+export async function buildLiveContextBlock(): Promise<string> {
+  const [pi, backups, visitors] = await Promise.all([
+    piMetricsLine(),
+    backupsLine(),
+    visitorLine()
+  ]);
+  const recent = recentOrdersLine();
+  return [pi, recent, backups, visitors].join('\n');
 }

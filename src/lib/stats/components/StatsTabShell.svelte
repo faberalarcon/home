@@ -206,6 +206,7 @@
     if (!href || href === currentHref) return;
 
     event.preventDefault();
+    if (anchor instanceof HTMLElement) anchor.blur();
     void activateStatsPage(href).catch(() => {
       void goto(appPath(href), { noScroll: true, keepFocus: true });
     });
