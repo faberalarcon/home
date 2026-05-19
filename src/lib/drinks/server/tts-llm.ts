@@ -1,11 +1,7 @@
 import { getSetting } from './db/settings';
 import { fetchLlamaModels, probeGoobyModelLoad } from '$lib/gooby/llama';
-
-const DEFAULT_LLAMA_BASE_URL = 'http://192.168.1.215:8080';
-
-function llamaBaseUrl(): string {
-  return (process.env.LLAMA_BASE_URL ?? DEFAULT_LLAMA_BASE_URL).replace(/\/+$/, '');
-}
+import { warmupEmbedder } from '$lib/gooby/server/rag';
+import { llamaBaseUrl } from '$lib/server/llama-endpoint';
 
 function isEnabled(): boolean {
   const raw = getSetting('tts_llm_enabled');
@@ -184,7 +180,11 @@ export async function generateOrderQuip(ctx: OrderQuipContext): Promise<string |
     ctx.todayCount !== undefined && ctx.allTimeCount !== undefined
       ? ` They've had ${ctx.todayCount} today, ${ctx.allTimeCount} all-time.`
       : '';
-  return callLlama(sys, `${lead}${countsPart}`);
+  const quip = await callLlama(sys, `${lead}${countsPart}`);
+  // Chat-model invocation may have evicted the embedder from llama-swap. Fire a
+  // no-op embed so the next RAG query doesn't pay the cold-load latency.
+  void warmupEmbedder();
+  return quip;
 }
 
 export async function generateMilestoneQuip(ctx: MilestoneQuipContext): Promise<string | null> {
@@ -194,5 +194,7 @@ export async function generateMilestoneQuip(ctx: MilestoneQuipContext): Promise<
   const itemsPart = formatItemsForPrompt(ctx.items);
   const orderedPhrase = ctx.items.length === 1 ? `ordered ${itemsPart}` : `ordered: ${itemsPart}`;
   const userPrompt = `Milestone "${ctx.milestoneName}" hit: scope ${ctx.scope}, threshold ${ctx.threshold}. ${ctx.profileName} ${orderedPhrase}.`;
-  return callLlama(sys, userPrompt);
+  const quip = await callLlama(sys, userPrompt);
+  void warmupEmbedder();
+  return quip;
 }

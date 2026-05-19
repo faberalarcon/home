@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, integer, text, real, blob } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const profiles = sqliteTable('profiles', {
@@ -90,7 +90,18 @@ export const piMetricsHistory = sqliteTable('pi_metrics_history', {
   load1: real('load1')
 });
 
+export const goobyEmbeddings = sqliteTable('gooby_embeddings', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  sourceType: text('source_type').notNull(),
+  sourceId: text('source_id').notNull(),
+  text: text('text').notNull(),
+  vector: blob('vector', { mode: 'buffer' }).notNull(),
+  dim: integer('dim').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
 export type Profile = typeof profiles.$inferSelect;
 export type Drink = typeof drinks.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type DailyBrief = typeof dailyBriefs.$inferSelect;
+export type GoobyEmbedding = typeof goobyEmbeddings.$inferSelect;

@@ -1,0 +1,13 @@
+[Unit]
+Description=Re-index 21 Bristoe GoobyGPT RAG embeddings
+Requires=21bristoe-rag-reindex.service
+
+[Timer]
+# Fire at 04:00 every day. Persistent=true means if the host was off at 4am,
+# the reindex runs on next boot instead of being silently skipped.
+OnCalendar=*-*-* 04:00:00
+AccuracySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

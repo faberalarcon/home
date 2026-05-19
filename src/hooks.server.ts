@@ -40,6 +40,13 @@ const TTS_LLM_SYSTEM_PROMPT_MISC = 'You are the host speaker at 21 Bristoe, a pr
 const DAILY_BRIEF_SYSTEM_PROMPT_VERSION = '1';
 const DAILY_BRIEF_SYSTEM_PROMPT = 'You are the steward of 21 Bristoe writing a one-paragraph daily brief for the household. Tone: warm, dry, observational — like a butler who has seen the whole day at once and is now reporting back. Use the structured facts I give you. Mention the drink count and top drink if non-zero; otherwise skip drinks. Mention the weather only if notable (rain, extreme temps). Mention Pi peak temp only if above 70C. Mention HA errors only if non-zero. Hard rules: 2-4 sentences total, under 60 words, no lists, no emojis, no quotes, no preamble. Output ONLY the brief paragraph.';
 
+const REWRITE_PROMPT_VERSION = '1';
+const REWRITE_PROMPT_MEMBER_BIO = 'You rewrite household-member bios for the 21 Bristoe site. Keep the same length, warmth, and dry humor. Match first/third person from the original. Output ONLY the rewritten bio — no preamble, no quotes, no list, no emojis. Stay under 500 characters.';
+const REWRITE_PROMPT_DRINK_DESCRIPTION = 'You rewrite drink descriptions for the 21 Bristoe drink hub menu. Punchy, evocative, single short paragraph. Keep ingredients/flavor cues that appear in the original. Output ONLY the rewritten description — no preamble, no quotes, no emojis. Stay under 400 characters.';
+const REWRITE_PROMPT_NEIGHBORHOOD_TIP = 'You rewrite neighborhood-highlight cards for the 21 Bristoe home page. Inviting, locally specific, warm but not saccharine. Output ONLY the rewritten description — no preamble, no quotes, no emojis. Stay under 300 characters.';
+const REWRITE_PROMPT_VISITOR_TIP = 'You rewrite visitor tips for the 21 Bristoe home page. Practical, friendly, two sentences max. Output ONLY the rewritten body — no preamble, no quotes, no emojis. Stay under 500 characters.';
+const REWRITE_PROMPT_LIMON_SPOTLIGHT = 'You rewrite the Limón spotlight bio. Warm, affectionate, a little chaotic — like introducing a beloved golden retriever to a stranger. Output ONLY the rewritten bio — no preamble, no quotes, no emojis. Stay under 500 characters.';
+
 bootstrapSettings({
   ha_base_url: 'http://ai.local:8123',
   ha_token: '',
@@ -58,7 +65,19 @@ bootstrapSettings({
   daily_brief_model: 'gemma4-26b-heretic-128k',
   daily_brief_notify_service: '',
   daily_brief_system_prompt: DAILY_BRIEF_SYSTEM_PROMPT,
-  daily_brief_system_prompt_version: DAILY_BRIEF_SYSTEM_PROMPT_VERSION
+  daily_brief_system_prompt_version: DAILY_BRIEF_SYSTEM_PROMPT_VERSION,
+  gooby_rag_enabled: 'true',
+  gooby_rag_model: 'gemma4-26b-heretic-128k',
+  gooby_rag_embed_model: 'embeddinggemma',
+  gooby_rag_embed_dim: '768',
+  gooby_rag_top_k: '8',
+  gooby_rag_max_chunk_chars: '600',
+  rewrite_prompt_member_bio: REWRITE_PROMPT_MEMBER_BIO,
+  rewrite_prompt_drink_description: REWRITE_PROMPT_DRINK_DESCRIPTION,
+  rewrite_prompt_neighborhood_tip: REWRITE_PROMPT_NEIGHBORHOOD_TIP,
+  rewrite_prompt_visitor_tip: REWRITE_PROMPT_VISITOR_TIP,
+  rewrite_prompt_limon_spotlight: REWRITE_PROMPT_LIMON_SPOTLIGHT,
+  rewrite_prompt_version: REWRITE_PROMPT_VERSION
 });
 
 // Force-overwrite saved system prompts once per version bump so older installs
@@ -83,6 +102,30 @@ if (getSetting('daily_brief_system_prompt_version') !== DAILY_BRIEF_SYSTEM_PROMP
   setSetting('daily_brief_system_prompt_version', DAILY_BRIEF_SYSTEM_PROMPT_VERSION);
   console.log(`[brief] migrated daily_brief_system_prompt to version ${DAILY_BRIEF_SYSTEM_PROMPT_VERSION}`);
 }
+if (getSetting('rewrite_prompt_version') !== REWRITE_PROMPT_VERSION) {
+  setSetting('rewrite_prompt_member_bio', REWRITE_PROMPT_MEMBER_BIO);
+  setSetting('rewrite_prompt_drink_description', REWRITE_PROMPT_DRINK_DESCRIPTION);
+  setSetting('rewrite_prompt_neighborhood_tip', REWRITE_PROMPT_NEIGHBORHOOD_TIP);
+  setSetting('rewrite_prompt_visitor_tip', REWRITE_PROMPT_VISITOR_TIP);
+  setSetting('rewrite_prompt_limon_spotlight', REWRITE_PROMPT_LIMON_SPOTLIGHT);
+  setSetting('rewrite_prompt_version', REWRITE_PROMPT_VERSION);
+  console.log(`[gooby-rag] migrated rewrite prompts to version ${REWRITE_PROMPT_VERSION}`);
+}
+
+async function bootstrapGoobyRagIndex(): Promise<void> {
+  try {
+    const { chunkCount, indexAll } = await import('$lib/gooby/server/rag');
+    if (chunkCount() > 0) {
+      console.log(`[gooby-rag] index has ${chunkCount()} chunks; skipping boot-on-empty`);
+      return;
+    }
+    const result = await indexAll();
+    console.log(`[gooby-rag] indexed ${result.inserted + result.updated} chunks (inserted=${result.inserted}, updated=${result.updated}, removed=${result.removed})`);
+  } catch (err) {
+    console.warn('[gooby-rag] boot-on-empty index failed:', err instanceof Error ? err.message : err);
+  }
+}
+void bootstrapGoobyRagIndex();
 
 const PI_INGEST_INTERVAL_MS = 5 * 60 * 1000;
 async function ingestPiAndBroadcast(label: string): Promise<void> {

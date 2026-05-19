@@ -1,0 +1,19 @@
+[Unit]
+Description=21 Bristoe GoobyGPT RAG re-index
+# POSTs to /admin/api/rag/reindex on the unified site container to rebuild
+# the gooby_embeddings table from current drinks, admin content, and last-7d
+# stats. Idempotent and cheap when little has changed.
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/21bristoe-admin.env
+ExecStart=/usr/bin/curl --fail --show-error --silent \
+  --max-time 600 --retry 3 --retry-delay 10 --retry-all-errors \
+  -X POST \
+  -H "X-Admin-Auth: ${ADMIN_SHARED_SECRET}" \
+  -o /tmp/21bristoe-rag-reindex.last.json \
+  http://127.0.0.1:6173/admin/api/rag/reindex
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=21bristoe-rag-reindex

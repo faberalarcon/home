@@ -95,6 +95,21 @@ if [[ "$MODE" != "--local" ]]; then
     ADMIN_CODE=$(curl -so /dev/null -w '%{http_code}' https://admin.21bristoe.com/admin/ 2>/dev/null || echo "error")
     check "Admin requires auth (401)" "$ADMIN_CODE" "401"
 
+    REWRITE_CODE=$(curl -so /dev/null -w '%{http_code}' -X POST https://admin.21bristoe.com/admin/api/rewrite -H 'Content-Type: application/json' -d '{"field":"drink_description","current":"x"}' 2>/dev/null || echo "error")
+    check "Admin /api/rewrite requires auth (401)" "$REWRITE_CODE" "401"
+
+    REINDEX_CODE=$(curl -so /dev/null -w '%{http_code}' -X POST https://admin.21bristoe.com/admin/api/rag/reindex 2>/dev/null || echo "error")
+    check "Admin /api/rag/reindex requires auth (401)" "$REINDEX_CODE" "401"
+
+    RAG_BOOT_LOG=$(docker logs --tail 200 21bristoe-site 2>&1 | grep -E '\[gooby-rag\] (indexed|index has)' | head -1 || true)
+    if [[ -n "$RAG_BOOT_LOG" ]]; then
+        echo "  PASS  Gooby RAG boot log present"
+        ((PASS++)) || true
+    else
+        echo "  FAIL  Gooby RAG boot log not found in last 200 lines"
+        ((FAIL++)) || true
+    fi
+
     MANIFEST=$(curl -s https://21bristoe.com/uploads/manifest.json 2>/dev/null || echo "")
     check "Uploads manifest is valid JSON" "$(echo "$MANIFEST" | python3 -c 'import sys,json; json.load(sys.stdin); print("valid")' 2>/dev/null || echo "invalid")" "valid"
 

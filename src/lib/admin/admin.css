@@ -810,3 +810,117 @@ details:first-child .st-section-title { border-top: none; padding-top: 0; }
     text-align: center;
   }
 }
+
+/* --- AI Rewrite --- */
+.rewrite-btn {
+  margin-top: 0.35rem;
+  align-self: flex-start;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.rewrite-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.rewrite-modal {
+  background: var(--color-paper-50, #fff);
+  border: 1px solid var(--color-paper-300, #d1d5db);
+  border-radius: 0.5rem;
+  max-width: 720px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+}
+
+.rewrite-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-paper-300, #d1d5db);
+}
+
+.rewrite-modal__head h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.rewrite-modal__close {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+}
+
+.rewrite-modal__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.75rem 1rem 1rem;
+  overflow-y: auto;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rewrite-card {
+  border: 1px solid var(--color-paper-300, #d1d5db);
+  border-radius: 0.4rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--color-paper-100, #f8f8f8);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rewrite-card:focus-within,
+.rewrite-card:hover {
+  border-color: var(--color-blood-500, #b91c1c);
+}
+
+.rewrite-card__tone {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-blood-600, #991b1b);
+  display: flex;
+  justify-content: space-between;
+}
+
+.rewrite-card__hint {
+  opacity: 0.6;
+  font-weight: 500;
+}
+
+.rewrite-card__text {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.rewrite-card__pick {
+  align-self: flex-start;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--color-blood-500, #b91c1c);
+  background: var(--color-blood-500, #b91c1c);
+  color: #fff;
+  border-radius: 0.3rem;
+  cursor: pointer;
+}
+
+.rewrite-card__pick:hover { filter: brightness(0.95); }

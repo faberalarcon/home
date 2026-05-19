@@ -48,6 +48,14 @@
 </script>
 
 <form class="composer" onsubmit={onSubmit} id="gooby-composer">
+  <label class="context-toggle">
+    <input
+      type="checkbox"
+      checked={chat.useSiteContext}
+      onchange={(e) => chat.setUseSiteContext((e.target as HTMLInputElement).checked)}
+    />
+    <span>Use site context</span>
+  </label>
   <div class="pill" data-state={chat.sending ? 'sending' : 'idle'}>
     <textarea
       bind:this={textareaEl}
@@ -181,6 +189,27 @@
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+
+  .context-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 auto;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-ink-500);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .context-toggle input {
+    width: 0.9rem;
+    height: 0.9rem;
+    accent-color: var(--color-blood-500);
+    cursor: pointer;
   }
 
   @media (max-width: 640px) {

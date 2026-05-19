@@ -1041,6 +1041,134 @@ function showToast(msg, type = 'success') {
   toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
 }
 
+// --- AI Rewrite overlay ---
+function rewriteCandidatesOverlay(textarea, candidates) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'rewrite-overlay';
+    overlay.innerHTML = `
+      <div class="rewrite-modal" role="dialog" aria-modal="true">
+        <header class="rewrite-modal__head">
+          <h3>AI Rewrite</h3>
+          <button type="button" class="rewrite-modal__close" aria-label="Close">×</button>
+        </header>
+        <ol class="rewrite-modal__list">
+          ${candidates.map((c, i) => `
+            <li class="rewrite-card" data-idx="${i}" tabindex="0">
+              <div class="rewrite-card__tone">${escHtml(c.tone)} <span class="rewrite-card__hint">press ${i + 1}</span></div>
+              <p class="rewrite-card__text">${escHtml(c.text)}</p>
+              <button type="button" class="rewrite-card__pick" data-idx="${i}">Use this</button>
+            </li>
+          `).join('')}
+        </ol>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const close = (value) => {
+      document.removeEventListener('keydown', onKey);
+      overlay.remove();
+      resolve(value);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); close(null); return; }
+      const idx = ['1', '2', '3'].indexOf(e.key);
+      if (idx >= 0 && candidates[idx]) { e.preventDefault(); close(candidates[idx].text); }
+    };
+    overlay.querySelector('.rewrite-modal__close').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(null); });
+    overlay.querySelectorAll('.rewrite-card__pick').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.idx);
+        close(candidates[idx]?.text ?? null);
+      });
+    });
+    document.addEventListener('keydown', onKey);
+  });
+}
+
+async function runRewrite(textarea, field, contextFn) {
+  const current = (textarea.value || '').trim();
+  if (!current) {
+    showToast('Field is empty — nothing to rewrite', 'error');
+    return;
+  }
+  const button = textarea.parentElement?.querySelector(`.rewrite-btn[data-field="${field}"]`);
+  if (button) button.disabled = true;
+  showToast('Rewriting…', 'success');
+  try {
+    const context = typeof contextFn === 'function' ? contextFn() : undefined;
+    const res = await fetch(`${API}/api/rewrite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ field, current, ...(context ? { context } : {}) })
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.error || `Rewrite failed (${res.status})`);
+    const candidates = Array.isArray(payload.candidates) ? payload.candidates : [];
+    if (candidates.length === 0) throw new Error('No candidates returned');
+    const picked = await rewriteCandidatesOverlay(textarea, candidates);
+    if (picked != null) {
+      textarea.value = picked;
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      showToast('Rewrite applied — remember to save', 'success');
+    }
+  } catch (err) {
+    showToast(err.message || 'Rewrite failed', 'error');
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function attachRewriteButton(textarea, field, contextFn) {
+  if (!textarea || textarea.dataset.rewriteAttached === '1') return;
+  textarea.dataset.rewriteAttached = '1';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'rewrite-btn btn-sm btn-outline';
+  btn.dataset.field = field;
+  btn.textContent = 'AI Rewrite';
+  btn.addEventListener('click', () => runRewrite(textarea, field, contextFn));
+  textarea.insertAdjacentElement('afterend', btn);
+}
+
+function attachAllRewriteButtons() {
+  document.querySelectorAll('textarea.member-bio').forEach((el) => {
+    attachRewriteButton(el, 'member_bio', () => {
+      const row = el.closest('.member-row');
+      const nameEl = row?.querySelector('.member-name');
+      const roleEl = row?.querySelector('.member-role');
+      return {
+        ...(nameEl?.value ? { name: nameEl.value } : {}),
+        ...(roleEl?.value ? { role: roleEl.value } : {})
+      };
+    });
+  });
+  document.querySelectorAll('textarea.tip-body').forEach((el) => {
+    attachRewriteButton(el, 'visitor_tip', () => {
+      const row = el.closest('.tip-row');
+      const titleEl = row?.querySelector('.tip-title');
+      return titleEl?.value ? { title: titleEl.value } : {};
+    });
+  });
+  document.querySelectorAll('textarea.nh-description').forEach((el) => {
+    attachRewriteButton(el, 'neighborhood_tip', () => {
+      const row = el.closest('.nh-row');
+      const titleEl = row?.querySelector('.nh-title');
+      return titleEl?.value ? { title: titleEl.value } : {};
+    });
+  });
+  const limonBio = document.getElementById('limonBio');
+  if (limonBio) attachRewriteButton(limonBio, 'limon_spotlight');
+}
+
+// Re-attach after every editor re-render.
+const _attachObserver = new MutationObserver(() => attachAllRewriteButtons());
+const _watchTargets = ['memberEditor', 'tipEditor', 'neighborhoodEditor', 'limonEditor'];
+for (const id of _watchTargets) {
+  const node = document.getElementById(id);
+  if (node) _attachObserver.observe(node, { childList: true, subtree: true });
+}
+
 // --- Init ---
 loadStats();
 loadGoobySettings();

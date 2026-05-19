@@ -1,6 +1,7 @@
 import type { LlamaModel, LlamaStatus } from './llama';
 
 const STORED_MODEL_KEY = 'gooby:selectedModel';
+const STORED_SITE_CONTEXT_KEY = 'gooby:useSiteContext';
 
 function readStoredModel(): string | null {
   if (typeof localStorage === 'undefined') return null;
@@ -16,6 +17,26 @@ function writeStoredModel(modelId: string) {
   if (!modelId) return;
   try {
     localStorage.setItem(STORED_MODEL_KEY, modelId);
+  } catch {
+    // ignore
+  }
+}
+
+function readStoredSiteContext(): boolean {
+  if (typeof localStorage === 'undefined') return true;
+  try {
+    const v = localStorage.getItem(STORED_SITE_CONTEXT_KEY);
+    if (v === null) return true;
+    return v === 'true';
+  } catch {
+    return true;
+  }
+}
+
+function writeStoredSiteContext(value: boolean) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(STORED_SITE_CONTEXT_KEY, value ? 'true' : 'false');
   } catch {
     // ignore
   }
@@ -190,6 +211,7 @@ export class GoobyChat {
   error = $state<string | null>(null);
   pendingOverrideModel = $state<string | null>(null);
   sessionStats = $state<Record<string, SessionStats>>({});
+  useSiteContext = $state<boolean>(readStoredSiteContext());
 
   private fallbackDefaultModel: string;
   private streamAbort: AbortController | null = null;
@@ -210,6 +232,11 @@ export class GoobyChat {
 
   private persistSelected() {
     writeStoredModel(this.selectedModel);
+  }
+
+  setUseSiteContext(value: boolean) {
+    this.useSiteContext = value;
+    writeStoredSiteContext(value);
   }
 
   setScrollHandler(handler: (() => void) | null) {
@@ -523,7 +550,8 @@ export class GoobyChat {
         body: JSON.stringify({
           conversationId: this.selectedId,
           model: this.selectedModel,
-          prompt: text
+          prompt: text,
+          useSiteContext: this.useSiteContext
         })
       });
 

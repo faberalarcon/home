@@ -21,6 +21,8 @@ import {
   waitForGoobyModelReady,
   type ChatMessage
 } from '$lib/gooby/llama';
+import { isRagEnabled, retrieve } from '$lib/gooby/server/rag';
+import { clearChatActive, markChatActive } from '$lib/drinks/server/llm-priority';
 
 function messageForLlama(message: GoobyMessage): ChatMessage {
   return {
@@ -107,6 +109,7 @@ export async function POST({ request }) {
   const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
   let conversationId = typeof body.conversationId === 'string' ? body.conversationId : '';
   let model = typeof body.model === 'string' ? body.model.trim() : '';
+  const useSiteContext = body.useSiteContext === true && isRagEnabled();
 
   if (!prompt) {
     return json({ error: 'Prompt is required' }, { status: 400 });
@@ -132,10 +135,33 @@ export async function POST({ request }) {
   const wasFirstExchange = countMessages(conversationId) === 0;
   addMessage(conversationId, 'user', prompt, model);
   const settings = getSettings();
-  const messages = [
-    { role: 'system', content: settings.systemPrompt } satisfies ChatMessage,
+  const baseMessages: ChatMessage[] = [
+    { role: 'system', content: settings.systemPrompt },
     ...listMessages(conversationId).slice(-40).map(messageForLlama)
   ];
+
+  let ragContext: string | null = null;
+  if (useSiteContext) {
+    try {
+      const chunks = await retrieve(prompt);
+      if (chunks.length > 0) {
+        ragContext = chunks
+          .map((c) => `[${c.sourceType}] ${c.text}`)
+          .join('\n\n');
+      }
+    } catch (err) {
+      console.warn('[gooby-rag] retrieve failed:', err instanceof Error ? err.message : err);
+    }
+  }
+
+  const messages: ChatMessage[] = ragContext
+    ? [
+        { role: 'system', content: `Site context (use only what's relevant):\n${ragContext}` },
+        ...baseMessages
+      ]
+    : baseMessages;
+
+  markChatActive(240);
   let assistantContent = '';
   let assistantReasoning = '';
   let parseBuffer = '';
@@ -227,6 +253,7 @@ export async function POST({ request }) {
         }
       } finally {
         reader?.releaseLock();
+        clearChatActive();
       }
     },
     cancel() {
