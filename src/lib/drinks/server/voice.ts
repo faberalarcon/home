@@ -22,12 +22,22 @@ export interface Transcription {
   durationMs: number;
 }
 
-export async function transcribe(audio: Buffer, mime: string): Promise<Transcription> {
+export function buildWhisperVocab(profileList: Profile[], menu: Drink[]): string {
+  const members = profileList.map((p) => p.name).filter(Boolean).join(', ');
+  const drinkNames = menu.map((d) => d.name).filter(Boolean).join(', ');
+  const parts: string[] = ['21 Bristoe.'];
+  if (members) parts.push(`Members: ${members}.`);
+  if (drinkNames) parts.push(`Drinks: ${drinkNames}.`);
+  return parts.join(' ');
+}
+
+export async function transcribe(audio: Buffer, mime: string, prompt?: string): Promise<Transcription> {
   const start = Date.now();
   const form = new FormData();
   form.set('file', new Blob([new Uint8Array(audio)], { type: mime || 'audio/webm' }), 'order.webm');
   form.set('temperature', '0');
   form.set('response_format', 'json');
+  if (prompt && prompt.trim()) form.set('prompt', prompt.trim());
 
   const response = await fetch(`${whisperBaseUrl()}/inference`, {
     method: 'POST',
@@ -83,7 +93,8 @@ function buildSystemPrompt(menu: Drink[], profileList: Profile[]): string {
     '- Use profile_id=null when the speaker does not name a person.',
     '- quantity is a positive integer (default 1).',
     '- For each unresolved profile/drink fragment, add an ambiguities entry with up to 3 candidates.',
-    '- Set confidence "high" only when every drink + profile resolves cleanly; "low" when no items resolve.'
+    '- Set confidence "high" only when every drink + profile resolves cleanly; "low" when no items resolve.',
+    '- The transcript comes from speech-to-text and may contain phonetic errors; map fragments to the closest-sounding profile/drink from the lists above.'
   ].join('\n');
 }
 

@@ -3,7 +3,7 @@ import { db } from '$lib/drinks/server/db';
 import { drinks, profiles } from '$lib/drinks/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { checkRateLimit } from '$lib/drinks/server/ratelimit';
-import { parseOrder, transcribe, type ParsedOrder } from '$lib/drinks/server/voice';
+import { parseOrder, transcribe, buildWhisperVocab, type ParsedOrder } from '$lib/drinks/server/voice';
 
 const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = new Set([
@@ -87,7 +87,10 @@ export const POST: RequestHandler = async (event) => {
   const buffer = Buffer.from(await blob.arrayBuffer());
 
   try {
-    const transcription = await transcribe(buffer, mime);
+    const activeProfiles = db.select().from(profiles).where(eq(profiles.active, true)).all();
+    const activeDrinks = db.select().from(drinks).where(eq(drinks.active, true)).all();
+    const vocab = buildWhisperVocab(activeProfiles, activeDrinks);
+    const transcription = await transcribe(buffer, mime, vocab);
     if (!transcription.text) {
       return json({ preview: null, autoSubmit: false, transcript: '', message: 'No speech detected' });
     }
