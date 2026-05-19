@@ -1,7 +1,17 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { appPath } from '$lib/drinks/app-paths';
+  import VoiceOrderButton from '$lib/drinks/components/VoiceOrderButton.svelte';
   import type { PageData } from './$types';
+
+  let kioskToast = $state<string | null>(null);
+
+  function showKioskToast(message: string, ms = 3000) {
+    kioskToast = message;
+    setTimeout(() => {
+      if (kioskToast === message) kioskToast = null;
+    }, ms);
+  }
 
   let { data }: { data: PageData } = $props();
 
@@ -218,3 +228,29 @@
     </div>
   </div>
 </div>
+
+<VoiceOrderButton
+  onSubmitted={(summary) => showKioskToast(`Voice order: ${summary}`, 4000)}
+  onError={(message) => showKioskToast(message, 3000)}
+/>
+
+{#if kioskToast}
+  <div class="kiosk-toast">{kioskToast}</div>
+{/if}
+
+<style>
+  .kiosk-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.25rem;
+    transform: translateX(-50%);
+    z-index: 70;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.92);
+    color: #fef3c7;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+</style>

@@ -32,6 +32,8 @@ const PROFILES: Record<string, LimitProfile> = {
   'admin-login': { refillMs: 100_000, burst: 3, windowMs: 5 * 60_000, windowMax: 3 },
   // SSE: 10 new connections per minute
   sse: { refillMs: 6_000, burst: 10, windowMs: 60_000, windowMax: 10 },
+  // Voice ordering: 1 transcript per 5s, 12 per minute
+  voice: { refillMs: 5_000, burst: 1, windowMs: 60_000, windowMax: 12 },
 };
 
 const buckets = new Map<string, Bucket>();

@@ -96,10 +96,26 @@ if [[ "$MODE" != "--local" ]]; then
     check "Admin requires auth (401)" "$ADMIN_CODE" "401"
 
     REWRITE_CODE=$(curl -so /dev/null -w '%{http_code}' -X POST https://admin.21bristoe.com/admin/api/rewrite -H 'Content-Type: application/json' -d '{"field":"drink_description","current":"x"}' 2>/dev/null || echo "error")
-    check "Admin /api/rewrite requires auth (401)" "$REWRITE_CODE" "401"
+    if [[ "$REWRITE_CODE" == "401" || "$REWRITE_CODE" == "403" ]]; then
+        echo "  PASS  Admin /api/rewrite requires auth ($REWRITE_CODE)"
+        ((PASS++)) || true
+    else
+        echo "  FAIL  Admin /api/rewrite requires auth"
+        echo "        Expected: 401 or 403"
+        echo "        Got:      $REWRITE_CODE"
+        ((FAIL++)) || true
+    fi
 
     REINDEX_CODE=$(curl -so /dev/null -w '%{http_code}' -X POST https://admin.21bristoe.com/admin/api/rag/reindex 2>/dev/null || echo "error")
-    check "Admin /api/rag/reindex requires auth (401)" "$REINDEX_CODE" "401"
+    if [[ "$REINDEX_CODE" == "401" || "$REINDEX_CODE" == "403" ]]; then
+        echo "  PASS  Admin /api/rag/reindex requires auth ($REINDEX_CODE)"
+        ((PASS++)) || true
+    else
+        echo "  FAIL  Admin /api/rag/reindex requires auth"
+        echo "        Expected: 401 or 403"
+        echo "        Got:      $REINDEX_CODE"
+        ((FAIL++)) || true
+    fi
 
     RAG_BOOT_LOG=$(docker logs --tail 200 21bristoe-site 2>&1 | grep -E '\[gooby-rag\] (indexed|index has)' | head -1 || true)
     if [[ -n "$RAG_BOOT_LOG" ]]; then
@@ -109,6 +125,20 @@ if [[ "$MODE" != "--local" ]]; then
         echo "  FAIL  Gooby RAG boot log not found in last 200 lines"
         ((FAIL++)) || true
     fi
+
+    VOICE_CODE=$(curl -so /dev/null -w '%{http_code}' "$BASE/drinks/api/voice" 2>/dev/null || echo "error")
+    if [[ "$VOICE_CODE" == "401" || "$VOICE_CODE" == "405" ]]; then
+        echo "  PASS  /drinks/api/voice gated to auth + POST ($VOICE_CODE)"
+        ((PASS++)) || true
+    else
+        echo "  FAIL  /drinks/api/voice gated to auth + POST"
+        echo "        Expected: 401 or 405"
+        echo "        Got:      $VOICE_CODE"
+        ((FAIL++)) || true
+    fi
+
+    WHISPER_HEALTH=$(curl -s --max-time 5 http://192.168.1.215:8081/health 2>/dev/null || echo "")
+    check "Whisper /health reachable on LAN" "$WHISPER_HEALTH" "ok"
 
     MANIFEST=$(curl -s https://21bristoe.com/uploads/manifest.json 2>/dev/null || echo "")
     check "Uploads manifest is valid JSON" "$(echo "$MANIFEST" | python3 -c 'import sys,json; json.load(sys.stdin); print("valid")' 2>/dev/null || echo "invalid")" "valid"

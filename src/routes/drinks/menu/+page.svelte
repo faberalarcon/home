@@ -3,6 +3,7 @@
   import { appPath, assetPath } from '$lib/drinks/app-paths';
   import { selectedProfile } from '$lib/drinks/profile';
   import { setTitle } from '$lib/drinks/stores/title';
+  import VoiceOrderButton from '$lib/drinks/components/VoiceOrderButton.svelte';
   import { onMount } from 'svelte';
   import type { PageData } from './$types';
 
@@ -244,6 +245,18 @@
     {toast}
   </div>
 {/if}
+
+<VoiceOrderButton
+  onSubmitted={(summary) => {
+    toast = `Voice order placed: ${summary}`;
+    setTitle('Cheers! 🍹', 3000);
+    setTimeout(() => (toast = null), 3000);
+  }}
+  onError={(message) => {
+    toast = message;
+    setTimeout(() => (toast = null), 2500);
+  }}
+/>
 
 <style>
   .menu-head {

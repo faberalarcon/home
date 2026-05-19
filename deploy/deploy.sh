@@ -61,6 +61,8 @@ ensure_root_env() {
         ensure_env_key_literal "MEDIA_DIR" "$MEDIA_DIR"
         ensure_env_key_literal "GOOBY_DATABASE_PATH" "/app/data/gooby-gpt.db"
         ensure_env_key_literal "LLAMA_BASE_URL" "http://192.168.1.215:8080"
+        ensure_env_key_literal "WHISPER_BASE_URL" "http://192.168.1.215:8081"
+        ensure_env_key_literal "WHISPER_MODEL" "base.en"
         ensure_env_key_from "ADMIN_SHARED_SECRET" "$ADMIN_ENV"
         chmod 600 "$ROOT_ENV_FILE"
         return 0
@@ -75,6 +77,8 @@ ensure_root_env() {
         printf 'MEDIA_DIR=%s\n' "$MEDIA_DIR"
         printf 'GOOBY_DATABASE_PATH=/app/data/gooby-gpt.db\n'
         printf 'LLAMA_BASE_URL=http://192.168.1.215:8080\n'
+        printf 'WHISPER_BASE_URL=http://192.168.1.215:8081\n'
+        printf 'WHISPER_MODEL=base.en\n'
         write_env_key_from "$LEGACY_DRINK_HUB_ENV" "SITE_PASSWORD"
         write_env_key_from "$LEGACY_DRINK_HUB_ENV" "SITE_PASSWORD_HASH"
         write_env_key_from "$LEGACY_DRINK_HUB_ENV" "GOOBY_PASSWORD"
