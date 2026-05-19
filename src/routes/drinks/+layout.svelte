@@ -36,7 +36,7 @@
   <title>{$pageTitle}</title>
 </svelte:head>
 
-{#if currentPath === '/login'}
+{#if currentPath === '/login' || currentPath === '/kiosk'}
   {@render children()}
 {:else}
   <DrinkSwipeEnhancer />
