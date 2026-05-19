@@ -1,17 +1,58 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import SectionHeader from '$lib/stats/components/SectionHeader.svelte';
   import StatCard from '$lib/stats/components/StatCard.svelte';
   import LineChart from '$lib/stats/components/LineChart.svelte';
 
   let { data } = $props();
 
+  let liveLatest = $state<typeof data.pi.latest | null>(null);
+  let live = $state(false);
+
+  const displayLatest = $derived(liveLatest ?? data.pi.latest);
+
+  onMount(() => {
+    if (typeof EventSource === 'undefined') return;
+    const es = new EventSource('/stats/api/stream');
+    const apply = (raw: string) => {
+      try {
+        const obj = JSON.parse(raw) as { t: number; cpuPct: number | null; memPct: number | null; tempC: number | null; load1: number | null };
+        if (!obj || typeof obj.t !== 'number') return;
+        liveLatest = {
+          t: obj.t,
+          cpuPct: obj.cpuPct,
+          memPct: obj.memPct ?? data.pi.latest?.memPct ?? 0,
+          memUsedMb: data.pi.latest?.memUsedMb ?? 0,
+          memTotalMb: data.pi.latest?.memTotalMb ?? 0,
+          tempC: obj.tempC,
+          load1: obj.load1 ?? data.pi.latest?.load1 ?? 0,
+          netDownMBps: data.pi.latest?.netDownMBps ?? null,
+          netUpMBps: data.pi.latest?.netUpMBps ?? null
+        };
+        live = true;
+      } catch {
+        // ignore parse failure
+      }
+    };
+    es.addEventListener('pi-tick', (ev) => apply((ev as MessageEvent).data));
+    es.addEventListener('pi-snapshot', (ev) => apply((ev as MessageEvent).data));
+    es.addEventListener('error', () => {
+      live = false;
+    });
+    return () => es.close();
+  });
+
   const rangeOptions = [
     { value: '1d', label: '1d' },
-    { value: '7d', label: '7d' }
+    { value: '7d', label: '7d' },
+    { value: '30d', label: '30d' },
+    { value: '90d', label: '90d' }
   ];
   const rangeLabels: Record<string, string> = {
     '1d': 'last 24 hours',
-    '7d': 'last 7 days (hourly peaks)'
+    '7d': 'last 7 days (hourly peaks)',
+    '30d': 'last 30 days (hourly peaks)',
+    '90d': 'last 90 days (6-hour peaks)'
   };
 
   function fmtMem(mb: number | null | undefined): string {
@@ -55,34 +96,34 @@
     </p>
   {:else}
     <section class="pi__section reveal">
-      <SectionHeader title="Current readings" meta="Latest sample" />
+      <SectionHeader title="Current readings" meta={live ? 'Live' : 'Latest sample'} />
       <div class="stat-grid">
         <StatCard
           label="CPU"
-          value={data.pi.latest?.cpuPct != null ? String(data.pi.latest.cpuPct) : '—'}
+          value={displayLatest?.cpuPct != null ? String(displayLatest.cpuPct) : '—'}
           unit="%"
-          sublabel={data.pi.latest ? `load ${data.pi.latest.load1.toFixed(2)}` : ''}
+          sublabel={displayLatest ? `load ${displayLatest.load1.toFixed(2)}` : ''}
           accent
         />
         <StatCard
           label="Temperature"
-          value={data.pi.latest?.tempC != null ? String(data.pi.latest.tempC) : '—'}
+          value={displayLatest?.tempC != null ? String(displayLatest.tempC) : '—'}
           unit="°C"
         />
         <StatCard
           label="Memory"
-          value={data.pi.latest ? String(data.pi.latest.memPct) : '—'}
+          value={displayLatest ? String(displayLatest.memPct) : '—'}
           unit="%"
-          sublabel={data.pi.latest ? `${fmtMem(data.pi.latest.memUsedMb)} of ${fmtMem(data.pi.latest.memTotalMb)}` : ''}
+          sublabel={displayLatest ? `${fmtMem(displayLatest.memUsedMb)} of ${fmtMem(displayLatest.memTotalMb)}` : ''}
         />
         <StatCard
           label="Network ↓"
-          value={fmtRate(data.pi.latest?.netDownMBps)}
-          sublabel={data.pi.latest ? `↑ ${fmtRate(data.pi.latest.netUpMBps)}` : ''}
+          value={fmtRate(displayLatest?.netDownMBps)}
+          sublabel={displayLatest ? `↑ ${fmtRate(displayLatest.netUpMBps)}` : ''}
         />
       </div>
-      {#if data.pi.latest}
-        <p class="pi__lastseen">last sample at {fmtTime(data.pi.latest.t)}</p>
+      {#if displayLatest}
+        <p class="pi__lastseen">last sample at {fmtTime(displayLatest.t)}</p>
       {/if}
     </section>
 

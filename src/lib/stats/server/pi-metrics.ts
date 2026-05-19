@@ -1,6 +1,9 @@
 import { readFile } from 'node:fs/promises';
+import { queryHistory as queryPiHistory } from './pi-history';
 
 const DATA_FILE = '/var/lib/bristoe-stats/pi-metrics.jsonl';
+
+export type PiMetricsRange = '1d' | '7d' | '30d' | '90d';
 
 export interface PiSample {
   t: number;
@@ -39,7 +42,7 @@ export interface PiMetrics {
     netUpMBps: number | null;
   } | null;
   history: PiPoint[];
-  range: '1d' | '7d';
+  range: PiMetricsRange;
 }
 
 async function readSamples(): Promise<PiSample[]> {
@@ -136,7 +139,7 @@ function bucketize(samples: Bucketable[], spanMs: number, bucketMs: number, buck
   return out;
 }
 
-export async function getPiMetrics(range: '1d' | '7d' = '1d'): Promise<PiMetrics> {
+export async function getPiMetrics(range: PiMetricsRange = '1d'): Promise<PiMetrics> {
   const samples = await readSamples();
   if (!samples.length) {
     return { available: false, latest: null, history: [], range };
@@ -144,10 +147,31 @@ export async function getPiMetrics(range: '1d' | '7d' = '1d'): Promise<PiMetrics
   const withRates = toRates(samples);
   const last = withRates[withRates.length - 1];
 
-  const spanMs = range === '7d' ? 7 * 86400000 : 86400000;
-  const bucketMs = range === '7d' ? 3600000 : 5 * 60000; // 7d -> hourly; 1d -> 5-min raw
-  const bucketLabel: 'hour' | 'day' = 'hour';
-  const history = bucketize(withRates, spanMs, bucketMs, bucketLabel, range === '7d' ? 'peak' : 'average');
+  let history: PiPoint[];
+  if (range === '30d' || range === '90d') {
+    // SQLite history table — survives JSONL rotation. Network omitted at long
+    // ranges because rate-derived values are noise after hourly bucketing.
+    const spanDays = range === '30d' ? 30 : 90;
+    const spanMs = spanDays * 86400000;
+    const bucketMs = range === '30d' ? 3600000 : 6 * 3600000; // 30d -> hourly; 90d -> 6h
+    const bucketLabel: 'hour' | 'day' = range === '90d' ? 'day' : 'hour';
+    const rows = queryPiHistory(spanMs, bucketMs, 'peak');
+    history = rows.map((r) => ({
+      time: fmtLabel(r.t, bucketLabel),
+      t: r.t,
+      cpuPct: r.cpuPct ?? 0,
+      memPct: r.memPct ?? 0,
+      tempC: r.tempC ?? 0,
+      netDownMBps: 0,
+      netUpMBps: 0,
+      load1: r.load1 ?? 0
+    }));
+  } else {
+    const spanMs = range === '7d' ? 7 * 86400000 : 86400000;
+    const bucketMs = range === '7d' ? 3600000 : 5 * 60000;
+    const bucketLabel: 'hour' | 'day' = 'hour';
+    history = bucketize(withRates, spanMs, bucketMs, bucketLabel, range === '7d' ? 'peak' : 'average');
+  }
 
   return {
     available: true,

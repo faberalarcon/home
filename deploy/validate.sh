@@ -145,6 +145,21 @@ if [[ "$MODE" != "--local" ]]; then
     BRIEF_LIST=$(curl -s "$BASE/stats/api/brief" 2>/dev/null || echo "")
     check "Stats brief list JSON" "$(echo "$BRIEF_LIST" | python3 -c 'import sys,json; d=json.load(sys.stdin); print("valid") if isinstance(d.get("briefs"), list) else print("invalid")' 2>/dev/null || echo "invalid")" "valid"
 
+    # SSE doesn't respond to HEAD cleanly; do a short GET and extract the content type.
+    STATS_STREAM_CT=$(curl -s --max-time 3 -o /dev/null -w '%{content_type}' "$BASE/stats/api/stream" 2>/dev/null || echo "")
+    check "Stats SSE returns text/event-stream" "$STATS_STREAM_CT" "text/event-stream"
+
+    PI_30D=$(curl -so /dev/null -w '%{http_code}' "$BASE/stats/pi?range=30d" 2>/dev/null || echo "error")
+    if [[ "$PI_30D" == "200" ]]; then
+        echo "  PASS  /stats/pi?range=30d reachable ($PI_30D)"
+        ((PASS++)) || true
+    else
+        echo "  FAIL  /stats/pi?range=30d reachable"
+        echo "        Expected: 200"
+        echo "        Got:      $PI_30D"
+        ((FAIL++)) || true
+    fi
+
     GOOBY_CODE=$(curl -so /dev/null -w '%{http_code}' "$BASE/gooby/login" 2>/dev/null || echo "error")
     if [[ "$GOOBY_CODE" == "200" || "$GOOBY_CODE" == "303" ]]; then
         echo "  PASS  /gooby/login reachable ($GOOBY_CODE)"

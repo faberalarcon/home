@@ -43,6 +43,13 @@
       "when": 1779235200000,
       "tag": "0005_daily_briefs",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1779321600000,
+      "tag": "0006_pi_metrics_history",
+      "breakpoints": true
     }
   ]
 }

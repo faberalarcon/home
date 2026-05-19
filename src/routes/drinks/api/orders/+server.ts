@@ -5,6 +5,7 @@ import { eq, sql, desc, lt, and } from 'drizzle-orm';
 import { fireEvent } from '$lib/drinks/server/ha';
 import { evaluateMilestones } from '$lib/drinks/server/milestones';
 import { broadcast } from '$lib/drinks/server/stream';
+import { broadcast as broadcastStats } from '$lib/stats/server/stream';
 import { checkRateLimit } from '$lib/drinks/server/ratelimit';
 import { announceDrinkOrder, formatItemsForSpeech, previewMilestoneText } from '$lib/drinks/server/tts';
 import type { OrderItem } from '$lib/drinks/server/tts-llm';
@@ -179,6 +180,12 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   };
 
   broadcast('order', payload);
+  broadcastStats('drink-order', {
+    profileName: profile.name,
+    drinkName: lastDrink.name,
+    category: lastDrink.category,
+    counts: { allTime: countAllTime, today: countToday }
+  });
 
   return json(payload);
 };

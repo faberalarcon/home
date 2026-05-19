@@ -6,6 +6,8 @@ import { bootstrapSettings, getSetting, setSetting } from '$lib/drinks/server/db
 import { verifySessionToken } from '$lib/drinks/server/auth';
 import { getConfiguredSitePasswordHash } from '$lib/drinks/server/site-access';
 import { getConfiguredGoobyPasswordHash } from '$lib/gooby/auth';
+import { ingestFromJsonl } from '$lib/stats/server/pi-history';
+import { broadcast as broadcastStats } from '$lib/stats/server/stream';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const rootAdminSecret = process.env.ADMIN_SHARED_SECRET ?? '';
@@ -81,6 +83,23 @@ if (getSetting('daily_brief_system_prompt_version') !== DAILY_BRIEF_SYSTEM_PROMP
   setSetting('daily_brief_system_prompt_version', DAILY_BRIEF_SYSTEM_PROMPT_VERSION);
   console.log(`[brief] migrated daily_brief_system_prompt to version ${DAILY_BRIEF_SYSTEM_PROMPT_VERSION}`);
 }
+
+const PI_INGEST_INTERVAL_MS = 5 * 60 * 1000;
+async function ingestPiAndBroadcast(label: string): Promise<void> {
+  try {
+    const result = await ingestFromJsonl();
+    if (result.inserted > 0 && result.latest) {
+      console.log(`[pi-history] ${label}: ingested ${result.inserted} new samples`);
+      broadcastStats('pi-tick', result.latest);
+    }
+  } catch (err) {
+    console.warn(`[pi-history] ${label} failed:`, err instanceof Error ? err.message : err);
+  }
+}
+void ingestPiAndBroadcast('startup');
+setInterval(() => {
+  void ingestPiAndBroadcast('tick');
+}, PI_INGEST_INTERVAL_MS).unref();
 
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Frame-Options': 'DENY',

@@ -82,6 +82,14 @@ export const dailyBriefs = sqliteTable('daily_briefs', {
     .default(sql`(unixepoch())`)
 });
 
+export const piMetricsHistory = sqliteTable('pi_metrics_history', {
+  t: integer('t').primaryKey(),
+  cpuPct: real('cpu_pct'),
+  memPct: real('mem_pct'),
+  tempC: real('temp_c'),
+  load1: real('load1')
+});
+
 export type Profile = typeof profiles.$inferSelect;
 export type Drink = typeof drinks.$inferSelect;
 export type Order = typeof orders.$inferSelect;
