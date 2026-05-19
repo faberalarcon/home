@@ -66,6 +66,7 @@ bootstrapSettings({
   daily_brief_notify_service: '',
   daily_brief_system_prompt: DAILY_BRIEF_SYSTEM_PROMPT,
   daily_brief_system_prompt_version: DAILY_BRIEF_SYSTEM_PROMPT_VERSION,
+  drinks_parse_model: 'gemma4:e2b',
   gooby_rag_enabled: 'true',
   gooby_rag_model: 'gemma4-26b-heretic-128k',
   gooby_rag_embed_model: 'embeddinggemma',

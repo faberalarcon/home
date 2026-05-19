@@ -6,7 +6,7 @@ import { isDrinksActive } from './llm-priority';
 import { llamaBaseUrl, whisperBaseUrl } from '$lib/server/llama-endpoint';
 
 const TRANSCRIBE_TIMEOUT_MS = 30_000;
-const PARSE_TIMEOUT_MS = 60_000;
+const PARSE_TIMEOUT_MS = 20_000;
 const YIELD_POLL_MS = 200;
 const YIELD_MAX_WAIT_MS = 8_000;
 
@@ -88,9 +88,18 @@ function buildSystemPrompt(menu: Drink[], profileList: Profile[]): string {
     'Menu:',
     menuPart || '(none)',
     '',
+    'Schema (output exactly this shape — no extra keys, no markdown):',
+    '{',
+    '  "profile_id": <number|null>,',
+    '  "items": [ { "drink_id": <number>, "quantity": <number>, "notes": <string|null> } ],',
+    '  "confidence": "high"|"medium"|"low",',
+    '  "ambiguities": [ { "field": "profile"|"drink", "transcript_fragment": <string>, "candidates": [ { "id": <number>, "label": <string> } ] } ]',
+    '}',
+    '',
     'Rules:',
-    '- Output ONLY the JSON object specified by the schema. No prose, no markdown.',
-    '- Use profile_id=null when the speaker does not name a person.',
+    '- Output ONLY the JSON object. No prose, no markdown.',
+    '- One entry in items per distinct drink line; combine same drinks into one entry with quantity.',
+    '- profile_id=null when the speaker does not name a person.',
     '- quantity is a positive integer (default 1).',
     '- For each unresolved profile/drink fragment, add an ambiguities entry with up to 3 candidates.',
     '- Set confidence "high" only when every drink + profile resolves cleanly; "low" when no items resolve.',
@@ -157,7 +166,7 @@ export async function parseOrder(transcript: string): Promise<ParsedOrder> {
   const menu = db.select().from(drinks).where(eq(drinks.active, true)).all();
   const profileList = db.select().from(profiles).where(eq(profiles.active, true)).all();
   const systemPrompt = buildSystemPrompt(menu, profileList);
-  const model = (getSetting('gooby_rag_model') ?? 'gemma4-26b-heretic-128k').trim();
+  const model = (getSetting('drinks_parse_model') ?? 'gemma4:e2b').trim();
 
   const response = await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
     method: 'POST',
