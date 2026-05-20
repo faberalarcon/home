@@ -5,7 +5,6 @@ const defaultTrustedOrigins = [
   'https://21bristoe.com',
   'https://www.21bristoe.com',
   'https://admin.21bristoe.com',
-  'https://drink-hub.21bristoe.com',
   'https://stats.21bristoe.com'
 ];
 

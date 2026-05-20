@@ -1,5 +1,5 @@
 import { ENTITIES, getStates } from '$lib/stats/server/home-assistant';
-import { fetchDrinkHubStats } from '$lib/stats/server/drink-hub';
+import { fetchDrinksStats } from '$lib/stats/server/drinks';
 import { getCurrentWeather, getDailyForecast, weatherCodeToDescription } from '$lib/stats/server/weather';
 import { getVisitorLocationStats } from '$lib/stats/server/visitors';
 import { getPiMetrics } from '$lib/stats/server/pi-metrics';
@@ -101,7 +101,7 @@ export interface OpsBoard {
     };
   };
   activity: {
-    drinkHubAvailable: boolean;
+    drinksAvailable: boolean;
     ordersToday: number | null;
     ordersWeek: number | null;
     ordersMonth: number | null;
@@ -235,7 +235,7 @@ export async function getOpsBoard(): Promise<OpsBoard> {
     getStates(Object.values(ENTITIES)).catch(() => new Map()),
     getCurrentWeather().catch(() => null),
     getDailyForecast().catch(() => []),
-    fetchDrinkHubStats().catch(() => null),
+    fetchDrinksStats().catch(() => null),
     getVisitorLocationStats().catch(() => null),
     getPiMetrics('1d').catch(() => ({ available: false, latest: null, history: [], range: '1d' as const })),
     readBackupManifest().catch(async () => readBackupManifest()),
@@ -308,8 +308,8 @@ export async function getOpsBoard(): Promise<OpsBoard> {
       severity: homeAssistantSeverity
     },
     {
-      id: 'drink-hub',
-      label: 'Drink Hub',
+      id: 'drinks',
+      label: 'Drinks',
       value: severityLabel(drinkSeverity),
       detail: drinkStats ? `${drinkStats.totals.today} orders today` : 'Stats API unavailable',
       severity: drinkSeverity
@@ -420,7 +420,7 @@ export async function getOpsBoard(): Promise<OpsBoard> {
       }
     },
     activity: {
-      drinkHubAvailable: Boolean(drinkStats),
+      drinksAvailable: Boolean(drinkStats),
       ordersToday: drinkStats?.totals.today ?? null,
       ordersWeek: drinkStats?.totals.thisWeek ?? null,
       ordersMonth: drinkStats?.totals.thisMonth ?? null,

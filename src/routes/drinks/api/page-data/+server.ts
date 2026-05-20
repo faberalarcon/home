@@ -8,7 +8,7 @@ import type { RequestHandler } from './$types';
 const SUPPORTED = new Set(['/', '/menu', '/recent', '/stats']);
 
 function canonicalHref(href: string): string | null {
-  const url = new URL(href, 'http://drink-hub.local');
+  const url = new URL(href, 'http://drinks.local');
   if (url.search || !SUPPORTED.has(url.pathname)) return null;
   return url.pathname;
 }
@@ -24,7 +24,7 @@ function loadPageData(href: string): Record<string, unknown> {
     case '/stats':
       return _loadStatsPageData() as Record<string, unknown>;
     default:
-      throw error(404, 'Unknown Drink Hub page');
+      throw error(404, 'Unknown Drinks page');
   }
 }
 
@@ -38,7 +38,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
   if (!href) throw error(400, 'Missing href');
 
   const canonical = canonicalHref(href);
-  if (!canonical) throw error(400, 'Unsupported Drink Hub href');
+  if (!canonical) throw error(400, 'Unsupported Drinks href');
 
   return json({ href: canonical, data: loadPageData(canonical) });
 };

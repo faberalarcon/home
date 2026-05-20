@@ -27,7 +27,7 @@
 
   const todayMetrics: TodayMetric[] = [
     {
-      label: 'Drink Hub',
+      label: 'Drinks',
       value: 'Menu',
       detail: 'Recipes, orders, and the house leaderboard',
       icon: '🍹',

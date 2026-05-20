@@ -66,7 +66,6 @@ if [[ "$MODE" != "--local" ]]; then
     check "www HTTPS -> non-www redirect" "$(curl -sI https://www.21bristoe.com | head -5)" "301"
     check "www HTTPS location" "$(curl -sI https://www.21bristoe.com | grep -i location)" "https://21bristoe.com"
     check "HTTP www -> HTTPS" "$(curl -sI http://www.21bristoe.com | head -5)" "301"
-    check "drink-hub subdomain redirects to /drinks" "$(curl -sI http://drink-hub.21bristoe.com/ | grep -i location)" "https://21bristoe.com/drinks/"
     check "stats subdomain redirects to /stats" "$(curl -sI http://stats.21bristoe.com/ | grep -i location)" "https://21bristoe.com/stats/"
 
     echo ""
@@ -160,7 +159,7 @@ if [[ "$MODE" != "--local" ]]; then
     fi
 
     DH_HEALTH=$(curl -s "$BASE/drinks/api/health" 2>/dev/null || echo "")
-    check "Drink Hub health JSON" "$(echo "$DH_HEALTH" | python3 -c 'import sys,json; json.load(sys.stdin); print("valid")' 2>/dev/null || echo "invalid")" "valid"
+    check "Drinks health JSON" "$(echo "$DH_HEALTH" | python3 -c 'import sys,json; json.load(sys.stdin); print("valid")' 2>/dev/null || echo "invalid")" "valid"
 
     STATS_CODE=$(curl -so /dev/null -w '%{http_code}' "$BASE/stats/" 2>/dev/null || echo "error")
     if [[ "$STATS_CODE" == "200" ]]; then

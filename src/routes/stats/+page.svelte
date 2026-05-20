@@ -81,7 +81,7 @@
   const piService = $derived(serviceById('pi'));
   const backupService = $derived(serviceById('backups'));
   const llamaService = $derived(serviceById('llama'));
-  const drinkService = $derived(serviceById('drink-hub'));
+  const drinkService = $derived(serviceById('drinks'));
   const visitorService = $derived(serviceById('visitors'));
   const serviceCounts = $derived([
     ops.services.filter((s) => s.severity === 'ok').length,
@@ -122,7 +122,7 @@
       id="service-health-heading"
       eyebrow={`${ops.services.length} sources`}
       title="Service health"
-      description="Canonical health signals for the site, house telemetry, weather, visitors, Drink Hub, and backups."
+      description="Canonical health signals for the site, house telemetry, weather, visitors, Drinks, and backups."
       compact
     />
     <div class="service-grid">
@@ -321,9 +321,9 @@
   <section class="ops-section reveal" aria-labelledby="activity-heading">
     <SectionHeader
       id="activity-heading"
-      eyebrow="Drink Hub + visitors"
+      eyebrow="Drinks + visitors"
       title="Household activity"
-      description="The public-facing activity signals: Drink Hub ordering, leaderboard movement, and visitor stats."
+      description="The public-facing activity signals: Drinks ordering, leaderboard movement, and visitor stats."
       compact
     />
 
@@ -332,7 +332,7 @@
         <div class="panel-heading">
           <div>
             <h3>Drink activity</h3>
-            <p>{drinkService?.detail ?? 'Drink Hub stats unavailable'}</p>
+            <p>{drinkService?.detail ?? 'Drinks stats unavailable'}</p>
           </div>
           <StatusPill status={drinkService?.severity ?? 'attention'} label={drinkService?.value ?? 'Needs attention'} />
         </div>

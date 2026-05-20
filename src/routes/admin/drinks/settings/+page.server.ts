@@ -10,7 +10,7 @@ import type { PageServerLoad, Actions } from './$types';
 export const load: PageServerLoad = async () => {
   return {
     haBaseUrl: getSetting('ha_base_url') ?? '',
-    siteName: getSetting('site_name') ?? 'drink-hub',
+    siteName: getSetting('site_name') ?? 'drinks',
     hasToken: !!(getSetting('ha_token') ?? ''),
     sitePasswordConfigured: !!getConfiguredSitePasswordHash(),
     ttsEnabled: (getSetting('tts_enabled') ?? 'false') !== 'false' && (getSetting('tts_enabled') ?? '0') !== '0',
@@ -33,7 +33,7 @@ export const actions: Actions = {
   save: async ({ request }) => {
     const fd = await request.formData();
     const haBaseUrl = (fd.get('haBaseUrl') as string | null)?.trim() ?? '';
-    const siteName = (fd.get('siteName') as string | null)?.trim() || 'drink-hub';
+    const siteName = (fd.get('siteName') as string | null)?.trim() || 'drinks';
     const haToken = (fd.get('haToken') as string | null)?.trim() ?? '';
     const ttsEnabled = fd.get('ttsEnabled') === 'on' ? 'true' : 'false';
     const ttsEntityId = (fd.get('ttsEntityId') as string | null)?.trim() ?? '';

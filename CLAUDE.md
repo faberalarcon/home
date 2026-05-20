@@ -17,7 +17,7 @@ If any step fails, fix the root cause and repeat.
 
 - Home: `/`
 - Gallery: `/gallery`
-- Drink Hub: `/drinks/`
+- Drinks: `/drinks/`
 - Stats: `/stats/`
 - Admin: `/admin/` behind `admin.21bristoe.com`
 
@@ -28,7 +28,7 @@ Canonical GitHub repo: <https://github.com/faberalarcon/home>
 - SvelteKit + Svelte 5 + adapter-node
 - Tailwind CSS 4
 - Shared theme: `packages/bristoe-theme`
-- Drink Hub data: SQLite + Drizzle
+- Drinks data: SQLite + Drizzle
 - Admin image processing: `sharp`
 - Stats integrations: Home Assistant, backup manifests, visitor stats
 - Docker Compose + nginx + Let's Encrypt
@@ -37,12 +37,12 @@ Canonical GitHub repo: <https://github.com/faberalarcon/home>
 
 - `src/routes/` — unified route tree
 - `src/lib/home/` — Home content/UI helpers
-- `src/lib/drinks/` — Drink Hub client/server modules
+- `src/lib/drinks/` — Drinks client/server modules
 - `src/lib/stats/` — Stats client/server modules
 - `src/lib/admin/` — Admin UI client and server helpers
-- `src/styles/` — global, Drink Hub, and Stats CSS
+- `src/styles/` — global, Drinks, and Stats CSS
 - `packages/bristoe-theme/bristoe-theme.css` — canonical tokens
-- `drizzle/` — Drink Hub migrations
+- `drizzle/` — Drinks migrations
 - `public/` — static assets
 - `deploy/` — nginx, deploy, validation, timers
 
@@ -67,7 +67,7 @@ npm run preview
 
 ## Production data
 
-- Drink Hub SQLite/uploads: `/var/lib/21bristoe/drink-hub`
+- Drinks SQLite/uploads: `/var/lib/21bristoe/drink-hub`
 - Home/Admin media: `/var/www/21bristoe-media`
 - Stats: `/var/lib/bristoe-stats`, `/var/lib/bristoe-backup`, `/mnt/usbbackup`
 

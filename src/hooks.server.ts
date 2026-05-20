@@ -22,9 +22,9 @@ if (!migrated) {
   try {
     migrate(db, { migrationsFolder: './drizzle' });
     migrated = true;
-    console.log('[drink-hub] migrations applied');
+    console.log('[drinks] migrations applied');
   } catch (err) {
-    console.error('[drink-hub] migration failed:', err);
+    console.error('[drinks] migration failed:', err);
   }
 }
 
@@ -42,7 +42,7 @@ const DAILY_BRIEF_SYSTEM_PROMPT = 'You are the steward of 21 Bristoe writing a o
 
 const REWRITE_PROMPT_VERSION = '1';
 const REWRITE_PROMPT_MEMBER_BIO = 'You rewrite household-member bios for the 21 Bristoe site. Keep the same length, warmth, and dry humor. Match first/third person from the original. Output ONLY the rewritten bio — no preamble, no quotes, no list, no emojis. Stay under 500 characters.';
-const REWRITE_PROMPT_DRINK_DESCRIPTION = 'You rewrite drink descriptions for the 21 Bristoe drink hub menu. Punchy, evocative, single short paragraph. Keep ingredients/flavor cues that appear in the original. Output ONLY the rewritten description — no preamble, no quotes, no emojis. Stay under 400 characters.';
+const REWRITE_PROMPT_DRINK_DESCRIPTION = 'You rewrite drink descriptions for the 21 Bristoe drinks menu. Punchy, evocative, single short paragraph. Keep ingredients/flavor cues that appear in the original. Output ONLY the rewritten description — no preamble, no quotes, no emojis. Stay under 400 characters.';
 const REWRITE_PROMPT_NEIGHBORHOOD_TIP = 'You rewrite neighborhood-highlight cards for the 21 Bristoe home page. Inviting, locally specific, warm but not saccharine. Output ONLY the rewritten description — no preamble, no quotes, no emojis. Stay under 300 characters.';
 const REWRITE_PROMPT_VISITOR_TIP = 'You rewrite visitor tips for the 21 Bristoe home page. Practical, friendly, two sentences max. Output ONLY the rewritten body — no preamble, no quotes, no emojis. Stay under 500 characters.';
 const REWRITE_PROMPT_LIMON_SPOTLIGHT = 'You rewrite the Limón spotlight bio. Warm, affectionate, a little chaotic — like introducing a beloved golden retriever to a stranger. Output ONLY the rewritten bio — no preamble, no quotes, no emojis. Stay under 500 characters.';
@@ -50,7 +50,7 @@ const REWRITE_PROMPT_LIMON_SPOTLIGHT = 'You rewrite the Limón spotlight bio. Wa
 bootstrapSettings({
   ha_base_url: 'http://ai.local:8123',
   ha_token: '',
-  site_name: 'drink-hub',
+  site_name: 'drinks',
   tts_llm_enabled: 'false',
   tts_llm_model: 'gemma4:e2b',
   tts_llm_timeout_ms: '3000',
@@ -86,17 +86,17 @@ bootstrapSettings({
 if (getSetting('tts_llm_system_prompt_version') !== TTS_LLM_SYSTEM_PROMPT_VERSION) {
   setSetting('tts_llm_system_prompt', TTS_LLM_SYSTEM_PROMPT);
   setSetting('tts_llm_system_prompt_version', TTS_LLM_SYSTEM_PROMPT_VERSION);
-  console.log(`[drink-hub] migrated tts_llm_system_prompt to version ${TTS_LLM_SYSTEM_PROMPT_VERSION}`);
+  console.log(`[drinks] migrated tts_llm_system_prompt to version ${TTS_LLM_SYSTEM_PROMPT_VERSION}`);
 }
 if (getSetting('tts_llm_system_prompt_food_version') !== TTS_LLM_SYSTEM_PROMPT_FOOD_VERSION) {
   setSetting('tts_llm_system_prompt_food', TTS_LLM_SYSTEM_PROMPT_FOOD);
   setSetting('tts_llm_system_prompt_food_version', TTS_LLM_SYSTEM_PROMPT_FOOD_VERSION);
-  console.log(`[drink-hub] migrated tts_llm_system_prompt_food to version ${TTS_LLM_SYSTEM_PROMPT_FOOD_VERSION}`);
+  console.log(`[drinks] migrated tts_llm_system_prompt_food to version ${TTS_LLM_SYSTEM_PROMPT_FOOD_VERSION}`);
 }
 if (getSetting('tts_llm_system_prompt_misc_version') !== TTS_LLM_SYSTEM_PROMPT_MISC_VERSION) {
   setSetting('tts_llm_system_prompt_misc', TTS_LLM_SYSTEM_PROMPT_MISC);
   setSetting('tts_llm_system_prompt_misc_version', TTS_LLM_SYSTEM_PROMPT_MISC_VERSION);
-  console.log(`[drink-hub] migrated tts_llm_system_prompt_misc to version ${TTS_LLM_SYSTEM_PROMPT_MISC_VERSION}`);
+  console.log(`[drinks] migrated tts_llm_system_prompt_misc to version ${TTS_LLM_SYSTEM_PROMPT_MISC_VERSION}`);
 }
 if (getSetting('daily_brief_system_prompt_version') !== DAILY_BRIEF_SYSTEM_PROMPT_VERSION) {
   setSetting('daily_brief_system_prompt', DAILY_BRIEF_SYSTEM_PROMPT);
@@ -110,7 +110,7 @@ if (getSetting('daily_brief_system_prompt_version') !== DAILY_BRIEF_SYSTEM_PROMP
 // that's known-loadable. Admin can re-pick later.
 if (getSetting('drinks_parse_model') === 'gemma4:e2b') {
   setSetting('drinks_parse_model', 'gemma4-26b-heretic-128k');
-  console.log('[drink-hub] migrated drinks_parse_model away from wedged gemma4:e2b');
+  console.log('[drinks] migrated drinks_parse_model away from wedged gemma4:e2b');
 }
 
 if (getSetting('rewrite_prompt_version') !== REWRITE_PROMPT_VERSION) {

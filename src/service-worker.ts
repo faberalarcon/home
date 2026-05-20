@@ -7,7 +7,7 @@ import { build, files, version } from '$service-worker';
 
 declare const self: ServiceWorkerGlobalScope;
 
-const CACHE = `drink-hub-${version}`;
+const CACHE = `drinks-${version}`;
 // Static assets to pre-cache on install
 const PRECACHE = [...build, ...files];
 
@@ -52,7 +52,7 @@ self.addEventListener('fetch', (e) => {
 
   if (!url.pathname.startsWith('/drinks/')) return;
 
-  // Drink Hub pages: network-first, cache fallback
+  // Drinks pages: network-first, cache fallback
   e.respondWith(
     fetch(request)
       .then((res) => {

@@ -1,4 +1,4 @@
-import { fetchDrinkHubStats } from '$lib/stats/server/drink-hub';
+import { fetchDrinksStats } from '$lib/stats/server/drinks';
 import { withStatsCache } from '$lib/stats/server/stats-preload-cache';
 import type { PageServerLoad } from './$types';
 
@@ -10,7 +10,7 @@ export async function _loadDrinksPageData(url: URL) {
     if (val) params.set(key, val);
   }
 
-  const stats = await fetchDrinkHubStats(params);
+  const stats = await fetchDrinksStats(params);
 
   return {
     stats,

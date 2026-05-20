@@ -112,7 +112,7 @@
 
 <header class="menu-head">
   <div>
-    <p class="dossier-kicker">Drink Hub</p>
+    <p class="dossier-kicker">Drinks</p>
     <h1>Menu</h1>
   </div>
 </header>

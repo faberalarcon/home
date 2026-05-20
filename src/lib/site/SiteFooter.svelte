@@ -58,6 +58,7 @@
           <li><a href="/drinks/">Drinks</a></li>
           <li><a href="/stats/">Stats</a></li>
           <li><a href="/gallery/">Gallery</a></li>
+          <li><a href="/gooby/">GoobyGPT</a></li>
           <li>
             <a href="https://github.com/faberalarcon/home" target="_blank" rel="noopener noreferrer">
               GitHub

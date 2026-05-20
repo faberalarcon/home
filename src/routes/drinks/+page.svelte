@@ -37,7 +37,7 @@
 </script>
 
 <header class="mb-6">
-  <p class="dossier-kicker">Drink Hub</p>
+  <p class="dossier-kicker">Drinks</p>
   <h1 class="text-4xl mb-2">Who's ordering?</h1>
   <p class="text-sm" style="color: var(--color-ink-500)">Tap your name to start.</p>
 </header>

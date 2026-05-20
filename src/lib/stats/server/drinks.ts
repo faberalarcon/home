@@ -1,6 +1,6 @@
-import { getDrinkHubStats } from '$lib/drinks/server/stats';
+import { getDrinksStats } from '$lib/drinks/server/stats';
 
-export interface DrinkHubStats {
+export interface DrinksStats {
   totals: {
     allTime: number;
     today: number;
@@ -52,9 +52,9 @@ export interface DrinkEntry {
   count: number;
 }
 
-export async function fetchDrinkHubStats(params?: URLSearchParams): Promise<DrinkHubStats | null> {
+export async function fetchDrinksStats(params?: URLSearchParams): Promise<DrinksStats | null> {
   try {
-    return getDrinkHubStats(params);
+    return getDrinksStats(params);
   } catch {
     return null;
   }

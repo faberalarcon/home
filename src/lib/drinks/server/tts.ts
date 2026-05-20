@@ -76,7 +76,7 @@ const MILESTONE_MESSAGES: Record<string, string[]> = {
 
   // --- keyed by HA trigger event name ---
   all_time_15: [
-    'Fifteen orders all time. The drink-hub is officially a historic landmark.',
+    'Fifteen orders all time. The drinks log is officially a historic landmark.',
     'All-time drink fifteen! We are legends. Absolute, hydrated legends.',
     'Number fifteen, all-time. The scoreboard is getting embarrassing — in the best way.',
     'Fifteen all-time orders. The liver has filed a formal complaint. It was denied.',

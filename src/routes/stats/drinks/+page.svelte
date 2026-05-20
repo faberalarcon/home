@@ -52,7 +52,7 @@
 
 <svelte:head>
   <title>Drinks — 21 Bristoe Stats</title>
-  <meta name="description" content="Drink Hub order log and leaderboard for 21 Bristoe" />
+  <meta name="description" content="Drinks order log and leaderboard for 21 Bristoe" />
 </svelte:head>
 
 <article class="drinks">
@@ -60,7 +60,7 @@
     <p class="dashboard-kicker">Drinks</p>
     <h1 class="drinks__title">Orders and trends</h1>
     <p class="drinks__lede">
-      Drink Hub order totals, leaders, and activity patterns.
+      Drinks order totals, leaders, and activity patterns.
     </p>
   </header>
 
@@ -70,7 +70,7 @@
 
   {#if !s}
     <p class="drinks__missing">
-      <span class="dashboard-status dashboard-status--alert">Drink Hub offline</span>
+      <span class="dashboard-status dashboard-status--alert">Drinks offline</span>
       &mdash; could not reach the lounge API.
     </p>
   {:else}

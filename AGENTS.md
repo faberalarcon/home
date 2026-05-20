@@ -2,13 +2,13 @@
 
 ## Project Structure & Module Organization
 
-`home` is the unified repo for the `21bristoe.com` domain. Home, Drink Hub, Stats, and Admin run from one root SvelteKit app in `src/`. Routes live in `src/routes/`: Home at `/`, Drink Hub under `/drinks/`, Stats under `/stats/`, and Admin under `/admin/`. Shared UI and server modules live in `src/lib/`, with app-specific modules under `src/lib/home`, `src/lib/drinks`, `src/lib/stats`, and `src/lib/admin`. Shared styling lives in `packages/bristoe-theme/` and `src/styles/`. Static files copied as-is live in `public/`. Deployment scripts and nginx config live in `deploy/`; generated output is `build/` and `.svelte-kit/`.
+`home` is the unified repo for the `21bristoe.com` domain. Home, Drinks, Stats, and Admin run from one root SvelteKit app in `src/`. Routes live in `src/routes/`: Home at `/`, Drinks under `/drinks/`, Stats under `/stats/`, and Admin under `/admin/`. Shared UI and server modules live in `src/lib/`, with app-specific modules under `src/lib/home`, `src/lib/drinks`, `src/lib/stats`, and `src/lib/admin`. Shared styling lives in `packages/bristoe-theme/` and `src/styles/`. Static files copied as-is live in `public/`. Deployment scripts and nginx config live in `deploy/`; generated output is `build/` and `.svelte-kit/`.
 
 ## Build, Test, and Development Commands
 
 - `npm install` installs root workspace dependencies.
 - `npm run dev` starts the unified SvelteKit app locally at `http://localhost:5173`.
-- `npm run build` builds Home, Drink Hub, Stats, and Admin together.
+- `npm run build` builds Home, Drinks, Stats, and Admin together.
 - `npm run check` runs Svelte checks for the unified app.
 - `npm run preview` previews the built site.
 - `./deploy/validate.sh` runs production validation checks.

@@ -1,24 +1,24 @@
 # 21bristoe.com
 
-Unified SvelteKit repo for the 21 Bristoe household site. Home, Drink Hub, Stats, and the protected Admin panel now run from this repo and one Docker container.
+Unified SvelteKit repo for the 21 Bristoe household site. Home, Drinks, Stats, and the protected Admin panel now run from this repo and one Docker container.
 
 **Canonical repo:** <https://github.com/faberalarcon/home>
 
 ## Live URLs
 
 - Home: <https://21bristoe.com>
-- Drink Hub: <https://21bristoe.com/drinks/>
+- Drinks: <https://21bristoe.com/drinks/>
 - Stats: <https://21bristoe.com/stats/>
 - Admin: <https://admin.21bristoe.com/admin/>
 
-Legacy `drink-hub.21bristoe.com` and `stats.21bristoe.com` redirect to the canonical path URLs.
+Legacy `stats.21bristoe.com` redirects to the canonical path URL.
 
 ## Stack
 
 - SvelteKit + Svelte 5
 - Tailwind CSS 4
 - Shared theme package: `packages/bristoe-theme`
-- SQLite + Drizzle for Drink Hub
+- SQLite + Drizzle for Drinks
 - Docker Compose, nginx, Let's Encrypt
 
 ## Development
@@ -54,6 +54,6 @@ The deploy script builds the unified SvelteKit app, prepares existing data direc
 
 Production data remains outside the repo:
 
-- Drink Hub SQLite/uploads: `/var/lib/21bristoe/drink-hub`
+- Drinks SQLite/uploads: `/var/lib/21bristoe/drink-hub`
 - Home/Admin media: `/var/www/21bristoe-media`
 - Stats host data: `/var/lib/bristoe-stats`, `/var/lib/bristoe-backup`, `/mnt/usbbackup`

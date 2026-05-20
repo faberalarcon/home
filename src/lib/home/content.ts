@@ -125,7 +125,7 @@ const defaultMembers: HomeMember[] = [
 ];
 
 const defaultQuickLinks: LinkItem[] = [
-  { icon: '🍹', title: 'Drink Hub', description: 'Browse cocktail recipes, home bar inventory, and drink recommendations.', href: '/drinks/' },
+  { icon: '🍹', title: 'Drinks', description: 'Browse cocktail recipes, home bar inventory, and drink recommendations.', href: '/drinks/' },
   { icon: '📊', title: 'Stats Dashboard', description: 'Live house status, weather, backups, drink activity, and household trends.', href: '/stats/' },
   { icon: '🖼️', title: 'Gallery', description: 'Photos from around the house, the neighborhood, and life at 21 Bristoe.', href: '/gallery/' },
   { icon: '🧭', title: 'Guest Info', description: 'Parking, front-door notes, guest Wi-Fi, and what to expect when you arrive.', href: '#visitor-guide' },
@@ -180,7 +180,6 @@ function canonicalizeHref(href: string): string {
     const host = url.hostname.toLowerCase();
     const pathWithSearch = `${url.pathname}${url.search}${url.hash}`;
 
-    if (host === 'drink-hub.21bristoe.com') return '/drinks/';
     if (host === 'stats.21bristoe.com') return '/stats/';
 
     if (host === '21bristoe.com' || host === 'www.21bristoe.com') {

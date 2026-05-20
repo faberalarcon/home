@@ -3,7 +3,7 @@ import { writable } from 'svelte/store';
 
 export type SelectedProfile = { id: number; name: string; color: string } | null;
 
-const KEY = 'drink-hub.profile';
+const KEY = 'drinks.profile';
 
 function load(): SelectedProfile {
   if (!browser) return null;

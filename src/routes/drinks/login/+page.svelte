@@ -23,7 +23,7 @@
     <div class="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/30">
       <h1 class="text-2xl font-semibold text-center mb-1 text-slate-50">House Access</h1>
       <p class="text-slate-400 text-sm text-center mb-6">
-        Enter the shared password to use drink-hub.
+        Enter the shared password to use Drinks.
       </p>
 
       {#if form?.error}

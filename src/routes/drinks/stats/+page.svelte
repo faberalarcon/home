@@ -73,7 +73,7 @@
 </script>
 
 <header class="stats-head">
-  <p class="dossier-kicker">Drink Hub</p>
+  <p class="dossier-kicker">Drinks</p>
   <h1>Stats</h1>
 </header>
 

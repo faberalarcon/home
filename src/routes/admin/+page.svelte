@@ -19,7 +19,7 @@
   </div>
   <div class="header-actions">
     <button id="rebuildBtn" class="btn-rebuild" title="Refresh runtime content">⟳ Refresh Content</button>
-    <a href="/admin/drinks/" class="home-link">Drink Hub admin →</a>
+    <a href="/admin/drinks/" class="home-link">Drinks admin →</a>
     <a href="https://21bristoe.com" class="home-link" target="_blank" rel="noopener noreferrer">View site →</a>
   </div>
 </header>

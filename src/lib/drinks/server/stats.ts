@@ -22,7 +22,7 @@ function startOfMonthLocal(): number {
   return Math.floor(new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000);
 }
 
-export function getDrinkHubStats(searchParams: URLSearchParams = new URLSearchParams()) {
+export function getDrinksStats(searchParams: URLSearchParams = new URLSearchParams()) {
   const resetAt = getStatsResetAt();
   const dayStart = startOfDayLocal();
   const weekStart = startOfWeekLocal();

@@ -129,7 +129,7 @@
 >
   <!-- Header bar -->
   <header class="flex items-center justify-between px-8 py-4 border-b border-slate-800/60 shrink-0">
-    <div class="text-2xl font-bold tracking-tight">🍹 drink-hub</div>
+    <div class="text-2xl font-bold tracking-tight">🍹 Drinks</div>
     <div class="text-5xl font-mono font-light tabular-nums text-slate-300">{clock}</div>
     <div class="text-right">
       <div class="text-sm text-slate-500">today</div>

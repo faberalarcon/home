@@ -46,7 +46,7 @@
         <SiteBrand site="drinks" href={appPath('/menu')} />
         <SiteNav current="drinks" />
       </div>
-      <nav class="drink-shell__nav" aria-label="Drink Hub">
+      <nav class="drink-shell__nav" aria-label="Drinks">
         <a href={appPath('/menu')} aria-current={currentPath === '/menu' ? 'page' : undefined}>Menu</a>
         <a href={appPath('/recent')} aria-current={currentPath === '/recent' ? 'page' : undefined}>Recent</a>
         <a href={appPath('/stats')} aria-current={currentPath === '/stats' ? 'page' : undefined}>Leaderboard</a>

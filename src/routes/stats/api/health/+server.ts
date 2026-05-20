@@ -5,7 +5,7 @@ import { isAvailable as isHaAvailable } from '$lib/stats/server/home-assistant';
 import { sql } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
-function isDrinkHubAvailable(): boolean {
+function isDrinksAvailable(): boolean {
   try {
     db.select({ c: sql<number>`count(*)` }).from(orders).get();
     return true;
@@ -15,19 +15,19 @@ function isDrinkHubAvailable(): boolean {
 }
 
 export const GET: RequestHandler = async () => {
-  const [ha, drinkHub] = await Promise.all([
+  const [ha, drinks] = await Promise.all([
     isHaAvailable().catch(() => false),
-    Promise.resolve(isDrinkHubAvailable())
+    Promise.resolve(isDrinksAvailable())
   ]);
 
-  const status = ha && drinkHub ? 'ok' : ha || drinkHub ? 'degraded' : 'unhealthy';
+  const status = ha && drinks ? 'ok' : ha || drinks ? 'degraded' : 'unhealthy';
 
   return json(
     {
       status,
       services: {
         homeAssistant: ha ? 'ok' : 'unavailable',
-        drinkHub: drinkHub ? 'ok' : 'unavailable'
+        drinks: drinks ? 'ok' : 'unavailable'
       },
       uptime: Math.floor(process.uptime()),
       timestamp: new Date().toISOString()

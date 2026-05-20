@@ -347,7 +347,7 @@ function buildHomepageItems(cfg: any): CorpusItem[] {
   const qLinks = Array.isArray(cfg.quickLinks) && cfg.quickLinks.length > 0
     ? cfg.quickLinks
     : [
-        { title: 'Drink Hub', description: 'Browse cocktail recipes, home bar inventory, and drink recommendations.', href: '/drinks/' },
+        { title: 'Drinks', description: 'Browse cocktail recipes, home bar inventory, and drink recommendations.', href: '/drinks/' },
         { title: 'Stats Dashboard', description: 'Live house status, weather, backups, drink activity, and household trends.', href: '/stats/' },
         { title: 'Gallery', description: 'Photos from around the house, the neighborhood, and life at 21 Bristoe.', href: '/gallery/' },
         { title: 'Guest Info', description: 'Parking, front-door notes, guest Wi-Fi, and what to expect when you arrive.', href: '#visitor-guide' }
