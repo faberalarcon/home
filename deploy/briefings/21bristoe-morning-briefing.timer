@@ -1,0 +1,11 @@
+[Unit]
+Description=Fire the 21 Bristoe morning briefing at 07:30
+Requires=21bristoe-morning-briefing.service
+
+[Timer]
+OnCalendar=*-*-* 07:30:00
+AccuracySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=21 Bristoe morning briefing (push via HA Companion)
+# Replaces the openclaw `daily-briefing` cron. Gathers facts (weather,
+# gog calendar, gog gmail, memory notes, backup status), generates the
+# narrative on the local llama-server, pushes to Faber's phone via HA.
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=faber
+EnvironmentFile=/home/faber/.config/briefings.env
+ExecStart=/home/faber/bin/briefing.sh morning
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=21bristoe-morning-briefing

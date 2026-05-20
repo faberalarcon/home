@@ -1,0 +1,14 @@
+[Unit]
+Description=21 Bristoe evening winddown (push via HA Companion)
+# Replaces the openclaw `faber-winddown` cron. Same data sources as the
+# morning briefing but tomorrow-leaning and warmer in tone.
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=faber
+EnvironmentFile=/home/faber/.config/briefings.env
+ExecStart=/home/faber/bin/briefing.sh evening
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=21bristoe-evening-winddown

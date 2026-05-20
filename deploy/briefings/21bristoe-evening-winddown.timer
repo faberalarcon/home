@@ -1,0 +1,11 @@
+[Unit]
+Description=Fire the 21 Bristoe evening winddown at 19:30
+Requires=21bristoe-evening-winddown.service
+
+[Timer]
+OnCalendar=*-*-* 19:30:00
+AccuracySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
