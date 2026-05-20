@@ -33,6 +33,17 @@
     }
   }
 
+  function metaLine(entry: typeof briefs[0]): string {
+    // updatedAt is the time of the most recent regeneration; createdAt is
+    // when the row first landed. Show "regenerated" when it has visibly
+    // changed since creation (>60s drift), else just the original timestamp.
+    const updated = entry.updatedAt ?? entry.createdAt;
+    if (updated > entry.createdAt + 60) {
+      return `Regenerated ${formatGenerated(updated)}`;
+    }
+    return `Generated ${formatGenerated(entry.createdAt)}`;
+  }
+
   function summaryLine(facts: typeof briefs[0]['payload']): string {
     const parts: string[] = [];
     if (facts.drinks.total > 0) {
@@ -74,7 +85,7 @@
     </section>
   {:else}
     <section class="brief__section brief__section--first reveal">
-      <SectionHeader title={formatDate(latest.date)} meta={`Generated ${formatGenerated(latest.createdAt)}`} />
+      <SectionHeader title={`Covers ${formatDate(latest.date)}`} meta={metaLine(latest)} />
       <p class="brief__narrative">{latest.narrative}</p>
       <p class="brief__summary">{summaryLine(latest.payload)}</p>
       {#if latest.model}

@@ -79,7 +79,8 @@ export const dailyBriefs = sqliteTable('daily_briefs', {
   model: text('model'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
-    .default(sql`(unixepoch())`)
+    .default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at').notNull().default(0)
 });
 
 export const piMetricsHistory = sqliteTable('pi_metrics_history', {

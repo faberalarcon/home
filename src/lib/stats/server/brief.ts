@@ -43,6 +43,7 @@ export interface BriefRecord {
   payload: BriefFacts;
   model: string | null;
   createdAt: number;
+  updatedAt: number;
 }
 
 function llamaBaseUrl(): string {
@@ -275,6 +276,19 @@ function buildUserPrompt(facts: BriefFacts): string {
   return JSON.stringify(facts, null, 0);
 }
 
+async function fetchWithRetry5xx(url: string, init: RequestInit): Promise<Response> {
+  const res = await fetch(url, init);
+  if (res.status < 500 || res.status >= 600) return res;
+  // Drain so the connection can be reused, then back off and retry once.
+  try {
+    await res.arrayBuffer();
+  } catch {
+    // ignore
+  }
+  await new Promise((resolve) => setTimeout(resolve, 5_000));
+  return fetch(url, init);
+}
+
 export async function generateNarrative(
   facts: BriefFacts,
   modelOverride?: string
@@ -292,7 +306,10 @@ export async function generateNarrative(
     // Try to suppress thinking output if the chat template supports it.
     chat_template_kwargs: { enable_thinking: false }
   };
-  const res = await fetch(url, {
+  // llama-server auto-loads models on demand; cold loads can briefly 5xx.
+  // Retry once after a short backoff to ride out the autoload race before
+  // surfacing the error.
+  const res = await fetchWithRetry5xx(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -332,11 +349,12 @@ export function persistBrief(
   model: string
 ): BriefRecord {
   const payload = JSON.stringify(facts);
+  const now = Math.floor(Date.now() / 1000);
   // Upsert by date so re-runs replace.
   const existing = db.select().from(dailyBriefs).where(eq(dailyBriefs.date, facts.date)).get();
   if (existing) {
     db.update(dailyBriefs)
-      .set({ narrative, payload, model })
+      .set({ narrative, payload, model, updatedAt: now })
       .where(eq(dailyBriefs.date, facts.date))
       .run();
     return {
@@ -348,12 +366,13 @@ export function persistBrief(
       createdAt:
         typeof existing.createdAt === 'number'
           ? existing.createdAt
-          : Math.floor((existing.createdAt as unknown as Date).getTime() / 1000)
+          : Math.floor((existing.createdAt as unknown as Date).getTime() / 1000),
+      updatedAt: now
     };
   }
   const row = db
     .insert(dailyBriefs)
-    .values({ date: facts.date, narrative, payload, model })
+    .values({ date: facts.date, narrative, payload, model, updatedAt: now })
     .returning()
     .get();
   return {
@@ -365,7 +384,8 @@ export function persistBrief(
     createdAt:
       typeof row.createdAt === 'number'
         ? row.createdAt
-        : Math.floor((row.createdAt as unknown as Date).getTime() / 1000)
+        : Math.floor((row.createdAt as unknown as Date).getTime() / 1000),
+    updatedAt: row.updatedAt ?? now
   };
 }
 
@@ -402,17 +422,24 @@ export function listBriefs(limit = 30): BriefRecord[] {
     .orderBy(desc(dailyBriefs.date))
     .limit(limit)
     .all();
-  return rows.map((r) => ({
-    id: r.id,
-    date: r.date,
-    narrative: r.narrative,
-    payload: safeParseFacts(r.payload),
-    model: r.model ?? null,
-    createdAt:
+  return rows.map((r) => {
+    const createdAt =
       typeof r.createdAt === 'number'
         ? r.createdAt
-        : Math.floor((r.createdAt as unknown as Date).getTime() / 1000)
-  }));
+        : Math.floor((r.createdAt as unknown as Date).getTime() / 1000);
+    // Existing rows backfilled the column to created_at, but defensively
+    // fall back if a row ever has 0/null.
+    const updatedAt = r.updatedAt && r.updatedAt > 0 ? r.updatedAt : createdAt;
+    return {
+      id: r.id,
+      date: r.date,
+      narrative: r.narrative,
+      payload: safeParseFacts(r.payload),
+      model: r.model ?? null,
+      createdAt,
+      updatedAt
+    };
+  });
 }
 
 function safeParseFacts(raw: string): BriefFacts {
