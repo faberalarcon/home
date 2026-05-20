@@ -66,7 +66,7 @@ bootstrapSettings({
   daily_brief_notify_service: '',
   daily_brief_system_prompt: DAILY_BRIEF_SYSTEM_PROMPT,
   daily_brief_system_prompt_version: DAILY_BRIEF_SYSTEM_PROMPT_VERSION,
-  drinks_parse_model: 'gemma4:e2b',
+  drinks_parse_model: 'gemma4-26b-heretic-128k',
   gooby_rag_enabled: 'true',
   gooby_rag_model: 'gemma4-26b-heretic-128k',
   gooby_rag_embed_model: 'embeddinggemma',
@@ -103,6 +103,16 @@ if (getSetting('daily_brief_system_prompt_version') !== DAILY_BRIEF_SYSTEM_PROMP
   setSetting('daily_brief_system_prompt_version', DAILY_BRIEF_SYSTEM_PROMPT_VERSION);
   console.log(`[brief] migrated daily_brief_system_prompt to version ${DAILY_BRIEF_SYSTEM_PROMPT_VERSION}`);
 }
+// One-shot correction: the first deploy of drinks_parse_model defaulted to
+// `gemma4:e2b`, but that preset is currently wedged in the llama-swap router
+// on the LLM box (see docs/handoff/2026-05-19-llm-box-heavy-models-stuck.md).
+// Force-flip any installs that already saved the bad value back to a model
+// that's known-loadable. Admin can re-pick later.
+if (getSetting('drinks_parse_model') === 'gemma4:e2b') {
+  setSetting('drinks_parse_model', 'gemma4-26b-heretic-128k');
+  console.log('[drink-hub] migrated drinks_parse_model away from wedged gemma4:e2b');
+}
+
 if (getSetting('rewrite_prompt_version') !== REWRITE_PROMPT_VERSION) {
   setSetting('rewrite_prompt_member_bio', REWRITE_PROMPT_MEMBER_BIO);
   setSetting('rewrite_prompt_drink_description', REWRITE_PROMPT_DRINK_DESCRIPTION);

@@ -7,9 +7,13 @@
 
 ## Symptom
 
-- `POST .215:8080/v1/chat/completions` with `model="gemma4-26b-heretic-128k"` hangs indefinitely (>120s); curl returns `Operation timed out`.
-- Whisper (`.215:8081`) is healthy — `/inference` on a 1s WAV returns 200 in ~1.0s.
+- Initial state (~18:00): `POST .215:8080/v1/chat/completions` with `model="gemma4-26b-heretic-128k"` hung indefinitely (>120s); `/v1/models` showed it in `status: "loading"`.
+- After a long cold-load completed during the session, the 26B preset became healthy (568ms warm RTT).
+- **New symptom (~19:30):** requesting `gemma4:e2b` while 26B is the loaded instance leaves e2b in `status: "loading"` for 10+ minutes with no progress. The router (`/props` reports `role: "router"`, `max_instances: 2`) appears unable to spawn the e2b sub-process. Earlier in the same session, e2b loaded and served in <1s — so the model files and command-line preset are fine; the swap/spawn itself is wedged.
+- Whisper (`.215:8081`) remains healthy throughout — `/inference` on a 1s WAV returns 200 in ~1.0s.
 - llama-server itself responds — `GET .215:8080/health` returns 200 in <10ms and `/v1/models` returns the full preset list.
+
+The combined picture: whichever model lands in VRAM first stays healthy; every attempted swap thereafter wedges the candidate model in `loading` and never resolves. This blocks any setting that points at a not-currently-loaded model.
 
 ## Model status snapshot (`GET .215:8080/v1/models`)
 
@@ -68,8 +72,12 @@ On the LLM box:
 | Daily brief (`stats/brief`) | Bootstrap default still points at the 26B preset — brief generation will fail until the model is back. |
 | RAG re-index | If `embeddinggemma` preset is genuinely broken (`exit_code=1`), the timer in `deploy/21bristoe-rag-reindex.timer` will fail silently. Worth confirming. |
 
-## Pi-side fallback (already shipped)
+## Pi-side fallback (shipped)
 
-`drinks_parse_model = 'gemma4:e2b'` (bootstrapped in `src/hooks.server.ts`, read in `src/lib/drinks/server/voice.ts` parseOrder, with explicit JSON schema in the system prompt so the small model produces the expected shape). Voice ordering survives heavy-model outages from now on.
+Indirection added: `drinks_parse_model` (in `src/hooks.server.ts` bootstrap, read in `src/lib/drinks/server/voice.ts` parseOrder). System prompt now includes an explicit JSON schema block so small models also produce the right shape.
 
-If the heavy model stays down for >1 day, consider also pointing `gooby_rag_model` at a still-working preset (e.g. one of the `gpt-oss-20b` variants if recovered, or the 26B non-128k if `--cpu-moe` brings it back). Don't do this preemptively — `gemma4:e2b` is too small for RAG quality.
+First attempt defaulted to `gemma4:e2b` — backed out after the swap wedge surfaced. Current default and force-overwrite migration target: `gemma4-26b-heretic-128k` (the only preset currently loadable on the box). Once the LLM box is healthy again and `gemma4:e2b` swaps freely, set `drinks_parse_model = 'gemma4:e2b'` via the admin settings table — it's the right size for the task and frees the 26B for RAG.
+
+If 26B itself goes back down, parseOrder will time out at 20s. There's no automatic fallback chain; the user will see "Voice processing failed" and can retype.
+
+Anything else still pointing at presets that need a swap (`tts_llm_model = gemma4:e2b`, `daily_brief_model = gemma4-26b-heretic-128k`) is exposed to the same wedge until the router is fixed.

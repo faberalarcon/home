@@ -166,7 +166,7 @@ export async function parseOrder(transcript: string): Promise<ParsedOrder> {
   const menu = db.select().from(drinks).where(eq(drinks.active, true)).all();
   const profileList = db.select().from(profiles).where(eq(profiles.active, true)).all();
   const systemPrompt = buildSystemPrompt(menu, profileList);
-  const model = (getSetting('drinks_parse_model') ?? 'gemma4:e2b').trim();
+  const model = (getSetting('drinks_parse_model') ?? 'gemma4-26b-heretic-128k').trim();
 
   const response = await fetch(`${llamaBaseUrl()}/v1/chat/completions`, {
     method: 'POST',
