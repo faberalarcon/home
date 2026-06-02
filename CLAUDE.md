@@ -73,6 +73,21 @@ npm run preview
 
 Do not commit production secrets, uploaded media, generated output, or runtime data.
 
+## 3D printer (Creality K2 Pro)
+
+Device is live at `192.168.1.176`. Moonraker (port 7125) is reachable; Fluidd
+UI at port 4408. No webcam configured in Moonraker yet — `PRINTER_SNAPSHOT_URL`
+is omitted from `.env`. Connection driven by `PRINTER_BASE_URL`.
+
+- Live status / temps / camera: `src/lib/stats/server/printer.ts` (live Moonraker
+  fetch) + `src/routes/stats/printer/`. Snapshot proxied via
+  `/stats/printer/snapshot` from `PRINTER_SNAPSHOT_URL`.
+- History charts: collector `deploy/printer-metrics/collect-printer-metrics.mjs`
+  → JSONL at `/var/lib/bristoe-stats/printer-metrics.jsonl`, run by
+  `deploy/systemd/21bristoe-printer-metrics.{service,timer}` (installed, 2-min cadence).
+- Env: `PRINTER_BASE_URL`, `PRINTER_SNAPSHOT_URL`, `PRINTER_CHAMBER_OBJECT`,
+  `PRINTER_NAME`, `PRINTER_FIXTURE` (=1 to preview with sample data).
+- Collector env: `/etc/21bristoe-printer.env`.
 ## Design tokens
 
 The theme source is `packages/bristoe-theme/bristoe-theme.css`. Existing `warm-*` and `sage-*` aliases are retained for compatibility, but new UI should prefer the canonical semantic tokens where practical.
