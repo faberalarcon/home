@@ -1,0 +1,13 @@
+[Unit]
+Description=Run 21bristoe-printer-metrics every 2 minutes
+Requires=21bristoe-printer-metrics.service
+
+[Timer]
+OnBootSec=1min
+OnCalendar=*:0/2
+AccuracySec=10s
+Persistent=true
+Unit=21bristoe-printer-metrics.service
+
+[Install]
+WantedBy=timers.target

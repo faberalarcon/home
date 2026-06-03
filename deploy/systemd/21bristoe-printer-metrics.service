@@ -1,0 +1,19 @@
+[Unit]
+Description=Collect 3D printer (Moonraker) metrics for 21bristoe-stats
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# PRINTER_BASE_URL (and optional PRINTER_CHAMBER_OBJECT) live here. The script
+# exits 0 quietly when PRINTER_BASE_URL is unset, so this may be enabled before
+# the printer is on the network.
+EnvironmentFile=-/etc/21bristoe-printer.env
+ExecStart=/usr/bin/node /usr/local/lib/21bristoe-printer-metrics/collect-printer-metrics.mjs
+Nice=10
+IOSchedulingClass=idle
+ProtectSystem=strict
+ReadWritePaths=/var/lib/bristoe-stats
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true

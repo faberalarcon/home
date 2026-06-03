@@ -10,7 +10,8 @@ export const statsSections: StatsSection[] = [
   { href: '/drinks', label: 'Drinks' },
   { href: '/visitors', label: 'Visitors' },
   { href: '/backups', label: 'Backups' },
-  { href: '/pi', label: 'Pi' }
+  { href: '/pi', label: 'Pi' },
+  { href: '/printer', label: 'Printer' }
 ];
 
 export const defaultStatsPreloadHrefs = statsSections
@@ -19,6 +20,7 @@ export const defaultStatsPreloadHrefs = statsSections
 
 export const houseRangeHrefs = ['/house?range=1d', '/house?range=7d', '/house?range=30d', '/house?range=90d'];
 export const piRangeHrefs = ['/pi?range=1d', '/pi?range=7d', '/pi?range=30d', '/pi?range=90d'];
+export const printerRangeHrefs = ['/printer?range=7d', '/printer?range=30d', '/printer?range=90d'];
 
 export function sectionIndexForPath(pathname: string): number {
   return statsSections.findIndex((section) => section.href === pathname);
