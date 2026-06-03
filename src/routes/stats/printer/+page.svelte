@@ -116,7 +116,7 @@
             {stateLabels[status.state] ?? status.state}
           </span>
           {#if status.job?.filename}
-            <p class="job-card__file">{status.job.filename}</p>
+            <p class="job-card__file redacted" title="Filename hidden for privacy">{status.job.filename}</p>
           {/if}
         </div>
         {#if status.state === 'printing' || status.state === 'paused'}
@@ -140,6 +140,36 @@
         <StatCard label="Progress" value={status.job ? `${(status.job.progressPct).toFixed(0)}` : '—'} unit="%" sublabel={status.job?.filename ? 'current job' : 'idle'} />
       </div>
     </section>
+
+    {#if status.box?.connected && status.box.slots.length > 0}
+      <section class="printer__section reveal">
+        <SectionHeader title="Filament box" meta="CFS · dry box" />
+        <div class="cfs-grid">
+          {#each status.box.slots as slot}
+            <div class="cfs-slot" class:cfs-slot--empty={!slot.loaded}>
+              <span
+                class="cfs-slot__swatch"
+                style="background: {slot.colorHex ? `#${slot.colorHex}` : 'transparent'}"
+              ></span>
+              <div class="cfs-slot__info">
+                <span class="cfs-slot__id">{slot.id}</span>
+                <span class="cfs-slot__material">{slot.loaded ? (slot.material ?? 'Filament') : 'Empty'}</span>
+                {#if slot.loaded && slot.remainPct != null}
+                  <div class="cfs-slot__bar">
+                    <span style="width: {Math.min(100, Math.max(0, slot.remainPct))}%"></span>
+                  </div>
+                  <span class="cfs-slot__remain">{Math.round(slot.remainPct)}% remaining</span>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+        <div class="stat-grid">
+          <StatCard label="Box temp" value={status.box.tempC != null ? `${status.box.tempC.toFixed(0)}°` : '—'} sublabel="dry box" />
+          <StatCard label="Humidity" value={status.box.humidityPct != null ? `${status.box.humidityPct.toFixed(0)}` : '—'} unit="%" sublabel="dry box" />
+        </div>
+      </section>
+    {/if}
 
     {#if status.configured}
       <section class="printer__section reveal">
@@ -224,7 +254,7 @@
         <ul class="job-list">
           {#each status.recentJobs.slice(0, 10) as job}
             <li class="job-list__row">
-              <span class="job-list__name">{job.filename}</span>
+              <span class="job-list__name redacted" title="Filename hidden for privacy">{job.filename}</span>
               <span class="job-list__status job-list__status--{job.status}">{job.status}</span>
               <span class="job-list__detail">{fmtDuration(job.durationS)} · {fmtFilament(job.filamentMm)}</span>
               <span class="job-list__when">{jobTime(job.at)}</span>
@@ -315,6 +345,83 @@
     max-width: 640px;
     border: 1px solid var(--color-paper-300);
     background: var(--color-paper-100);
+  }
+
+  /* Filenames hidden for privacy — keep layout/length but unreadable. */
+  .redacted {
+    filter: blur(6px);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .cfs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .cfs-slot {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.85rem;
+    border: 1px solid var(--color-paper-300);
+    background: var(--color-paper-100);
+  }
+  .cfs-slot--empty { opacity: 0.5; }
+  .cfs-slot__swatch {
+    flex: 0 0 auto;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-paper-300);
+    box-shadow: inset 0 0 0 2px var(--color-paper-50);
+  }
+  .cfs-slot--empty .cfs-slot__swatch {
+    background-image: repeating-linear-gradient(
+      45deg,
+      var(--color-paper-300) 0,
+      var(--color-paper-300) 3px,
+      transparent 3px,
+      transparent 6px
+    );
+  }
+  .cfs-slot__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+    flex: 1;
+  }
+  .cfs-slot__id {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--color-ink-500);
+  }
+  .cfs-slot__material {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-ink-900);
+  }
+  .cfs-slot__bar {
+    height: 0.4rem;
+    margin-top: 0.35rem;
+    background: var(--color-paper-300);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .cfs-slot__bar span {
+    display: block;
+    height: 100%;
+    background: var(--color-blood-500);
+    transition: width 0.4s ease;
+  }
+  .cfs-slot__remain {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-ink-500);
   }
 
   .stat-grid {

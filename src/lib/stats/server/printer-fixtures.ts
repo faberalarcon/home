@@ -33,6 +33,17 @@ export function fixtureStatus(): PrinterStatus {
       completed: 131,
       cancelled: 11
     },
+    box: {
+      connected: true,
+      tempC: 26,
+      humidityPct: 36,
+      slots: [
+        { id: 'T1A', colorHex: 'ffffff', material: 'PLA', remainPct: 100, loaded: true },
+        { id: 'T1B', colorHex: '9ea7ae', material: 'PLA', remainPct: 80, loaded: true },
+        { id: 'T1C', colorHex: '1b04ae', material: 'PETG', remainPct: 45, loaded: true },
+        { id: 'T1D', colorHex: null, material: null, remainPct: null, loaded: false }
+      ]
+    },
     recentJobs: [
       { filename: 'bracket_v3.gcode', status: 'completed', durationS: 7320, filamentMm: 4210, at: now - 3_600_000 },
       { filename: 'gridfinity_bin.gcode', status: 'completed', durationS: 5040, filamentMm: 3120, at: now - 90_000_000 },

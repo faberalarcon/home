@@ -32,6 +32,24 @@ export interface PrinterLifetime {
   cancelled: number;
 }
 
+// Creality Filament System (CFS) — the multi-material dry box. One or more
+// 4-slot units (T1..T4, slots A–D), each reporting per-slot colour, material
+// and remaining estimate plus a unit-level temperature and humidity.
+export interface PrinterBoxSlot {
+  id: string;
+  colorHex: string | null;
+  material: string | null;
+  remainPct: number | null;
+  loaded: boolean;
+}
+
+export interface PrinterBox {
+  connected: boolean;
+  tempC: number | null;
+  humidityPct: number | null;
+  slots: PrinterBoxSlot[];
+}
+
 export interface PrinterStatus {
   configured: boolean;
   available: boolean;
@@ -53,6 +71,7 @@ export interface PrinterStatus {
     chamberC: number | null;
   };
   lifetime: PrinterLifetime | null;
+  box: PrinterBox | null;
   recentJobs: Array<{
     filename: string;
     status: string;
@@ -116,8 +135,65 @@ function emptyStatus(configured: boolean): PrinterStatus {
     job: null,
     temps: { nozzleC: null, nozzleTarget: null, bedC: null, bedTarget: null, chamberC: null },
     lifetime: null,
+    box: null,
     recentJobs: []
   };
+}
+
+// Parse the CFS `box` object. Slots come from each connected unit's parallel
+// arrays (color_value / remain_len, index 0–3 → A–D); the human material name
+// (e.g. "PLA") is only in `same_material`, shape [code, color, [slotIds], name].
+function toHex6(v: unknown): string | null {
+  const s = String(v ?? '').trim();
+  const hex = s.slice(-6);
+  return /^[0-9a-fA-F]{6}$/.test(hex) ? hex.toLowerCase() : null;
+}
+function toNumLoose(v: unknown): number | null {
+  const n = typeof v === 'number' ? v : parseFloat(String(v));
+  return Number.isFinite(n) ? n : null;
+}
+function parseBox(box: Record<string, unknown> | undefined): PrinterBox | null {
+  if (!box) return null;
+  const materialBySlot = new Map<string, string>();
+  const sm = box['same_material'];
+  if (Array.isArray(sm)) {
+    for (const entry of sm) {
+      if (!Array.isArray(entry)) continue;
+      const ids = entry[2];
+      const name = entry[3];
+      if (Array.isArray(ids) && typeof name === 'string') {
+        for (const id of ids) materialBySlot.set(String(id), name);
+      }
+    }
+  }
+  const letters = ['A', 'B', 'C', 'D'];
+  const slots: PrinterBoxSlot[] = [];
+  let tempC: number | null = null;
+  let humidityPct: number | null = null;
+  let connected = false;
+  for (const unit of ['T1', 'T2', 'T3', 'T4']) {
+    const u = box[unit] as Record<string, unknown> | undefined;
+    if (!u || String(u['state'] ?? '').toLowerCase() !== 'connect') continue;
+    connected = true;
+    if (tempC === null) tempC = toNumLoose(u['temperature']);
+    if (humidityPct === null) humidityPct = toNumLoose(u['dry_and_humidity']);
+    const colors = Array.isArray(u['color_value']) ? (u['color_value'] as unknown[]) : [];
+    const remains = Array.isArray(u['remain_len']) ? (u['remain_len'] as unknown[]) : [];
+    for (let i = 0; i < 4; i++) {
+      const id = `${unit}${letters[i]}`;
+      const material = materialBySlot.get(id) ?? null;
+      const remainPct = toNumLoose(remains[i]);
+      slots.push({
+        id,
+        colorHex: toHex6(colors[i]),
+        material,
+        remainPct,
+        loaded: material != null || (remainPct != null && remainPct > 0)
+      });
+    }
+  }
+  if (!connected) return { connected: false, tempC: null, humidityPct: null, slots: [] };
+  return { connected, tempC, humidityPct, slots };
 }
 
 function normalizeState(raw: unknown): PrinterState {
@@ -145,9 +221,20 @@ function num(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
+// Print filenames can reveal what's being made; the stats page is public, so
+// redact server-side (the raw name never reaches the client HTML) keeping only
+// the file extension as a hint. The UI also blurs the result for good measure.
+function maskFilename(name: string | null | undefined): string | null {
+  const s = (name ?? '').trim();
+  if (!s) return null;
+  const dot = s.lastIndexOf('.');
+  const ext = dot > 0 && dot < s.length - 1 ? s.slice(dot).toLowerCase() : '';
+  return `••••••${ext}`;
+}
+
 async function liveStatus(): Promise<PrinterStatus | null> {
   const chamber = chamberObject();
-  const objects = ['print_stats', 'virtual_sdcard', 'display_status', 'extruder', 'heater_bed', 'toolhead', chamber];
+  const objects = ['print_stats', 'virtual_sdcard', 'display_status', 'extruder', 'heater_bed', 'toolhead', 'box', chamber];
   const query = objects.map((o) => encodeURIComponent(o)).join('&');
 
   type QueryResp = { result?: { status?: Record<string, Record<string, unknown>> } };
@@ -161,6 +248,7 @@ async function liveStatus(): Promise<PrinterStatus | null> {
   const extruder = status['extruder'] ?? {};
   const bed = status['heater_bed'] ?? {};
   const chamberSensor = status[chamber] ?? {};
+  const box = parseBox(status['box']);
 
   const progress = num(vsd['progress']) ?? num(display['progress']) ?? 0;
   const state = normalizeState(printStats['state']);
@@ -183,7 +271,7 @@ async function liveStatus(): Promise<PrinterStatus | null> {
     name: printerName(),
     state,
     job: {
-      filename: (printStats['filename'] as string) || null,
+      filename: maskFilename(printStats['filename'] as string),
       progressPct: Math.round(progress * 1000) / 10,
       elapsedS,
       remainingS
@@ -196,6 +284,7 @@ async function liveStatus(): Promise<PrinterStatus | null> {
       chamberC: num(chamberSensor['temperature'])
     },
     lifetime,
+    box,
     recentJobs
   };
 }
@@ -234,7 +323,7 @@ async function liveRecentJobs(): Promise<PrinterStatus['recentJobs']> {
     const resp = await moonrakerFetch<JobList>('/server/history/list?limit=20&order=desc');
     const jobs = resp.result?.jobs ?? [];
     return jobs.map((j) => ({
-      filename: j.filename || 'unknown',
+      filename: maskFilename(j.filename) ?? 'unknown',
       status: j.status || 'unknown',
       durationS: Math.round(j.print_duration ?? 0),
       filamentMm: Math.round(j.filament_used ?? 0),
@@ -276,7 +365,7 @@ function statusFromSample(s: PrinterSample): PrinterStatus {
     name: printerName(),
     state: s.state,
     job: {
-      filename: s.filename,
+      filename: maskFilename(s.filename),
       progressPct: s.progressPct,
       elapsedS: s.printDurationS,
       remainingS: s.state === 'printing' && s.progressPct > 1 && s.printDurationS > 0
@@ -291,6 +380,7 @@ function statusFromSample(s: PrinterSample): PrinterStatus {
       chamberC: s.chamberC
     },
     lifetime: s.lifetime ? { ...s.lifetime, completed, cancelled } : null,
+    box: null,
     recentJobs: []
   };
 }
