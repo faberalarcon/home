@@ -76,17 +76,29 @@ Do not commit production secrets, uploaded media, generated output, or runtime d
 ## 3D printer (Creality K2 Pro)
 
 Device is live at `192.168.1.176`. Moonraker (port 7125) is reachable; Fluidd
-UI at port 4408. No webcam configured in Moonraker yet — `PRINTER_SNAPSHOT_URL`
-is omitted from `.env`. Connection driven by `PRINTER_BASE_URL`.
+UI at port 4408. Connection driven by `PRINTER_BASE_URL`.
 
-- Live status / temps / camera: `src/lib/stats/server/printer.ts` (live Moonraker
-  fetch) + `src/routes/stats/printer/`. Snapshot proxied via
-  `/stats/printer/snapshot` from `PRINTER_SNAPSHOT_URL`.
+- Live status / temps / CFS box: `src/lib/stats/server/printer.ts` (live Moonraker
+  fetch) + `src/routes/stats/printer/`. Print filenames are masked server-side
+  (`maskFilename`) and blurred in the UI for privacy.
+- CFS material box: parsed from the Moonraker `box` object (per-slot colour,
+  material, remaining %, dry-box temp/humidity).
+- Camera: the K2 serves video **only over WebRTC** (custom base64 signaling on
+  `webrtc_local`, port 8000 — same as the DnG-Crafts/K2-Camera project; stock
+  Fluidd isn't wired to it). The page has an in-browser **LAN live view**:
+  `/stats/printer/webrtc` (`+server.ts`) proxies signaling same-origin; media
+  flows browser↔printer, so it works on the LAN only.
+- Snapshot: `/stats/printer/snapshot` proxies `PRINTER_SNAPSHOT_URL` for the
+  `<img>` (currently unset → "unavailable"). **TODO (future work):** an
+  always-on/remote JPEG snapshot via a headless-Chromium bridge —
+  `deploy/printer-camera/` (`cam-snap.py` + `client.html`, EXPERIMENTAL/unverified).
+  `aiortc` was ruled out (cannot complete the K2's libpeer DTLS handshake).
 - History charts: collector `deploy/printer-metrics/collect-printer-metrics.mjs`
   → JSONL at `/var/lib/bristoe-stats/printer-metrics.jsonl`, run by
   `deploy/systemd/21bristoe-printer-metrics.{service,timer}` (installed, 2-min cadence).
-- Env: `PRINTER_BASE_URL`, `PRINTER_SNAPSHOT_URL`, `PRINTER_CHAMBER_OBJECT`,
-  `PRINTER_NAME`, `PRINTER_FIXTURE` (=1 to preview with sample data).
+- Env: `PRINTER_BASE_URL`, `PRINTER_SNAPSHOT_URL`, `PRINTER_WEBRTC_URL`
+  (defaults to host:8000), `PRINTER_CHAMBER_OBJECT`, `PRINTER_NAME`,
+  `PRINTER_FIXTURE` (=1 to preview with sample data).
 - Collector env: `/etc/21bristoe-printer.env`.
 ## Design tokens
 

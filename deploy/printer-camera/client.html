@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>K2 cam snapshotter</title></head>
+<body>
+<script>
+// Headless client run by cam-snap.py inside system Chromium (which, unlike
+// aiortc, completes the K2's libpeer DTLS handshake). Mirrors the proven
+// DnG-Crafts/K2-Camera handshake, then uses MediaStreamTrackProcessor to pull
+// decoded frames and keep the latest as a JPEG data URL for Python to grab.
+const STATE = { lastJpeg: null, lastTs: 0, connected: false, log: [] };
+function L(m) { STATE.log.push(m); console.log(m); }
+window.__grab = () => STATE.lastJpeg;
+window.__log = () => STATE.log;
+window.__status = () => ({ connected: STATE.connected, age: STATE.lastTs ? Date.now() - STATE.lastTs : null });
+
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d');
+
+function startPeer() {
+  const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+  pc.addTransceiver('video', { direction: 'sendrecv' });
+
+  L('startPeer; MediaStreamTrackProcessor=' + ('MediaStreamTrackProcessor' in window));
+  pc.onconnectionstatechange = () => {
+    L('conn=' + pc.connectionState);
+    STATE.connected = pc.connectionState === 'connected';
+    if (['failed', 'closed', 'disconnected'].includes(pc.connectionState)) {
+      try { pc.close(); } catch (e) {}
+      setTimeout(startPeer, 2000);
+    }
+  };
+
+  pc.ontrack = async (ev) => {
+    L('ontrack');
+    const track = ev.streams[0].getVideoTracks()[0];
+    if (!track || !('MediaStreamTrackProcessor' in window)) { L('no track/processor'); return; }
+    const reader = new MediaStreamTrackProcessor({ track }).readable.getReader();
+    while (true) {
+      const { value: frame, done } = await reader.read();
+      if (done) break;
+      // Throttle expensive draw+encode to ~1.5 fps; drain the rest.
+      if (Date.now() - STATE.lastTs > 650) {
+        canvas.width = frame.displayWidth;
+        canvas.height = frame.displayHeight;
+        ctx.drawImage(frame, 0, 0);
+        STATE.lastJpeg = canvas.toDataURL('image/jpeg', 0.8);
+        STATE.lastTs = Date.now();
+      }
+      frame.close();
+    }
+  };
+
+  pc.onicegatheringstatechange = () => L('gather=' + pc.iceGatheringState);
+  pc.oniceconnectionstatechange = () => L('ice=' + pc.iceConnectionState);
+  pc.onicecandidate = (e) => {
+    if (e.candidate === null) {
+      L('gathering done; sending offer');
+      fetch('/signal', { method: 'POST', body: btoa(JSON.stringify({ type: 'offer', sdp: pc.localDescription.sdp })) })
+        .then((r) => { L('signal status ' + r.status); return r.text(); })
+        .then((t) => {
+          L('answer len ' + t.length);
+          return pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(t.trim()))));
+        })
+        .then(() => L('remote set'))
+        .catch((err) => { L('signal err ' + err); setTimeout(startPeer, 2000); });
+    }
+  };
+
+  pc.createOffer().then((d) => pc.setLocalDescription(d)).then(() => L('local set')).catch((e) => L('offer err ' + e));
+}
+startPeer();
+</script>
+</body>
+</html>

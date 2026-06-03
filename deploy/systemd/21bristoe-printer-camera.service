@@ -1,0 +1,20 @@
+[Unit]
+Description=K2 Pro camera snapshot bridge (headless Chromium -> JPEG) for 21bristoe-stats
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/21bristoe-printer-camera.env
+ExecStart=/usr/local/lib/21bristoe-printer-camera/.venv/bin/python /usr/local/lib/21bristoe-printer-camera/cam-snap.py
+Restart=always
+RestartSec=10
+Nice=10
+# Chromium needs a writable home + /dev/shm; keep the rest locked down.
+ProtectSystem=strict
+ReadWritePaths=/usr/local/lib/21bristoe-printer-camera
+Environment=HOME=/usr/local/lib/21bristoe-printer-camera
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
