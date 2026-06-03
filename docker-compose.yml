@@ -44,6 +44,12 @@ services:
       - HA_BASE_URL=${HA_BASE_URL:-http://ai.local:8123}
       - HA_TOKEN=${HA_TOKEN:-}
       - EV_COST_PER_KWH=${EV_COST_PER_KWH:-0.12}
+      - PRINTER_BASE_URL=${PRINTER_BASE_URL:-http://192.168.1.176:7125}
+      - PRINTER_CHAMBER_OBJECT=${PRINTER_CHAMBER_OBJECT:-temperature_sensor chamber_temp}
+      - PRINTER_NAME=${PRINTER_NAME:-K2 Pro}
+      - PRINTER_WEBRTC_URL=${PRINTER_WEBRTC_URL:-}
+      - PRINTER_SNAPSHOT_URL=${PRINTER_SNAPSHOT_URL:-}
+      - PRINTER_FIXTURE=${PRINTER_FIXTURE:-}
       - TZ=${TZ:-America/New_York}
     extra_hosts:
       - "ai.local:host-gateway"
