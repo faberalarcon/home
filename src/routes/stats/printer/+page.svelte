@@ -4,7 +4,7 @@
   import LineChart from '$lib/stats/components/LineChart.svelte';
   import BarChart from '$lib/stats/components/BarChart.svelte';
   import { appPath } from '$lib/stats/app-paths';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   let { data } = $props();
 
@@ -37,6 +37,60 @@
   });
   const snapshotSrc = $derived(`${appPath('/printer/snapshot')}${snapshotBust ? `?t=${snapshotBust}` : ''}`);
   let snapshotOk = $state(true);
+
+  // Live view: the browser plays the printer's WebRTC stream directly (Chromium
+  // negotiates the K2's libpeer stack fine). Signaling goes through our
+  // same-origin /printer/webrtc proxy; media flows browser <-> printer, so this
+  // only works on the home LAN and fails closed elsewhere.
+  let liveActive = $state(false);
+  let liveError = $state('');
+  let videoEl = $state<HTMLVideoElement | null>(null);
+  let pc: RTCPeerConnection | null = null;
+
+  async function startLive() {
+    liveError = '';
+    liveActive = true;
+    try {
+      // Mirror the proven DnG-Crafts/K2-Camera handshake: STUN server + a
+      // sendrecv transceiver (the K2's libpeer stack expects this).
+      pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+      pc.addTransceiver('video', { direction: 'sendrecv' });
+      pc.ontrack = (e) => {
+        if (videoEl) videoEl.srcObject = e.streams[0];
+      };
+      await pc.setLocalDescription(await pc.createOffer());
+      await new Promise<void>((resolve) => {
+        if (pc!.iceGatheringState === 'complete') return resolve();
+        const check = () => {
+          if (pc!.iceGatheringState === 'complete') {
+            pc!.removeEventListener('icegatheringstatechange', check);
+            resolve();
+          }
+        };
+        pc!.addEventListener('icegatheringstatechange', check);
+        setTimeout(resolve, 3000);
+      });
+      const body = btoa(JSON.stringify({ type: 'offer', sdp: pc.localDescription!.sdp }));
+      const resp = await fetch(appPath('/printer/webrtc'), { method: 'POST', body });
+      if (!resp.ok) throw new Error('signaling failed');
+      const answer = JSON.parse(atob((await resp.text()).trim()));
+      await pc.setRemoteDescription(answer);
+    } catch {
+      liveError = 'Live view unavailable — home network only.';
+      stopLive();
+    }
+  }
+
+  function stopLive() {
+    liveActive = false;
+    if (pc) {
+      pc.close();
+      pc = null;
+    }
+    if (videoEl) videoEl.srcObject = null;
+  }
+
+  onDestroy(stopLive);
 
   const rangeOptions = [
     { value: '7d', label: '7d' },
@@ -173,8 +227,11 @@
 
     {#if status.configured}
       <section class="printer__section reveal">
-        <SectionHeader title="Camera" meta="snapshot · refreshes every 30s" />
-        {#if snapshotOk}
+        <SectionHeader title="Camera" meta={liveActive ? 'live · WebRTC' : 'snapshot · refreshes every 30s'} />
+        {#if liveActive}
+          <!-- svelte-ignore a11y_media_has_caption -->
+          <video class="printer__cam" bind:this={videoEl} autoplay playsinline muted></video>
+        {:else if snapshotOk}
           <img
             class="printer__cam"
             src={snapshotSrc}
@@ -184,6 +241,14 @@
         {:else}
           <p class="printer__note printer__note--inline">Camera snapshot unavailable.</p>
         {/if}
+        <div class="printer__cam-actions">
+          {#if liveActive}
+            <button class="printer__cam-btn" onclick={stopLive}>Stop live view</button>
+          {:else}
+            <button class="printer__cam-btn" onclick={startLive}>Live view</button>
+          {/if}
+          {#if liveError}<span class="printer__note printer__note--inline">{liveError}</span>{/if}
+        </div>
       </section>
     {/if}
 
@@ -345,6 +410,29 @@
     max-width: 640px;
     border: 1px solid var(--color-paper-300);
     background: var(--color-paper-100);
+  }
+  .printer__cam-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.75rem;
+  }
+  .printer__cam-btn {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.9rem;
+    color: var(--color-ink-700);
+    background: var(--color-paper-100);
+    border: 1px solid var(--color-paper-300);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .printer__cam-btn:hover {
+    background: var(--color-ink-900);
+    color: var(--color-paper-50);
   }
 
   /* Filenames hidden for privacy — keep layout/length but unreadable. */

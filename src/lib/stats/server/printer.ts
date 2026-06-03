@@ -124,6 +124,23 @@ function printerName(): string {
   return env.PRINTER_NAME?.trim() || 'K2 Pro';
 }
 
+// The K2 Pro serves its camera over WebRTC (custom base64 signaling on the
+// `webrtc_local` endpoint, default port 8000). Browsers can play it directly
+// (Fluidd does), but only via a same-origin signaling proxy — the printer
+// sends no CORS headers. Derived from PRINTER_BASE_URL unless overridden.
+export function webrtcSignalingUrl(): string | null {
+  const explicit = env.PRINTER_WEBRTC_URL?.trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+  const base = baseUrl();
+  if (!base) return null;
+  try {
+    const u = new URL(base);
+    return `${u.protocol}//${u.hostname}:8000/call/webrtc_local`;
+  } catch {
+    return null;
+  }
+}
+
 function emptyStatus(configured: boolean): PrinterStatus {
   return {
     configured,
