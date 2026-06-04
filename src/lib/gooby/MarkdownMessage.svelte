@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { renderMarkdown } from './markdown-stream';
   import { ensureHighlighter, onReady } from './highlighter';
   import 'katex/dist/katex.min.css';
@@ -15,8 +15,11 @@
   let highlighterReady = $state(false);
   let rafScheduled = false;
   let pendingFlush = false;
-  let latestNext = content;
-  let pendingContent = $state(content);
+  // Intentional one-time seed from the initial prop value; the $effect below
+  // keeps both in sync on every `content` change. untrack signals this is a
+  // deliberate snapshot (silences state_referenced_locally).
+  let latestNext = untrack(() => content);
+  let pendingContent = $state(untrack(() => content));
 
   onMount(() => {
     pendingContent = content;

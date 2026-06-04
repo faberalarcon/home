@@ -155,22 +155,13 @@ setInterval(() => {
   void ingestPiAndBroadcast('tick');
 }, PI_INGEST_INTERVAL_MS).unref();
 
+// Content-Security-Policy is now emitted by SvelteKit's nonce-based CSP
+// (see kit.csp in svelte.config.js) so it can drop 'unsafe-inline' from
+// script-src. These remaining headers apply to every response as a backstop.
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Content-Security-Policy': [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' https://21bristoe.com data: blob:",
-    "connect-src 'self' https://21bristoe.com",
-    "font-src 'self'",
-    "object-src 'none'",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ].join('; '),
   'Permissions-Policy': 'camera=(), microphone=(self), geolocation=(), interest-cohort=()'
 };
 

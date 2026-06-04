@@ -23,7 +23,27 @@ const config = {
     files: {
       assets: 'public'
     },
-    csrf: { trustedOrigins }
+    csrf: { trustedOrigins },
+    // Nonce-based CSP: SvelteKit injects a per-response nonce into its own inline
+    // scripts so 'unsafe-inline' can be dropped from script-src. This header is
+    // the source of truth — the old static CSP in hooks.server.ts / nginx was
+    // removed (nginx cannot mint matching per-request nonces).
+    // style-src keeps 'unsafe-inline' for inline style="" attributes (e.g. app.html).
+    csp: {
+      mode: 'auto',
+      directives: {
+        'default-src': ['self'],
+        'script-src': ['self', 'wasm-unsafe-eval'],
+        'style-src': ['self', 'unsafe-inline'],
+        'img-src': ['self', 'https://21bristoe.com', 'data:', 'blob:'],
+        'connect-src': ['self', 'https://21bristoe.com'],
+        'font-src': ['self'],
+        'object-src': ['none'],
+        'frame-ancestors': ['none'],
+        'base-uri': ['self'],
+        'form-action': ['self']
+      }
+    }
   }
 };
 
