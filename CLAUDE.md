@@ -82,7 +82,15 @@ UI at port 4408. Connection driven by `PRINTER_BASE_URL`.
   fetch) + `src/routes/stats/printer/`. Print filenames are masked server-side
   (`maskFilename`) and blurred in the UI for privacy.
 - CFS material box: parsed from the Moonraker `box` object (per-slot colour,
-  material, remaining %, dry-box temp/humidity).
+  material, remaining %, dry-box temp/humidity). The remaining % is only shown
+  for **RFID spools** (`vender` populated) — non-RFID spools report a flat
+  firmware default of 100, so `parseBox()` nulls `remainPct` for them and the
+  card hides the bar.
+- Remote access: the Pi/LAN node `ai` (192.168.1.177) advertises the printer as
+  a Tailscale subnet route (`192.168.1.176/32`); no changes on the printer, no
+  open ports. Tailnet devices reach Moonraker, SSH, and the WebRTC live view via
+  the printer's LAN IP (subnet-router SNAT lets the K2's ICE complete). Never
+  port-forward 7125/4408/8000 — Moonraker is unauthenticated.
 - Camera: the K2 serves video **only over WebRTC** (custom base64 signaling on
   `webrtc_local`, port 8000 — same as the DnG-Crafts/K2-Camera project; stock
   Fluidd isn't wired to it). The page has an in-browser **LAN live view**:
