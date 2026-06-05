@@ -1,4 +1,4 @@
-import { stat, readFile } from 'node:fs/promises';
+import { open } from 'node:fs/promises';
 import { join, dirname, resolve, normalize } from 'node:path';
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -22,49 +22,50 @@ export const GET: RequestHandler = async ({ params, request }) => {
     throw error(403, 'Forbidden');
   }
 
-  let fileStat: Awaited<ReturnType<typeof stat>>;
+  // Open once and stat/read through the same handle so the check and the use
+  // operate on one inode atomically (no TOCTOU race between stat and read).
+  let fh: Awaited<ReturnType<typeof open>>;
   try {
-    fileStat = await stat(filePath);
+    fh = await open(filePath, 'r');
   } catch {
     throw error(404, 'Not found');
   }
 
-  const lastModified = fileStat.mtime.toUTCString();
-  const etag = `"${fileStat.mtimeMs.toString(36)}-${fileStat.size.toString(36)}"`;
+  try {
+    const fileStat = await fh.stat();
+    const lastModified = fileStat.mtime.toUTCString();
+    const etag = `"${fileStat.mtimeMs.toString(36)}-${fileStat.size.toString(36)}"`;
 
-  // Conditional request — return 304 if client already has the current version
-  if (
-    request.headers.get('if-none-match') === etag ||
-    request.headers.get('if-modified-since') === lastModified
-  ) {
-    return new Response(null, {
-      status: 304,
+    // Conditional request — return 304 if client already has the current version
+    if (
+      request.headers.get('if-none-match') === etag ||
+      request.headers.get('if-modified-since') === lastModified
+    ) {
+      return new Response(null, {
+        status: 304,
+        headers: {
+          ETag: etag,
+          'Last-Modified': lastModified,
+          'Cache-Control': 'public, max-age=0, must-revalidate'
+        }
+      });
+    }
+
+    const buf = await fh.readFile();
+    const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
+    const contentType = MIME[ext] ?? 'application/octet-stream';
+
+    return new Response(new Uint8Array(buf), {
       headers: {
+        'Content-Type': contentType,
+        // must-revalidate: browser always checks freshness via ETag/Last-Modified
+        // before serving from cache, so replaced images are never served stale.
+        'Cache-Control': 'public, max-age=0, must-revalidate',
         ETag: etag,
-        'Last-Modified': lastModified,
-        'Cache-Control': 'public, max-age=0, must-revalidate'
+        'Last-Modified': lastModified
       }
     });
+  } finally {
+    await fh.close();
   }
-
-  let buf: Buffer;
-  try {
-    buf = await readFile(filePath);
-  } catch {
-    throw error(404, 'Not found');
-  }
-
-  const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
-  const contentType = MIME[ext] ?? 'application/octet-stream';
-
-  return new Response(new Uint8Array(buf), {
-    headers: {
-      'Content-Type': contentType,
-      // must-revalidate: browser always checks freshness via ETag/Last-Modified
-      // before serving from cache, so replaced images are never served stale.
-      'Cache-Control': 'public, max-age=0, must-revalidate',
-      ETag: etag,
-      'Last-Modified': lastModified
-    }
-  });
 };
