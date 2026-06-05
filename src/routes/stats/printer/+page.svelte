@@ -11,6 +11,10 @@
   const status = $derived(data.status);
   const history = $derived(data.history);
 
+  // Camera (snapshot + live view) is only available while a print is active —
+  // matched by the server-side gate on the snapshot/webrtc routes. Paused counts.
+  const camAllowed = $derived(status.state === 'printing' || status.state === 'paused');
+
   const stateLabels: Record<string, string> = {
     printing: 'Printing',
     paused: 'Paused',
@@ -91,6 +95,12 @@
   }
 
   onDestroy(stopLive);
+
+  // If the print finishes (or pauses out) while someone is watching, tear the
+  // live stream down so it can't outlive the active-print window.
+  $effect(() => {
+    if (!camAllowed && liveActive) stopLive();
+  });
 
   const rangeOptions = [
     { value: '7d', label: '7d' },
@@ -227,28 +237,35 @@
 
     {#if status.configured}
       <section class="printer__section reveal">
-        <SectionHeader title="Camera" meta={liveActive ? 'live · WebRTC' : 'snapshot · refreshes every 30s'} />
-        {#if liveActive}
-          <!-- svelte-ignore a11y_media_has_caption -->
-          <video class="printer__cam" bind:this={videoEl} autoplay playsinline muted></video>
-        {:else if snapshotOk}
-          <img
-            class="printer__cam"
-            src={snapshotSrc}
-            alt="Printer webcam snapshot"
-            onerror={() => (snapshotOk = false)}
-          />
+        <SectionHeader
+          title="Camera"
+          meta={!camAllowed ? 'during prints only' : liveActive ? 'live · WebRTC' : 'snapshot · refreshes every 30s'}
+        />
+        {#if !camAllowed}
+          <p class="printer__note printer__note--inline">Camera is available while a print is running.</p>
         {:else}
-          <p class="printer__note printer__note--inline">Camera snapshot unavailable.</p>
-        {/if}
-        <div class="printer__cam-actions">
           {#if liveActive}
-            <button class="printer__cam-btn" onclick={stopLive}>Stop live view</button>
+            <!-- svelte-ignore a11y_media_has_caption -->
+            <video class="printer__cam" bind:this={videoEl} autoplay playsinline muted></video>
+          {:else if snapshotOk}
+            <img
+              class="printer__cam"
+              src={snapshotSrc}
+              alt="Printer webcam snapshot"
+              onerror={() => (snapshotOk = false)}
+            />
           {:else}
-            <button class="printer__cam-btn" onclick={startLive}>Live view</button>
+            <p class="printer__note printer__note--inline">Camera snapshot unavailable.</p>
           {/if}
-          {#if liveError}<span class="printer__note printer__note--inline">{liveError}</span>{/if}
-        </div>
+          <div class="printer__cam-actions">
+            {#if liveActive}
+              <button class="printer__cam-btn" onclick={stopLive}>Stop live view</button>
+            {:else}
+              <button class="printer__cam-btn" onclick={startLive}>Live view</button>
+            {/if}
+            {#if liveError}<span class="printer__note printer__note--inline">{liveError}</span>{/if}
+          </div>
+        {/if}
       </section>
     {/if}
 

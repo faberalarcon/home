@@ -1,16 +1,19 @@
 import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { isPrintActive } from '$lib/stats/server/printer';
 import type { RequestHandler } from './$types';
 
 // Proxies a single still image from the printer's webcam (e.g. crowsnest
 // `http://<printer>/webcam/?action=snapshot`). Keeps the browser off the
-// printer directly and the feed local-network-only. 404 when unconfigured.
+// printer directly. Only served while a print is active (gated server-side so
+// the URL can't be scraped when idle). 404 when unconfigured or not printing.
 
 const SNAPSHOT_TIMEOUT = 5000;
 
 export const GET: RequestHandler = async () => {
   const src = env.PRINTER_SNAPSHOT_URL?.trim();
   if (!src) throw error(404, 'Printer snapshot not configured');
+  if (!(await isPrintActive())) throw error(404, 'Camera available only during prints');
 
   let upstream: Response;
   try {

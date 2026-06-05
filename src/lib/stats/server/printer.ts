@@ -238,6 +238,22 @@ async function moonrakerFetch<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// The camera (snapshot + live view) is only exposed while a print is in
+// progress. A paused job still counts as active (you often want eyes on it
+// exactly then). Used to gate the snapshot/webrtc routes server-side; fails
+// closed so a Moonraker hiccup hides the feed rather than leaking it.
+export const PRINT_ACTIVE_STATES: ReadonlySet<PrinterState> = new Set(['printing', 'paused']);
+
+export async function isPrintActive(): Promise<boolean> {
+  try {
+    type Resp = { result?: { status?: { print_stats?: { state?: unknown } } } };
+    const resp = await moonrakerFetch<Resp>('/printer/objects/query?print_stats');
+    return PRINT_ACTIVE_STATES.has(normalizeState(resp.result?.status?.print_stats?.state));
+  } catch {
+    return false;
+  }
+}
+
 // Object set queried from Moonraker. The chamber sensor name varies by config
 // (Creality K2 exposes it under its own name) — override via env when known.
 function chamberObject(): string {
