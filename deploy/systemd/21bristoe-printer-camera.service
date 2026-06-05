@@ -10,10 +10,13 @@ ExecStart=/usr/local/lib/21bristoe-printer-camera/.venv/bin/python /usr/local/li
 Restart=always
 RestartSec=10
 Nice=10
-# Chromium needs a writable home + /dev/shm; keep the rest locked down.
+# Chromium needs a writable home + temp; keep the rest locked down.
 ProtectSystem=strict
 ReadWritePaths=/usr/local/lib/21bristoe-printer-camera
 Environment=HOME=/usr/local/lib/21bristoe-printer-camera
+# Playwright/Chromium mkdtemp under /tmp, which ProtectSystem=strict makes
+# read-only — give the service its own private writable /tmp.
+PrivateTmp=true
 NoNewPrivileges=true
 
 [Install]

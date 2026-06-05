@@ -169,6 +169,12 @@ function toNumLoose(v: unknown): number | null {
   const n = typeof v === 'number' ? v : parseFloat(String(v));
   return Number.isFinite(n) ? n : null;
 }
+// A CFS slot reports a real remaining-length reading only when it carries RFID
+// vendor data; placeholders are "unknown" / "-1" / "none" / empty.
+function rfidBacked(v: unknown): boolean {
+  const s = String(v ?? '').trim().toLowerCase();
+  return s !== '' && s !== 'unknown' && s !== '-1' && s !== 'none';
+}
 function parseBox(box: Record<string, unknown> | undefined): PrinterBox | null {
   if (!box) return null;
   const materialBySlot = new Map<string, string>();
@@ -196,10 +202,14 @@ function parseBox(box: Record<string, unknown> | undefined): PrinterBox | null {
     if (humidityPct === null) humidityPct = toNumLoose(u['dry_and_humidity']);
     const colors = Array.isArray(u['color_value']) ? (u['color_value'] as unknown[]) : [];
     const remains = Array.isArray(u['remain_len']) ? (u['remain_len'] as unknown[]) : [];
+    // `remain_len` is only a genuine measurement for Creality RFID spools; for
+    // non-RFID spools the firmware reports a flat default (100) and `vender` is
+    // "unknown". Only trust the % when the slot has real RFID vendor data.
+    const venders = Array.isArray(u['vender']) ? (u['vender'] as unknown[]) : [];
     for (let i = 0; i < 4; i++) {
       const id = `${unit}${letters[i]}`;
       const material = materialBySlot.get(id) ?? null;
-      const remainPct = toNumLoose(remains[i]);
+      const remainPct = rfidBacked(venders[i]) ? toNumLoose(remains[i]) : null;
       slots.push({
         id,
         colorHex: toHex6(colors[i]),
@@ -226,6 +236,22 @@ async function moonrakerFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${url}${path}`, { signal: AbortSignal.timeout(PRINTER_TIMEOUT) });
   if (!res.ok) throw new Error(`Moonraker ${res.status}: ${res.statusText}`);
   return res.json() as Promise<T>;
+}
+
+// The camera (snapshot + live view) is only exposed while a print is in
+// progress. A paused job still counts as active (you often want eyes on it
+// exactly then). Used to gate the snapshot/webrtc routes server-side; fails
+// closed so a Moonraker hiccup hides the feed rather than leaking it.
+export const PRINT_ACTIVE_STATES: ReadonlySet<PrinterState> = new Set(['printing', 'paused']);
+
+export async function isPrintActive(): Promise<boolean> {
+  try {
+    type Resp = { result?: { status?: { print_stats?: { state?: unknown } } } };
+    const resp = await moonrakerFetch<Resp>('/printer/objects/query?print_stats');
+    return PRINT_ACTIVE_STATES.has(normalizeState(resp.result?.status?.print_stats?.state));
+  } catch {
+    return false;
+  }
 }
 
 // Object set queried from Moonraker. The chamber sensor name varies by config
