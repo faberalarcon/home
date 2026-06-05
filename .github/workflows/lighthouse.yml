@@ -17,6 +17,8 @@ jobs:
     name: lighthouse (live URLs)
     runs-on: ubuntu-latest
     steps:
+      # Needed so LHCI can resolve `git rev-parse HEAD` for its status check.
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12.6.2
         with:
           urls: |
