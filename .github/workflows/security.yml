@@ -17,7 +17,7 @@ jobs:
     name: npm audit (production deps)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -31,7 +31,7 @@ jobs:
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: semgrep ci --sarif --output=semgrep.sarif || true
         env:
           SEMGREP_RULES: >-
@@ -46,7 +46,7 @@ jobs:
     name: gitleaks (secret scan)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # full history so leaked-then-removed secrets are caught
       - uses: gitleaks/gitleaks-action@v3
@@ -57,7 +57,7 @@ jobs:
     name: trivy (deps + IaC/config misconfig)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs

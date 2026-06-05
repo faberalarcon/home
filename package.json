@@ -21,7 +21,7 @@
     "hash:secret": "node scripts/hash-secret.mjs"
   },
   "dependencies": {
-    "@ip-location-db/dbip-city-mmdb": "^2.3.2026040119",
+    "@ip-location-db/dbip-city-mmdb": "^2.3.2026050119",
     "better-sqlite3": "^11.8.1",
     "chart.js": "^4.4.8",
     "dompurify": "^3.4.3",
