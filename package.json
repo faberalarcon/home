@@ -24,7 +24,7 @@
     "@ip-location-db/dbip-city-mmdb": "^2.3.2026040119",
     "better-sqlite3": "^11.8.1",
     "chart.js": "^4.4.8",
-    "dompurify": "^3.4.3",
+    "dompurify": "^3.4.8",
     "drizzle-orm": "^0.45.2",
     "katex": "^0.16.46",
     "marked": "^18.0.4",
