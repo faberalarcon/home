@@ -1,12 +1,14 @@
 # Printer camera snapshot bridge — install
 
-> **STATUS: EXPERIMENTAL / NOT YET WIRED IN (future work).** The LAN live view
-> (in-browser WebRTC on `/stats/printer`) is the shipped camera feature. This
-> headless-Chromium service is the planned path for an *always-on / remote*
-> JPEG snapshot (so `PRINTER_SNAPSHOT_URL` and the `<img>` light up off-LAN),
-> but the end-to-end frame capture is **unverified** — `createOffer` works
-> headless, full capture is untested. `aiortc` was tried first and cannot
-> complete the K2's libpeer DTLS handshake. Do not enable in production yet.
+> **STATUS: VERIFIED (2026-06-04).** End-to-end capture confirmed on the Pi —
+> headless system Chromium completes the K2's libpeer DTLS handshake (`aiortc`
+> cannot) and yields real 1280×720 JPEG frames. The bridge is **print-gated**:
+> it only holds the printer's WebRTC peer while a print is active
+> (printing/paused), so it decodes ~0 frames (≈no CPU) when idle. This mirrors
+> the site's server-side gate — `/stats/printer/snapshot` and `/stats/printer/webrtc`
+> return 404 unless a print is active. Snapshot works off-LAN (served through the
+> public site); the in-browser **live view** still needs LAN/tailnet reachability
+> to the printer.
 
 
 The K2 Pro serves its camera **only over WebRTC** via a minimal "libpeer" stack.
@@ -43,24 +45,28 @@ sudo /usr/local/lib/21bristoe-printer-camera/.venv/bin/pip install -r deploy/pri
 
 ## 3. Configure
 
-Optional `/etc/21bristoe-printer-camera.env` (defaults shown):
+`/etc/21bristoe-printer-camera.env` — bind to the Docker bridge gateway so the
+site container can reach it (the site runs in a bridged container, not host net):
 
 ```
 CAM_SIGNALING_URL=http://192.168.1.176:8000/call/webrtc_local
-CAM_BIND_HOST=127.0.0.1
+CAM_PRINTER_URL=http://192.168.1.176:7125
+CAM_BIND_HOST=172.17.0.1
 CAM_BIND_PORT=8788
 CAM_CHROMIUM=/usr/bin/chromium
 CAM_STREAM_FPS=2
 ```
 
-Site container — set in `home/.env` and redeploy (`./deploy/deploy.sh`):
+Site container — set in `home/.env` and redeploy (`./deploy/deploy.sh`). The
+container resolves `ai.local` to the host gateway via compose `extra_hosts`:
 
 ```
-PRINTER_SNAPSHOT_URL=http://127.0.0.1:8788/snapshot
+PRINTER_SNAPSHOT_URL=http://ai.local:8788/snapshot
 ```
 
-> If the site runs in Docker without host networking, use the host gateway
-> (e.g. `http://172.17.0.1:8788/snapshot`) or bind the bridge to that IP.
+> `CAM_BIND_HOST=172.17.0.1` exposes the bridge only on the Docker bridge (not
+> the LAN). The snapshot/webrtc routes are gated to active prints server-side,
+> so the JPEG is never served while idle.
 
 ## 4. Install the service
 
