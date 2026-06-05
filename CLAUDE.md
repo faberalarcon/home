@@ -83,16 +83,23 @@ UI at port 4408. Connection driven by `PRINTER_BASE_URL`.
   (`maskFilename`) and blurred in the UI for privacy.
 - CFS material box: parsed from the Moonraker `box` object (per-slot colour,
   material, remaining %, dry-box temp/humidity).
-- Camera: the K2 serves video **only over WebRTC** (custom base64 signaling on
-  `webrtc_local`, port 8000 — same as the DnG-Crafts/K2-Camera project; stock
-  Fluidd isn't wired to it). The page has an in-browser **LAN live view**:
-  `/stats/printer/webrtc` (`+server.ts`) proxies signaling same-origin; media
-  flows browser↔printer, so it works on the LAN only.
-- Snapshot: `/stats/printer/snapshot` proxies `PRINTER_SNAPSHOT_URL` for the
-  `<img>` (currently unset → "unavailable"). **TODO (future work):** an
-  always-on/remote JPEG snapshot via a headless-Chromium bridge —
-  `deploy/printer-camera/` (`cam-snap.py` + `client.html`, EXPERIMENTAL/unverified).
-  `aiortc` was ruled out (cannot complete the K2's libpeer DTLS handshake).
+- Camera is **gated to active prints** (printing/paused) — enforced server-side
+  via `isPrintActive()` in `printer.ts` (snapshot + webrtc routes 404 when idle),
+  in the UI (`camAllowed` hides the section), and in the bridge (only captures
+  while printing). The K2 serves video **only over WebRTC** (custom base64
+  signaling on `webrtc_local`, port 8000 — same as the DnG-Crafts/K2-Camera
+  project; stock Fluidd isn't wired to it).
+- Live view: in-browser WebRTC on `/stats/printer`; `/stats/printer/webrtc`
+  (`+server.ts`) proxies signaling same-origin; media flows browser↔printer, so
+  it needs **LAN or tailnet** reachability to the printer (subnet route works).
+- Snapshot (remote-capable): `/stats/printer/snapshot` proxies
+  `PRINTER_SNAPSHOT_URL`. **VERIFIED + wired** via a headless-Chromium bridge —
+  `deploy/printer-camera/` (`cam-snap.py` + `client.html`): system Chromium
+  completes the K2's libpeer DTLS (which `aiortc` can't) and re-serves the latest
+  decoded frame as JPEG. Runs as `21bristoe-printer-camera.service`, binds the
+  Docker bridge gateway (`172.17.0.1:8788`); site reaches it via
+  `PRINTER_SNAPSHOT_URL=http://ai.local:8788/snapshot`. Served through the public
+  site → works off-LAN. See `deploy/printer-camera/INSTALL.md`.
 - History charts: collector `deploy/printer-metrics/collect-printer-metrics.mjs`
   → JSONL at `/var/lib/bristoe-stats/printer-metrics.jsonl`, run by
   `deploy/systemd/21bristoe-printer-metrics.{service,timer}` (installed, 2-min cadence).
