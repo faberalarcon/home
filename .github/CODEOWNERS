@@ -1,0 +1,8 @@
+# Default owner for everything in the repo.
+* @faberalarcon
+
+# Security-sensitive surfaces — review with extra care.
+/src/lib/admin/    @faberalarcon
+/src/routes/admin/ @faberalarcon
+/deploy/nginx/     @faberalarcon
+/.github/          @faberalarcon

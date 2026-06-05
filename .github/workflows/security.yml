@@ -71,3 +71,16 @@ jobs:
         with:
           sarif_file: trivy.sarif
           category: trivy
+
+  zizmor:
+    name: zizmor (GitHub Actions lint)
+    runs-on: ubuntu-latest
+    continue-on-error: true # report-only; findings land in the Security tab
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          persist-credentials: false
+      - uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
+        with:
+          # Report-only: findings surface in the Security tab, never block a run.
+          advanced-security: true
