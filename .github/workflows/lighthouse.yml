@@ -1,0 +1,27 @@
+name: lighthouse
+
+# Performance bot. The app is a stateful adapter-node server (SQLite + Home
+# Assistant tokens), so we do NOT boot it in CI. Instead we measure the live
+# public site directly — no secrets, no DB, robust. Report-only baseline.
+
+on:
+  schedule:
+    - cron: '0 7 * * 1' # weekly Monday 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    name: lighthouse (live URLs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12.6.2
+        with:
+          urls: |
+            https://21bristoe.com/
+            https://21bristoe.com/drinks/
+            https://21bristoe.com/stats/
+          uploadArtifacts: true
+          temporaryPublicStorage: true
