@@ -86,6 +86,8 @@ jobs:
     name: zizmor (GitHub Actions lint)
     runs-on: ubuntu-latest
     continue-on-error: true # report-only; findings land in the Security tab
+    permissions:
+      security-events: write # zizmor-action uploads its SARIF to the Security tab
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
