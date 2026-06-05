@@ -9,8 +9,14 @@ decoded frames via MediaStreamTrackProcessor, and re-exposes the latest frame
 as a plain HTTP snapshot/MJPEG so the SvelteKit /stats/printer/snapshot proxy
 (PRINTER_SNAPSHOT_URL) can serve it on the LAN and remotely.
 
+The bridge only holds the printer's WebRTC peer while a print is active
+(printing/paused) — it loads the client page when a print starts and blanks it
+when the print ends, so Chromium decodes ~0 frames (≈no CPU) when idle. This
+mirrors the site's server-side gate: the camera is a during-prints-only feature.
+
 Env:
   CAM_SIGNALING_URL  default http://192.168.1.176:8000/call/webrtc_local
+  CAM_PRINTER_URL    default http://192.168.1.176:7125   (Moonraker, for print state)
   CAM_BIND_HOST      default 127.0.0.1
   CAM_BIND_PORT      default 8788
   CAM_CHROMIUM       default /usr/bin/chromium
@@ -28,6 +34,7 @@ from aiohttp import web
 from playwright.async_api import async_playwright
 
 SIGNALING_URL = os.environ.get("CAM_SIGNALING_URL", "http://192.168.1.176:8000/call/webrtc_local")
+PRINTER_URL = os.environ.get("CAM_PRINTER_URL", "http://192.168.1.176:7125").rstrip("/")
 BIND_HOST = os.environ.get("CAM_BIND_HOST", "127.0.0.1")
 BIND_PORT = int(os.environ.get("CAM_BIND_PORT", "8788"))
 CHROMIUM = os.environ.get("CAM_CHROMIUM", "/usr/bin/chromium")
@@ -35,6 +42,9 @@ STREAM_FPS = float(os.environ.get("CAM_STREAM_FPS", "2"))
 CLIENT_HTML = (Path(__file__).parent / "client.html").read_text()
 
 FRAME_STALE_S = 10.0
+# Print states during which the camera is exposed; mirrors the site gate.
+ACTIVE_STATES = {"printing", "paused"}
+STATE_POLL_S = 4.0
 
 
 class FrameStore:
@@ -45,6 +55,10 @@ class FrameStore:
     def put(self, jpeg: bytes) -> None:
         self.jpeg = jpeg
         self.ts = time.monotonic()
+
+    def clear(self) -> None:
+        self.jpeg = None
+        self.ts = 0.0
 
     def fresh(self) -> bool:
         return self.jpeg is not None and (time.monotonic() - self.ts) < FRAME_STALE_S
@@ -114,14 +128,50 @@ async def handle_health(request: web.Request) -> web.Response:
     return web.json_response({"fresh": store.fresh()})
 
 
-async def grab_loop(page) -> None:
+async def print_active() -> bool:
+    """True while the printer is printing or paused (fail closed on error)."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{PRINTER_URL}/printer/objects/query?print_stats",
+                timeout=aiohttp.ClientTimeout(total=5),
+            ) as resp:
+                data = await resp.json()
+        state = data.get("result", {}).get("status", {}).get("print_stats", {}).get("state")
+        return str(state).lower() in ACTIVE_STATES
+    except Exception:
+        return False
+
+
+async def state_loop(page, state: dict) -> None:
+    """Hold the WebRTC peer only during prints: load the client page when a
+    print is active, blank it (drop the peer, stop decoding) when it isn't."""
     while True:
-        try:
-            data = await page.evaluate("window.__grab && window.__grab()")
-            if data and isinstance(data, str) and data.startswith("data:image"):
-                store.put(base64.b64decode(data.split(",", 1)[1]))
-        except Exception as exc:  # noqa: BLE001
-            print(f"[cam-snap] grab error: {exc}", flush=True)
+        active = await print_active()
+        if active != state["active"]:
+            state["active"] = active
+            try:
+                if active:
+                    print("[cam-snap] print active → connecting camera", flush=True)
+                    await page.goto(f"http://{BIND_HOST}:{BIND_PORT}/", wait_until="domcontentloaded", timeout=20000)
+                else:
+                    print("[cam-snap] print idle → disconnecting camera", flush=True)
+                    await page.goto("about:blank", wait_until="domcontentloaded", timeout=20000)
+                    store.clear()
+            except Exception as exc:  # noqa: BLE001
+                print(f"[cam-snap] state switch error: {exc}", flush=True)
+        await asyncio.sleep(STATE_POLL_S)
+
+
+async def grab_loop(page, state: dict) -> None:
+    while True:
+        if state["active"]:
+            try:
+                data = await page.evaluate("window.__grab && window.__grab()")
+                if data and isinstance(data, str) and data.startswith("data:image"):
+                    store.put(base64.b64decode(data.split(",", 1)[1]))
+            except Exception as exc:  # noqa: BLE001
+                print(f"[cam-snap] grab error: {exc}", flush=True)
         await asyncio.sleep(0.5)
 
 
@@ -153,9 +203,11 @@ async def main() -> None:
     page = await browser.new_page()
     page.on("console", lambda m: print(f"[page] {m.type}: {m.text}", flush=True))
     page.on("pageerror", lambda e: print(f"[page error] {e}", flush=True))
-    await page.goto(f"http://{BIND_HOST}:{BIND_PORT}/", wait_until="domcontentloaded", timeout=20000)
-    print("[cam-snap] chromium client loaded", flush=True)
-    await grab_loop(page)
+    # Start blank; state_loop loads the client only while a print is active.
+    await page.goto("about:blank", wait_until="domcontentloaded", timeout=20000)
+    print("[cam-snap] ready; waiting for an active print", flush=True)
+    state = {"active": False}
+    await asyncio.gather(state_loop(page, state), grab_loop(page, state))
 
 
 if __name__ == "__main__":
