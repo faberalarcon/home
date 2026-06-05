@@ -36,6 +36,10 @@
     "svelte-chartjs": "^4.0.1",
     "undici": "^8.3.0"
   },
+  "overrides": {
+    "cookie": "^0.7.0",
+    "esbuild": "^0.25.0"
+  },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.5.4",
     "@sveltejs/kit": "^2.57.1",
