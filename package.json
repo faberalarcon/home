@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@ip-location-db/dbip-city-mmdb": "^2.3.2026050119",
-    "better-sqlite3": "^11.8.1",
+    "better-sqlite3": "^12.10.0",
     "chart.js": "^4.4.8",
     "dompurify": "^3.4.8",
     "drizzle-orm": "^0.45.2",
