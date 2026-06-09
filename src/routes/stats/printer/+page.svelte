@@ -10,6 +10,7 @@
 
   const status = $derived(data.status);
   const history = $derived(data.history);
+  const canon = $derived(data.canon);
 
   // Camera (snapshot + live view) is only available while a print is active —
   // matched by the server-side gate on the snapshot/webrtc routes. Paused counts.
@@ -140,6 +141,29 @@
     } catch {
       return '';
     }
+  }
+
+  const canonStateLabels: Record<string, string> = {
+    idle: 'Idle',
+    printing: 'Printing',
+    stopped: 'Stopped',
+    offline: 'Offline'
+  };
+  const canonStateTone: Record<string, string> = {
+    idle: 'ok',
+    printing: 'live',
+    stopped: 'alert',
+    offline: 'alert'
+  };
+
+  // The tri-color cartridge reports several hex values; render them as a
+  // gradient swatch. Hex values come off the wire, so validate before they
+  // land in an inline style.
+  function inkSwatch(colors: string[]): string {
+    const safe = colors.filter((c) => /^#[0-9a-fA-F]{3,8}$/.test(c));
+    if (safe.length === 0) return 'transparent';
+    if (safe.length === 1) return safe[0];
+    return `linear-gradient(135deg, ${safe.join(', ')})`;
   }
 </script>
 
@@ -346,6 +370,49 @@
       </section>
     {/if}
   {/if}
+
+  {#if canon}
+    <section class="printer__section reveal">
+      <SectionHeader title="Office printer" meta={canon.model} />
+      {#if canon.state === 'offline'}
+        <p class="printer__note printer__note--inline">
+          <span class="dashboard-status dashboard-status--alert">Offline</span>
+          &mdash; printer configured but not responding on the network.
+        </p>
+      {:else}
+        <div class="canon-state">
+          <span class="dashboard-status dashboard-status--{canonStateTone[canon.state] ?? 'warn'}">
+            {canonStateLabels[canon.state] ?? canon.state}
+          </span>
+          {#if canon.queuedJobs}
+            <span class="canon-state__queue">{canon.queuedJobs} job{canon.queuedJobs === 1 ? '' : 's'} queued</span>
+          {/if}
+          {#if canon.stateReasons.length > 0}
+            <span class="canon-state__reasons">{canon.stateReasons.join(', ')}</span>
+          {/if}
+        </div>
+        {#if canon.inks.length > 0}
+          <div class="cfs-grid">
+            {#each canon.inks as ink}
+              <div class="cfs-slot">
+                <span class="cfs-slot__swatch" style="background: {inkSwatch(ink.colors)}"></span>
+                <div class="cfs-slot__info">
+                  <span class="cfs-slot__id">{ink.name}</span>
+                  <span class="cfs-slot__material">{ink.type === 'ink-cartridge' ? 'Ink cartridge' : (ink.type ?? 'Ink')}</span>
+                  {#if ink.levelPct != null}
+                    <div class="cfs-slot__bar">
+                      <span style="width: {Math.min(100, Math.max(0, ink.levelPct))}%"></span>
+                    </div>
+                    <span class="cfs-slot__remain">{Math.round(ink.levelPct)}% remaining</span>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      {/if}
+    </section>
+  {/if}
 </article>
 
 <style>
@@ -457,6 +524,20 @@
     filter: blur(6px);
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  .canon-state {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .canon-state__queue,
+  .canon-state__reasons {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--color-ink-500);
   }
 
   .cfs-grid {

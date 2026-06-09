@@ -50,6 +50,8 @@ services:
       - PRINTER_WEBRTC_URL=${PRINTER_WEBRTC_URL:-}
       - PRINTER_SNAPSHOT_URL=${PRINTER_SNAPSHOT_URL:-}
       - PRINTER_FIXTURE=${PRINTER_FIXTURE:-}
+      - CANON_PRINTER_URL=${CANON_PRINTER_URL:-}
+      - CANON_PRINTER_NAME=${CANON_PRINTER_NAME:-}
       - TZ=${TZ:-America/New_York}
     extra_hosts:
       - "ai.local:host-gateway"
