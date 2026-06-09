@@ -193,6 +193,10 @@ async def main() -> None:
         executable_path=CHROMIUM,
         headless=True,
         args=[
+            # Sandbox needs user namespaces the service's hardened systemd unit
+            # doesn't grant. Acceptable here: the page only ever loads our local
+            # client.html and the printer's own WebRTC stream — no untrusted
+            # web content — and the HTTP server binds localhost/bridge only.
             "--no-sandbox",
             "--disable-dev-shm-usage",
             "--autoplay-policy=no-user-gesture-required",

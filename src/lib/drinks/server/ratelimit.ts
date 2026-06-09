@@ -34,6 +34,8 @@ const PROFILES: Record<string, LimitProfile> = {
   sse: { refillMs: 6_000, burst: 10, windowMs: 60_000, windowMax: 10 },
   // Voice ordering: 1 transcript per 5s, 12 per minute
   voice: { refillMs: 5_000, burst: 1, windowMs: 60_000, windowMax: 12 },
+  // GoobyGPT conversation list/create: 60 per minute
+  'gooby-api': { refillMs: 1_000, burst: 30, windowMs: 60_000, windowMax: 60 },
 };
 
 const buckets = new Map<string, Bucket>();
