@@ -1,6 +1,7 @@
 <script lang="ts">
-  import DrinkSwipeEnhancer from '$lib/drinks/components/DrinkSwipeEnhancer.svelte';
-  import DrinkTabShell from '$lib/drinks/components/DrinkTabShell.svelte';
+  import SwipeEnhancer from '$lib/site/tab-shell/SwipeEnhancer.svelte';
+  import TabShell from '$lib/site/tab-shell/TabShell.svelte';
+  import { drinkSwipeConfig, drinkTabShellConfig } from '$lib/drinks/tab-config';
   import SiteBrand from '$lib/site/SiteBrand.svelte';
   import SiteFooter from '$lib/site/SiteFooter.svelte';
   import SiteNav from '$lib/site/SiteNav.svelte';
@@ -39,7 +40,7 @@
 {#if currentPath === '/login' || currentPath === '/kiosk'}
   {@render children()}
 {:else}
-  <DrinkSwipeEnhancer />
+  <SwipeEnhancer config={drinkSwipeConfig} />
   <div class="drink-shell">
     <header class="drink-shell__masthead" use:measureMasthead>
       <div class="drink-shell__top">
@@ -71,9 +72,9 @@
       </nav>
     </header>
     <main class="drink-shell__main">
-      <DrinkTabShell>
+      <TabShell config={drinkTabShellConfig}>
         {@render children()}
-      </DrinkTabShell>
+      </TabShell>
     </main>
     <SiteFooter visitorCount={data.visitorCount} />
   </div>

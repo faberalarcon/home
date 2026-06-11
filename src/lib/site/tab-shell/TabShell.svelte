@@ -1,20 +1,10 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { goto } from '$app/navigation';
+  import { afterNavigate, goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import { afterNavigate } from '$app/navigation';
-  import { appPath, routePath } from '$lib/drinks/app-paths';
-  import { drinkSections, sectionIndexForPath } from '$lib/drinks/drink-sections';
   import { onDestroy, onMount, tick } from 'svelte';
-  import ProfilesPage from '../../../routes/drinks/+page.svelte';
-  import MenuPage from '../../../routes/drinks/menu/+page.svelte';
-  import RecentPage from '../../../routes/drinks/recent/+page.svelte';
-  import StatsPage from '../../../routes/drinks/stats/+page.svelte';
+  import type { TabShellConfig } from './types';
 
-  const CACHE_TTL_MS = 30_000;
-  const MAIN_HREFS = drinkSections.map((section) => section.href);
-
-  type PageHref = '/' | '/menu' | '/recent' | '/stats';
   type CacheEntry = {
     data?: any;
     loadedAt: number;
@@ -27,35 +17,26 @@
     complete?: Promise<void>;
   };
 
-  const PAGE_COMPONENTS: Record<PageHref, any> = {
-    '/': ProfilesPage,
-    '/menu': MenuPage,
-    '/recent': RecentPage,
-    '/stats': StatsPage
-  };
+  let { config, children }: { config: TabShellConfig; children: any } = $props();
 
-  let { children } = $props();
+  const MAIN_HREFS = $derived(config.sections.map((section) => section.href));
 
-  let activeHref = $state<PageHref | null>(null);
+  let activeHref = $state<string | null>(null);
   let activeData = $state<any>(null);
   let shellNavigationActive = false;
   const pageCache = new Map<string, CacheEntry>();
 
-  const currentHref = $derived(canonicalDrinkHref($page.url));
-  const ActivePage = $derived(activeHref ? PAGE_COMPONENTS[activeHref] : null);
+  const currentHref = $derived(canonicalHref($page.url));
+  const ActivePage = $derived(activeHref ? config.pageComponents[activeHref] : null);
 
-  function canonicalDrinkHref(url: URL): PageHref | null {
-    const pathname = routePath(url.pathname);
+  function canonicalHref(url: URL): string | null {
     if (url.search) return null;
-    if (pathname === '/') return '/';
-    if (pathname === '/menu') return '/menu';
-    if (pathname === '/recent') return '/recent';
-    if (pathname === '/stats') return '/stats';
-    return null;
+    const pathname = config.routePath(url.pathname);
+    return isPageHref(pathname) ? pathname : null;
   }
 
-  function isPageHref(href: string): href is PageHref {
-    return href in PAGE_COMPONENTS;
+  function isPageHref(href: string): boolean {
+    return href in config.pageComponents;
   }
 
   function canWarmup(): boolean {
@@ -65,7 +46,7 @@
   }
 
   function cacheFresh(entry: CacheEntry | undefined): entry is CacheEntry & { data: any } {
-    return Boolean(entry?.data && Date.now() - entry.loadedAt < CACHE_TTL_MS);
+    return Boolean(entry?.data && Date.now() - entry.loadedAt < config.cacheTtlMs);
   }
 
   function seedCurrentPageData() {
@@ -73,26 +54,26 @@
     pageCache.set(currentHref, { data: $page.data, loadedAt: Date.now() });
   }
 
-  function adjacentHrefs(href: PageHref | null): PageHref[] {
+  function adjacentHrefs(href: string | null): string[] {
     if (!href) return [];
-    const currentIndex = sectionIndexForPath(href);
+    const currentIndex = config.sectionIndexForPath(href);
     if (currentIndex === -1) return [];
-    return [drinkSections[currentIndex - 1]?.href, drinkSections[currentIndex + 1]?.href].filter(
-      (item): item is PageHref => Boolean(item && isPageHref(item))
+    return [config.sections[currentIndex - 1]?.href, config.sections[currentIndex + 1]?.href].filter(
+      (item): item is string => Boolean(item && isPageHref(item))
     );
   }
 
-  async function fetchPageData(href: PageHref): Promise<any> {
-    const response = await fetch(`${appPath('/api/page-data')}?href=${encodeURIComponent(href)}`, {
+  async function fetchPageData(href: string): Promise<any> {
+    const response = await fetch(`${config.appPath('/api/page-data')}?href=${encodeURIComponent(href)}`, {
       credentials: 'same-origin'
     });
     if (!response.ok) throw new Error(`Failed to load ${href}`);
-    const body = await response.json() as { data?: any };
+    const body = (await response.json()) as { data?: any };
     if (!body.data) throw new Error(`Missing page data for ${href}`);
     return body.data;
   }
 
-  function preloadPage(href: PageHref): Promise<any> {
+  function preloadPage(href: string): Promise<any> {
     const cached = pageCache.get(href);
     if (cacheFresh(cached)) return Promise.resolve(cached.data);
     if (cached?.promise) return cached.promise;
@@ -110,13 +91,13 @@
     return promise;
   }
 
-  function preloadAround(href: PageHref | null) {
+  function preloadAround(href: string | null) {
     if (!href || !canWarmup()) return;
     const priority = adjacentHrefs(href);
     void Promise.allSettled(priority.map((item) => preloadPage(item)));
 
     const remaining = MAIN_HREFS.filter(
-      (item): item is PageHref => isPageHref(item) && item !== href && !priority.includes(item)
+      (item) => isPageHref(item) && item !== href && !priority.includes(item)
     );
     void (async () => {
       for (const item of remaining) {
@@ -138,10 +119,10 @@
     html.style.scrollBehavior = previousScrollBehavior;
   }
 
-  async function syncRouteUrl(href: PageHref, scrollY: number) {
+  async function syncRouteUrl(href: string, scrollY: number) {
     shellNavigationActive = true;
     try {
-      await goto(appPath(href), { noScroll: true, keepFocus: true });
+      await goto(config.appPath(href), { noScroll: true, keepFocus: true });
       await tick();
       restoreScrollY(scrollY);
       activeHref = null;
@@ -151,7 +132,7 @@
     }
   }
 
-  async function activatePage(href: PageHref, scrollY = window.scrollY) {
+  async function activatePage(href: string, scrollY = window.scrollY) {
     const data = await preloadPage(href);
     activeHref = href;
     activeData = data;
@@ -176,18 +157,21 @@
   }
 
   function handleDocumentClick(event: MouseEvent) {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
     const anchor = event.target instanceof Element
-      ? event.target.closest<HTMLAnchorElement>('.drink-shell__nav a[href]')
+      ? event.target.closest<HTMLAnchorElement>(`${config.navAnchorSelector} a[href]`)
       : null;
     if (!anchor) return;
 
-    const href = canonicalDrinkHref(new URL(anchor.href));
+    const href = canonicalHref(new URL(anchor.href));
     if (!href || href === currentHref) return;
 
     event.preventDefault();
+    anchor.blur();
     void activatePage(href).catch(() => {
-      void goto(appPath(href), { noScroll: true, keepFocus: true });
+      void goto(config.appPath(href), { noScroll: true, keepFocus: true });
     });
   }
 
@@ -210,13 +194,13 @@
   onMount(() => {
     seedCurrentPageData();
     preloadAround(currentHref);
-    window.addEventListener('drink:swipe-navigate', handleSwipeNavigate as EventListener);
+    window.addEventListener(config.navEventName, handleSwipeNavigate as EventListener);
     document.addEventListener('click', handleDocumentClick);
   });
 
   onDestroy(() => {
     if (!browser) return;
-    window.removeEventListener('drink:swipe-navigate', handleSwipeNavigate as EventListener);
+    window.removeEventListener(config.navEventName, handleSwipeNavigate as EventListener);
     document.removeEventListener('click', handleDocumentClick);
   });
 </script>

@@ -3,8 +3,9 @@
   import SiteBrand from '$lib/site/SiteBrand.svelte';
   import SiteFooter from '$lib/site/SiteFooter.svelte';
   import SiteNav from '$lib/site/SiteNav.svelte';
-  import StatsEnhancer from '$lib/stats/components/StatsEnhancer.svelte';
-  import StatsTabShell from '$lib/stats/components/StatsTabShell.svelte';
+  import SwipeEnhancer from '$lib/site/tab-shell/SwipeEnhancer.svelte';
+  import TabShell from '$lib/site/tab-shell/TabShell.svelte';
+  import { statsSwipeConfig, statsTabShellConfig } from '$lib/stats/tab-config';
   import { appPath, routePath } from '$lib/stats/app-paths';
   import { statsSections } from '$lib/stats/stats-sections';
 
@@ -53,12 +54,12 @@
   </div>
 </header>
 
-<StatsEnhancer />
+<SwipeEnhancer config={statsSwipeConfig} />
 
 <main id="main-content" class="app-main">
-  <StatsTabShell>
+  <TabShell config={statsTabShellConfig}>
     {@render children()}
-  </StatsTabShell>
+  </TabShell>
 </main>
 
 <SiteFooter visitorCount={data.visitorCount} />
