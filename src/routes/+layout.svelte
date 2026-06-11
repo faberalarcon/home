@@ -5,7 +5,7 @@
 
   let { children } = $props();
 
-  const TAB_BAR_EXCLUDED = ['/gooby', '/admin', '/drinks/login', '/drinks/kiosk'];
+  const TAB_BAR_EXCLUDED = ['/drinks/kiosk'];
 
   const showTabBar = $derived(
     !TAB_BAR_EXCLUDED.some(

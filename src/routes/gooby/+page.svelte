@@ -47,7 +47,7 @@
   <div class="app-header__inner">
     <div class="app-header__top">
       <SiteBrand site="gooby" href="/gooby/" />
-      <SiteNav current="gooby" fallbackMenu />
+      <SiteNav current="gooby" />
     </div>
   </div>
 </header>
@@ -88,7 +88,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100dvh;
+    height: calc(100dvh - var(--site-tab-bar-height, 0px));
     min-height: 0;
     box-sizing: border-box;
     padding-top: var(--stats-app-header-height, 4.5rem);

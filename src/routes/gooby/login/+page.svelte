@@ -17,7 +17,7 @@
     <div class="app-header__inner">
       <div class="app-header__top">
         <SiteBrand site="gooby" href="/gooby/" />
-        <SiteNav current="gooby" fallbackMenu />
+        <SiteNav current="gooby" />
       </div>
     </div>
   </header>

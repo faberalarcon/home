@@ -127,7 +127,7 @@
   .scrim {
     position: fixed;
     inset: 0;
-    z-index: 60;
+    z-index: 74;
     border: 0;
     background: rgba(15, 23, 42, 0.42);
     cursor: pointer;
@@ -141,7 +141,7 @@
 
   .drawer {
     position: fixed;
-    z-index: 70;
+    z-index: 75;
     top: 0;
     bottom: 0;
     left: 0;
