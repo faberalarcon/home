@@ -21,7 +21,8 @@
     '[role="button"]',
     '[contenteditable="true"]',
     '.drink-shell__nav',
-    '.hubnav'
+    '.hubnav',
+    '.site-tab-bar'
   ].join(',');
 
   type Point = { x: number; y: number };

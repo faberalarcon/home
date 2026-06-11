@@ -1,31 +1,16 @@
 <script lang="ts">
   import { page } from '$app/stores';
-
-  type SiteKey = 'home' | 'drinks' | 'stats' | 'gooby' | 'gallery';
+  import { keyForPath, siteLinks, type SiteKey } from '$lib/site/site-links';
 
   interface Props {
     current?: SiteKey;
+    /** Show the hamburger dropdown on mobile. Only for pages where the bottom tab bar is suppressed (gooby, logins). */
+    fallbackMenu?: boolean;
   }
 
-  let { current }: Props = $props();
+  let { current, fallbackMenu = false }: Props = $props();
   let menuOpen = $state(false);
   let navRoot: HTMLElement;
-
-  const links: Array<{ key: SiteKey; label: string; href: string }> = [
-    { key: 'home', label: 'Home', href: '/' },
-    { key: 'drinks', label: 'Drinks', href: '/drinks/' },
-    { key: 'stats', label: 'Stats', href: '/stats/' },
-    { key: 'gooby', label: 'GPT', href: '/gooby/' },
-    { key: 'gallery', label: 'Gallery', href: '/gallery/' }
-  ];
-
-  function keyForPath(pathname: string): SiteKey {
-    if (pathname === '/drinks' || pathname.startsWith('/drinks/')) return 'drinks';
-    if (pathname === '/stats' || pathname.startsWith('/stats/')) return 'stats';
-    if (pathname === '/gooby' || pathname.startsWith('/gooby/')) return 'gooby';
-    if (pathname === '/gallery' || pathname.startsWith('/gallery/')) return 'gallery';
-    return 'home';
-  }
 
   const activeKey = $derived(current ?? keyForPath($page.url.pathname));
   const menuId = $derived(`site-nav-menu-${current ?? activeKey}`);
@@ -46,23 +31,30 @@
 
 <svelte:window onclick={handleWindowClick} onkeydown={handleWindowKeydown} />
 
-<nav class="site-nav" aria-label="21 Bristoe sites" bind:this={navRoot}>
-  <button
-    id="site-nav-menu-button"
-    class="site-nav__toggle"
-    type="button"
-    aria-label="Open site navigation"
-    aria-expanded={menuOpen}
-    aria-controls={menuId}
-    onclick={() => (menuOpen = !menuOpen)}
-  >
-    <span aria-hidden="true"></span>
-    <span aria-hidden="true"></span>
-    <span aria-hidden="true"></span>
-  </button>
+<nav
+  class="site-nav"
+  class:site-nav--fallback={fallbackMenu}
+  aria-label="21 Bristoe sites"
+  bind:this={navRoot}
+>
+  {#if fallbackMenu}
+    <button
+      id="site-nav-menu-button"
+      class="site-nav__toggle"
+      type="button"
+      aria-label="Open site navigation"
+      aria-expanded={menuOpen}
+      aria-controls={menuId}
+      onclick={() => (menuOpen = !menuOpen)}
+    >
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </button>
+  {/if}
 
   <ul id={menuId} class:site-nav__list--open={menuOpen} class="site-nav__list" role="list">
-    {#each links as link (link.key)}
+    {#each siteLinks as link (link.key)}
       {@const active = activeKey === link.key}
       <li>
         <a
@@ -162,15 +154,20 @@
   }
 
   @media (max-width: 760px) {
-    .site-nav {
+    /* Bottom tab bar handles mobile nav on normal pages. */
+    .site-nav:not(.site-nav--fallback) .site-nav__list {
+      display: none;
+    }
+
+    .site-nav--fallback {
       flex: 0 0 auto;
     }
 
-    .site-nav__toggle {
+    .site-nav--fallback .site-nav__toggle {
       display: inline-flex;
     }
 
-    .site-nav__list {
+    .site-nav--fallback .site-nav__list {
       position: absolute;
       top: calc(100% + 0.5rem);
       right: 0;
@@ -190,13 +187,13 @@
       transition: opacity 140ms ease, transform 140ms ease;
     }
 
-    .site-nav__list--open {
+    .site-nav--fallback .site-nav__list--open {
       opacity: 1;
       pointer-events: auto;
       transform: translateY(0);
     }
 
-    .site-nav__pill {
+    .site-nav--fallback .site-nav__pill {
       width: 100%;
       min-width: 0;
       min-height: 2.6rem;

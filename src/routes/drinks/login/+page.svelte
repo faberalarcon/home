@@ -15,7 +15,7 @@
   <header class="site-login-header">
     <nav class="mx-auto flex max-w-5xl items-center justify-between gap-3" aria-label="Main navigation">
       <SiteBrand site="drinks" href="/drinks/" />
-      <SiteNav current="drinks" />
+      <SiteNav current="drinks" fallbackMenu />
     </nav>
   </header>
 

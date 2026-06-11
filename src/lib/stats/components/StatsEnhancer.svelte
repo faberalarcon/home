@@ -33,7 +33,8 @@
     '.house__range-tabs',
     '.pi__range-tabs',
     '.app-header__nav',
-    '.hubnav'
+    '.hubnav',
+    '.site-tab-bar'
   ].join(',');
 
   type IdleDeadline = { didTimeout: boolean; timeRemaining: () => number };
