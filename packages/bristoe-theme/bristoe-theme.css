@@ -40,6 +40,25 @@
   font-display: swap;
 }
 
+/* Metric-compatible local fallbacks (capsize metrics) so text laid out
+   during the font-display: swap window doesn't shift when the web font lands. */
+@font-face {
+  font-family: 'Inter Tight Fallback';
+  src: local('Arial');
+  size-adjust: 96.39%;
+  ascent-override: 100.51%;
+  descent-override: 25.03%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Fraunces Fallback';
+  src: local('Georgia');
+  size-adjust: 105.2%;
+  ascent-override: 92.96%;
+  descent-override: 24.24%;
+  line-gap-override: 0%;
+}
+
 @theme {
   /* Canonical app tokens */
   --color-paper-50:  #fafbfc;
@@ -86,8 +105,8 @@
   --color-sage-800: #3f4959;
   --color-sage-900: #232a36;
 
-  --font-display: 'Fraunces', 'Georgia', 'Times New Roman', serif;
-  --font-body:    'Inter Tight', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --font-display: 'Fraunces', 'Fraunces Fallback', 'Georgia', 'Times New Roman', serif;
+  --font-body:    'Inter Tight', 'Inter Tight Fallback', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --measure-text: 68ch;
