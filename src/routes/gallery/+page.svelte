@@ -21,6 +21,11 @@
     return img.url || `/uploads/${img.filename}`;
   }
 
+  function variantUrl(img: GalleryImage, width: number) {
+    const url = photoUrl(img);
+    return url.startsWith('/uploads/') ? `${url}?w=${width}` : url;
+  }
+
   function openLightbox(idx: number) {
     currentIdx = idx;
     lightboxOpen = true;
@@ -97,10 +102,13 @@
             on:click={() => openLightbox(i)}
           >
             <img
-              src={photoUrl(img)}
+              src={variantUrl(img, 480)}
+              srcset={`${variantUrl(img, 480)} 480w, ${variantUrl(img, 960)} 960w`}
+              sizes="(max-width: 640px) 50vw, 33vw"
               alt={img.originalName || img.filename}
               class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
               loading="lazy"
+              decoding="async"
             />
           </button>
         </div>
@@ -127,6 +135,6 @@
     <button class="gallery-lb-close" aria-label="Close" on:click={closeLightbox}>✕</button>
     <button class="gallery-lb-prev" aria-label="Previous photo" on:click={prevPhoto}>‹</button>
     <button class="gallery-lb-next" aria-label="Next photo" on:click={nextPhoto}>›</button>
-    <img src={photoUrl(images[currentIdx])} alt={images[currentIdx].originalName || images[currentIdx].filename} />
+    <img src={photoUrl(images[currentIdx])} alt={images[currentIdx].originalName || images[currentIdx].filename} decoding="async" />
   </div>
 {/if}

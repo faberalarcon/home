@@ -17,7 +17,16 @@
   let suppressClickTimer: ReturnType<typeof setTimeout> | null = null;
 
   function imageUrl(img: SlideImage) {
-    return img.url || `/uploads/${img.filename}`;
+    const url = img.url || `/uploads/${img.filename}`;
+    return url.startsWith('/uploads/') ? `${url}?w=1440` : url;
+  }
+
+  // Only the current slide and its neighbors are mounted, so a full gallery
+  // isn't downloaded on home page load; the crossfade only ever needs ±1.
+  function isNearCurrent(index: number, activeIndex: number, count: number): boolean {
+    if (count <= 3) return true;
+    const diff = (index - activeIndex + count) % count;
+    return diff <= 1 || diff === count - 1;
   }
 
   function goTo(index: number) {
@@ -133,13 +142,15 @@
     <div class="slide-fallback absolute inset-0 bg-gradient-to-br from-warm-800 via-warm-700 to-sage-700" aria-hidden="true"></div>
   {:else}
     {#each images as img, i}
-      <a
-        href="/gallery/"
-        class={`bristoe-slide ${i === current ? 'active' : ''}`}
-        style={`background-image: url(${JSON.stringify(imageUrl(img))})`}
-        aria-label={`Photo ${i + 1} of ${images.length} — view gallery`}
-        tabindex="-1"
-      ></a>
+      {#if isNearCurrent(i, current, images.length)}
+        <a
+          href="/gallery/"
+          class={`bristoe-slide ${i === current ? 'active' : ''}`}
+          style={`background-image: url(${JSON.stringify(imageUrl(img))})`}
+          aria-label={`Photo ${i + 1} of ${images.length} — view gallery`}
+          tabindex="-1"
+        ></a>
+      {/if}
     {/each}
   {/if}
 
