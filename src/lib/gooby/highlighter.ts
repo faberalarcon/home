@@ -1,5 +1,5 @@
 import type { HighlighterCore } from 'shiki/core';
-import { createHighlighter, type Highlighter } from 'shiki';
+import type { Highlighter } from 'shiki';
 
 const LANGS = [
   'ts',
@@ -49,15 +49,21 @@ export function getHighlighter(): Highlighter | null {
 export function ensureHighlighter(): Promise<Highlighter> {
   if (highlighter) return Promise.resolve(highlighter);
   if (loading) return loading;
-  loading = createHighlighter({
-    themes: ['github-light'],
-    langs: [...LANGS]
-  }).then((h) => {
-    highlighter = h;
-    subscribers.forEach((cb) => cb());
-    subscribers.clear();
-    return h;
-  });
+  // Dynamic import keeps shiki's grammar/theme graph out of the gooby entry
+  // chunk; highlighting upgrades progressively via onReady once it loads.
+  loading = import('shiki')
+    .then(({ createHighlighter }) =>
+      createHighlighter({
+        themes: ['github-light'],
+        langs: [...LANGS]
+      })
+    )
+    .then((h) => {
+      highlighter = h;
+      subscribers.forEach((cb) => cb());
+      subscribers.clear();
+      return h;
+    });
   return loading;
 }
 
