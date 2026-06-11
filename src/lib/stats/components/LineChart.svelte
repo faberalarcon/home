@@ -134,6 +134,8 @@
     const line      = color ? resolveColor(color, ink) : ink;
     const fontBody  = "Inter Tight, system-ui, sans-serif";
     const fontMono  = "JetBrains Mono, ui-monospace, monospace";
+    const smallScreen = window.matchMedia('(max-width: 520px)').matches;
+    const tickFontSize = smallScreen ? 11 : 10;
 
     chart = new Chart(canvas, {
       type: 'line',
@@ -147,6 +149,7 @@
           fill,
           tension: 0.25,
           pointRadius: data.length > 30 ? 0 : 2.5,
+          pointHitRadius: 12,
           pointHoverRadius: 4,
           pointHoverBorderColor: blood,
           pointHoverBackgroundColor: blood,
@@ -177,10 +180,10 @@
             border: { color: ink, width: 1 },
             ticks: {
               color: inkMuted,
-              font: { family: fontMono, size: 10 },
+              font: { family: fontMono, size: tickFontSize },
               autoSkip: true,
               maxRotation: 0,
-              maxTicksLimit: 7
+              maxTicksLimit: smallScreen ? 5 : 7
             }
           },
           y: {
@@ -188,7 +191,8 @@
             border: { color: ink, width: 1 },
             ticks: {
               color: inkMuted,
-              font: { family: fontMono, size: 10 },
+              font: { family: fontMono, size: tickFontSize },
+              maxTicksLimit: smallScreen ? 4 : undefined,
               callback: (val) => (unit ? `${val}${unit}` : String(val))
             },
             beginAtZero

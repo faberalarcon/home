@@ -177,8 +177,26 @@
     .drink-shell__top {
       gap: 0.5rem;
     }
+    /* Scrollable single row with full-size touch targets. */
     .drink-shell__nav {
-      gap: 0.6rem;
+      gap: 0.35rem;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      scrollbar-width: none;
+    }
+    .drink-shell__nav::-webkit-scrollbar {
+      display: none;
+    }
+    .drink-shell__nav a,
+    .drink-shell__signout,
+    .drink-shell__profile {
+      flex: 0 0 auto;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0.55rem 0.5rem;
     }
   }
   @media (prefers-reduced-motion: reduce) {

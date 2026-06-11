@@ -172,6 +172,8 @@
     const defaultColor = ink;
     const fontBody  = "Inter Tight, system-ui, sans-serif";
     const fontMono  = "JetBrains Mono, ui-monospace, monospace";
+    const smallScreen = window.matchMedia('(max-width: 520px)').matches;
+    const tickFontSize = smallScreen ? 11 : 10;
 
     chart = new Chart(canvas, {
       type: 'bar',
@@ -213,10 +215,10 @@
             border: { color: ink, width: 1 },
             ticks: {
               color: inkMuted,
-              font: { family: fontMono, size: 10 },
+              font: { family: fontMono, size: tickFontSize },
               autoSkip: true,
-              maxRotation: horizontal ? 0 : 0,
-              maxTicksLimit: horizontal ? 5 : 7,
+              maxRotation: 0,
+              maxTicksLimit: horizontal ? (smallScreen ? 4 : 5) : (smallScreen ? 5 : 7),
               callback: function (val) {
                 if (horizontal && unit) return `${val}${unit}`;
                 return (this as { getLabelForValue: (v: number) => string }).getLabelForValue(val as number);
@@ -228,9 +230,9 @@
             border: { color: ink, width: 1 },
             ticks: {
               color: inkMuted,
-              font: { family: fontMono, size: 10 },
+              font: { family: fontMono, size: tickFontSize },
               autoSkip: true,
-              maxTicksLimit: horizontal ? 8 : 5,
+              maxTicksLimit: horizontal ? 8 : (smallScreen ? 4 : 5),
               callback: function (val) {
                 if (!horizontal && unit) return `${val}${unit}`;
                 return (this as { getLabelForValue: (v: number) => string }).getLabelForValue(val as number);

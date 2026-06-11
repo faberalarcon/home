@@ -268,19 +268,35 @@ a:hover { color: var(--color-blood-600); text-decoration-color: var(--color-bloo
   .app-header__inner {
     gap: 0.35rem;
   }
+  /* Single scrollable row instead of squeezing 8 tabs below 44px targets. */
   .app-header__nav {
     width: 100%;
     flex-wrap: nowrap;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 0.15rem;
     padding-bottom: 0.15rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+  }
+  .app-header__nav::-webkit-scrollbar {
+    display: none;
   }
   .app-header__nav a {
-    flex: 0 1 auto;
-    font-size: 0.625rem;
+    flex: 0 0 auto;
+    font-size: 0.7rem;
     letter-spacing: 0;
-    min-height: 40px;
-    padding: 0.45rem 0.28rem;
+    min-height: 44px;
+    padding: 0.55rem 0.55rem;
+  }
+  /* Range tabs (house/pi/printer) share a markup pattern; give them full touch targets. */
+  .house__range-tab,
+  .pi__range-tab,
+  .printer__range-tab {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
 }
 
