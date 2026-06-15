@@ -1,0 +1,44 @@
+- Home & Smart Home:
+    - Home Assistant:
+        href: http://ai.local:8123
+        description: Smart-home hub
+        siteMonitor: http://ai.local:8123
+    - 21bristoe.com:
+        href: https://21bristoe.com
+        description: Public site
+        siteMonitor: http://127.0.0.1:6173
+        server: my-docker
+        container: 21bristoe-site
+    - Pi-hole:
+        href: http://192.168.1.204/admin
+        description: DNS / ad-block (.204)
+        siteMonitor: http://192.168.1.204/admin
+
+- Infrastructure:
+    - Uptime Kuma:
+        href: http://127.0.0.1:6190
+        description: Uptime monitoring
+        siteMonitor: http://127.0.0.1:6190
+        server: my-docker
+        container: uptime-kuma
+    - LLM box (pc.local):
+        href: http://192.168.1.215:8080
+        description: llama-router (.215)
+        siteMonitor: http://192.168.1.215:8080
+    - MQTT (Mosquitto):
+        description: Smart-home bus :1883
+        server: my-docker
+        container: mosquitto
+
+- 3D Printing:
+    - Printer Hub:
+        href: https://printer.21bristoe.com
+        description: Creality Cloud clone
+        siteMonitor: http://127.0.0.1:6180
+        server: my-docker
+        container: printer-hub
+    - Kiri:Moto Slicer:
+        href: http://127.0.0.1:6181
+        description: Browser slicer
+        server: my-docker
+        container: printer-hub-kiri

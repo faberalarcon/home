@@ -55,3 +55,51 @@ services:
       - TZ=${TZ:-America/New_York}
     extra_hosts:
       - "ai.local:host-gateway"
+
+  # --- Smart-home MQTT bus (Home Assistant connects via host loopback) ---
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    # Run as the image's mosquitto uid and skip the entrypoint's chown
+    # (which needs CAP_CHOWN we drop). Files are pre-owned 1883:1883.
+    user: "1883:1883"
+    entrypoint: ["/usr/sbin/mosquitto"]
+    command: ["-c", "/mosquitto/config/mosquitto.conf"]
+    ports:
+      - "127.0.0.1:1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  # --- Uptime monitoring (reachable via nginx/tailnet on 127.0.0.1:6190) ---
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6190:3001"
+    volumes:
+      - ./uptime-kuma/data:/app/data
+    security_opt:
+      - no-new-privileges:true
+
+  # --- Homepage dashboard (single landing pane for all services) ---
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6191:3000"
+    volumes:
+      - ./homepage/config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - HOMEPAGE_ALLOWED_HOSTS=localhost:6191,127.0.0.1:6191,status.21bristoe.com,home.21bristoe.com
+    security_opt:
+      - no-new-privileges:true

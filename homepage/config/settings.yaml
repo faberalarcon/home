@@ -1,0 +1,14 @@
+title: 21 Bristoe
+theme: dark
+color: slate
+headerStyle: clean
+layout:
+  Home & Smart Home:
+    style: row
+    columns: 3
+  Infrastructure:
+    style: row
+    columns: 3
+  3D Printing:
+    style: row
+    columns: 2
